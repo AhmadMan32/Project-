@@ -52,9 +52,11 @@ WorldCover classes and DEM relief; it is not satellite imagery.
 
 ### GitHub Pages
 
-`pnpm --filter @workspace/firebreak-lab run build:pages` writes the same demo to `docs/` at the repository root, with
-`VITE_LIVE_MAP=1`: live Esri World Imagery and the 3D Terrarium DEM, like the full app, with the bundled terrain data and
-in-browser simulation. Serve it with GitHub Pages (Settings → Pages → Deploy from a branch → `/docs`).
+`pnpm --filter @workspace/firebreak-lab run build:pages` writes a serverless web version to `docs/` at the repository
+root (`VITE_LIVE_MAP=1`). It works for any place, on phones too: live Esri World Imagery and the 3D Terrarium DEM like
+the full app, and terrain read in the browser straight from the providers (Planetary Computer STAC + SAS token +
+range reads of the WorldCover COG with geotiff.js, Terrarium tiles from AWS), all of which allow cross-origin requests.
+Place search goes to Nominatim. Serve it with GitHub Pages (Settings → Pages → Deploy from a branch → `/docs`).
 
 ## Run on your own computer
 

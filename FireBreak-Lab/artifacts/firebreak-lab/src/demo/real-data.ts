@@ -1,5 +1,7 @@
 import type { ScenarioInput, Terrain } from '@workspace/api-client-react';
 import type { Bounds } from '@/lib/sim';
+import { fromUrl } from 'geotiff';
+import { LIVE_MAP } from '@/demo/flag';
 
 /**
  * Real open data bundled with the offline demo (demo-public/demo-data):
@@ -9,6 +11,10 @@ import type { Bounds } from '@/lib/sim';
  * (the 10 m pixel under each cell centre for land cover, nearest tile pixel for elevation, numpy-style gradients).
  * The server reads WorldCover through GDAL, which may use the COG's overviews, so a few cells can differ.
  * Outside the bundled squares the demo refuses, like the server does when providers fail.
+ *
+ * The web build (LIVE_MAP) does not use the bundle: it reads the same open data straight from the providers in the
+ * browser, for any place, the way terrain.py does on the server: the WorldCover COG window through Planetary Computer
+ * (STAC search + SAS token) and the Terrarium tiles from AWS. All of them allow cross-origin reads.
  */
 
 export const SOURCE = 'ESA WorldCover 2021 v200 (10 m; nearest-cell sampling) · AWS/Mapzen Terrarium DEM z12';
@@ -17,13 +23,16 @@ const BASE = 'demo-data/';
 
 type Grid = { x0: number; y0: number; dx: number; dy: number; w: number; h: number };
 export type Place = { key: string; name: string; lat: number; lon: number; bounds: Bounds; grid: Grid; worldcover: string[]; demTiles: [number, number, number][] };
-type Loaded = { place: Place; wc: Uint8Array; tiles: Map<string, Float64Array> };
+type Raster = { grid: Grid; data: ArrayLike<number> };
+type Loaded = { grids: Raster[]; tiles: Map<string, Float64Array> };
 
 let placesP: Promise<Place[]> | null = null;
 export const places = () => (placesP ??= fetch(BASE + 'places.json').then((r) => r.json() as Promise<Place[]>));
 
 async function pixels(url: string) {
-  const blob = await (await fetch(url)).blob();
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`${res.status} ${url}`);
+  const blob = await res.blob();
   // No colour management: class codes and Terrarium RGB must arrive byte-exact.
   const bmp = await createImageBitmap(blob, { colorSpaceConversion: 'none', premultiplyAlpha: 'none' });
   const c = document.createElement('canvas');
@@ -33,8 +42,14 @@ async function pixels(url: string) {
   return { w: bmp.width, h: bmp.height, data: g.getImageData(0, 0, bmp.width, bmp.height).data };
 }
 
+const terrarium = (d: Uint8ClampedArray) => {
+  const e = new Float64Array(256 * 256);
+  for (let i = 0; i < e.length; i++) e[i] = d[i * 4] * 256 + d[i * 4 + 1] + d[i * 4 + 2] / 256 - 32768;
+  return e;
+};
+
 const loaded = new Map<string, Promise<Loaded>>();
-function load(place: Place) {
+function load(place: Place): Promise<Loaded> {
   let p = loaded.get(place.key);
   if (!p) {
     p = (async () => {
@@ -43,14 +58,63 @@ function load(place: Place) {
       for (let i = 0; i < wc.length; i++) wc[i] = wcPx.data[i * 4];
       const tiles = new Map<string, Float64Array>();
       await Promise.all(place.demTiles.map(async ([z, x, y]) => {
-        const t = await pixels(`${BASE}dem-${z}-${x}-${y}.png`);
-        const e = new Float64Array(256 * 256);
-        for (let i = 0; i < e.length; i++) e[i] = t.data[i * 4] * 256 + t.data[i * 4 + 1] + t.data[i * 4 + 2] / 256 - 32768;
-        tiles.set(`${z}/${x}/${y}`, e);
+        tiles.set(`${z}/${x}/${y}`, terrarium((await pixels(`${BASE}dem-${z}-${x}-${y}.png`)).data));
       }));
-      return { place, wc, tiles };
+      return { grids: [{ grid: place.grid, data: wc }], tiles };
     })();
     loaded.set(place.key, p);
+  }
+  return p;
+}
+
+async function fetchRetry(url: string, tries = 3): Promise<Response> {
+  for (let k = 0; ; k++) {
+    const r = await fetch(url);
+    if (r.ok || r.status < 500 || k >= tries - 1) return r;
+    await new Promise((z) => setTimeout(z, 1000 * (k + 1)));
+  }
+}
+
+const tileX = (lon: number, z: number) => ((lon + 180) / 360) * 2 ** z;
+const tileY = (lat: number, z: number) => ((1 - Math.asinh(Math.tan((lat * Math.PI) / 180)) / Math.PI) / 2) * 2 ** z;
+
+/** Live read of the providers for any study area (web build). Mirrors terrain.load() on the server. */
+const online = new Map<string, Promise<Loaded>>();
+function loadOnline(b: Bounds): Promise<Loaded> {
+  const key = b.join(',');
+  let p = online.get(key);
+  if (!p) {
+    p = (async () => {
+      const [w, s, e, n] = b;
+      const stac = await fetchRetry(`https://planetarycomputer.microsoft.com/api/stac/v1/search?collections=esa-worldcover&bbox=${w},${s},${e},${n}&limit=20`);
+      if (!stac.ok) throw new Error(`ESA WorldCover search failed (${stac.status}).`);
+      const items = ((await stac.json()).features as { id: string; assets: { map: { href: string } } }[]).filter((f) => f.id.includes('2021'));
+      if (!items.length) throw new Error('ESA WorldCover 2021 coverage is unavailable for this area.');
+      const tokRes = await fetchRetry('https://planetarycomputer.microsoft.com/api/sas/v1/token/esa-worldcover');
+      if (!tokRes.ok) throw new Error(`Planetary Computer token failed (${tokRes.status}).`);
+      const token = (await tokRes.json()).token as string;
+      const grids = (await Promise.all(items.map(async (it): Promise<Raster | null> => {
+        // Only the window around the study area is fetched, with HTTP range requests on the cloud-optimised GeoTIFF.
+        const img = await (await fromUrl(`${it.assets.map.href}?${token}`)).getImage();
+        const [ox, oy] = img.getOrigin();
+        const [rx, ry] = img.getResolution();
+        const W = img.getWidth(), H = img.getHeight();
+        const c0 = Math.max(0, Math.floor((w - ox) / rx) - 1), c1 = Math.min(W, Math.ceil((e - ox) / rx) + 1);
+        const r0 = Math.max(0, Math.floor((n - oy) / ry) - 1), r1 = Math.min(H, Math.ceil((s - oy) / ry) + 1);
+        if (c1 <= c0 || r1 <= r0) return null;
+        const bands = (await img.readRasters({ window: [c0, r0, c1, r1], samples: [0] })) as unknown as ArrayLike<number>[];
+        return { grid: { x0: ox + c0 * rx, y0: oy + r0 * ry, dx: rx, dy: -ry, w: c1 - c0, h: r1 - r0 }, data: bands[0] };
+      }))).filter((g): g is Raster => g !== null);
+      const z = 12, tiles = new Map<string, Float64Array>();
+      const jobs: Promise<void>[] = [];
+      for (let x = Math.floor(tileX(w, z)); x <= Math.floor(tileX(e, z)); x++)
+        for (let y = Math.floor(tileY(n, z)); y <= Math.floor(tileY(s, z)); y++)
+          jobs.push(pixels(`https://s3.amazonaws.com/elevation-tiles-prod/terrarium/${z}/${x}/${y}.png`).then((t) => { tiles.set(`${z}/${x}/${y}`, terrarium(t.data)); }));
+      await Promise.all(jobs);
+      return { grids, tiles };
+    })();
+    p.catch(() => online.delete(key));
+    online.set(key, p);
   }
   return p;
 }
@@ -72,9 +136,11 @@ export const terrainIdentity = (s: Pick<ScenarioInput, 'lat' | 'lon' | 'widthM' 
   'demo-' + JSON.stringify([s.lat, s.lon, s.widthM, s.cellSize, s.zones]);
 
 function wcAt(L: Loaded, lon: number, lat: number) {
-  const g = L.place.grid;
-  const c = Math.floor((lon - g.x0) / g.dx), r = Math.floor((g.y0 - lat) / g.dy);
-  return c < 0 || r < 0 || c >= g.w || r >= g.h ? 0 : L.wc[r * g.w + c];
+  for (const { grid: g, data } of L.grids) {
+    const c = Math.floor((lon - g.x0) / g.dx), r = Math.floor((g.y0 - lat) / g.dy);
+    if (c >= 0 && r >= 0 && c < g.w && r < g.h && data[r * g.w + c]) return data[r * g.w + c];
+  }
+  return 0;
 }
 
 /** Same as sample_dem() in terrain.py: zoom 12, nearest pixel of the Terrarium tile. */
@@ -103,12 +169,19 @@ function demSmooth(L: Loaded, lon: number, lat: number) {
 
 export async function realTerrain(s: ScenarioInput): Promise<Terrain> {
   const { n, cell, bounds } = geometry(s);
-  const place = await placeFor(bounds);
-  if (!place) {
-    const names = (await places()).map((p) => p.name.split(',')[0]).join(', ');
-    throw new Error(`Bu çevrimdışı demo yalnızca şu bölgelerin gerçek verisini içerir: ${names}. Alanı bu bölgelerden birine taşıyın. Yapay veri kullanılmadı.`);
+  let L: Loaded;
+  if (LIVE_MAP) {
+    try { L = await loadOnline(bounds); } catch (e) {
+      throw new Error(`Gerçek arazi verisi alınamadı (${(e as Error).message}). İnternet bağlantısını kontrol edip tekrar deneyin. Yapay veri kullanılmadı.`);
+    }
+  } else {
+    const place = await placeFor(bounds);
+    if (!place) {
+      const names = (await places()).map((p) => p.name.split(',')[0]).join(', ');
+      throw new Error(`Bu çevrimdışı demo yalnızca şu bölgelerin gerçek verisini içerir: ${names}. Alanı bu bölgelerden birine taşıyın. Yapay veri kullanılmadı.`);
+    }
+    L = await load(place);
   }
-  const L = await load(place);
   const [w, so, e, no] = bounds;
   const fuel: number[] = [], raw: number[] = [];
   for (let r = 0; r < n; r++)
@@ -158,7 +231,7 @@ export async function realBasemap(lat: number, lon: number) {
   if (!p) {
     p = (async () => {
       const L = await load(place);
-      const G = place.grid, W = G.w, H = G.h;
+      const G = place.grid, W = G.w, H = G.h, wc = L.grids[0].data;
       // elevation on a 4 px lattice, bilinear in between, so the relief is smooth
       const step = 4, gw = Math.ceil(W / step) + 2, gh = Math.ceil(H / step) + 2;
       const el = new Float32Array(gw * gh);
@@ -182,7 +255,7 @@ export async function realBasemap(lat: number, lon: number) {
       const d = img.data;
       for (let y = 0; y < H; y++)
         for (let x = 0; x < W; x++) {
-          const cls = L.wc[y * W + x];
+          const cls = wc[y * W + x];
           let [R, G, B] = TONE[cls] ?? [90, 90, 90];
           const k = 0.86 + h2(x, y) * 0.28;
           R *= k; G *= k; B *= k;

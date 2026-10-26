@@ -1,6 +1,7 @@
 import type { Run, RunInput, Scenario, ScenarioInput, Terrain } from '@workspace/api-client-react';
 import { places, realTerrain, terrainIdentity } from '@/demo/real-data';
 import { simulate } from '@/demo/engine';
+import { LIVE_MAP } from '@/demo/flag';
 
 /**
  * Answers the app's /api requests inside the browser for the offline demo.
@@ -75,6 +76,12 @@ async function handle(method: string, path: string, query: URLSearchParams, body
     const q = (query.get('q') ?? '').trim();
     const m = /^\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*$/.exec(q);
     if (m) return [{ name: q, lat: Number(m[1]), lon: Number(m[2]) }];
+    if (LIVE_MAP && q.length >= 2) {
+      // Same OpenStreetMap search the server uses; it allows browser requests.
+      const r = await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&limit=5&q=${encodeURIComponent(q.slice(0, 200))}`);
+      if (!r.ok) throw new HttpError(502, 'Place search unavailable. Enter latitude, longitude instead.');
+      return ((await r.json()) as { display_name: string; lat: string; lon: string }[]).map((p) => ({ name: p.display_name, lat: Number(p.lat), lon: Number(p.lon) }));
+    }
     const k = q.toLocaleLowerCase('tr');
     return (await places()).filter((p) => p.name.toLocaleLowerCase('tr').includes(k)).map(({ name, lat, lon }) => ({ name, lat, lon }));
   }
@@ -85,7 +92,7 @@ export function installMockApi() {
   const real = window.fetch.bind(window);
   window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = new URL(typeof input === 'string' ? input : input instanceof URL ? input.href : input.url, location.href);
-    if (!url.pathname.includes('/api/')) return real(input, init);
+    if (url.origin !== location.origin || !url.pathname.includes('/api/')) return real(input, init);
     const path = url.pathname.slice(url.pathname.indexOf('/api/'));
     const method = (init?.method ?? (input instanceof Request ? input.method : 'GET')).toUpperCase();
     let body: unknown = undefined;

@@ -109,7 +109,7 @@ const dict = {
   compareNote: ['Yalnızca gözlenen çalıştırmaların aritmetik ortalaması. Güven aralığı hesaplanmaz. Geçiş ortalaması yalnızca geçiş olan çalıştırmaları kullanır.', 'Arithmetic mean of observed runs only. No confidence intervals are estimated. Crossing mean uses only runs where a crossing occurred.'],
   runsN: ['çalıştırma', 'runs'],
   demoBanner: ['Çevrimdışı demo · gerçek ESA WorldCover 2021 ve Terrarium DEM verisi yalnızca Marmaris, Manavgat, Köyceğiz ve Çeşme için pakette. Simülasyon tarayıcıda çalışır.', 'Offline demo · real ESA WorldCover 2021 and Terrarium DEM data are bundled only for Marmaris, Manavgat, Köyceğiz and Çeşme. The simulation runs in your browser.'],
-  demoBannerLive: ['Demo · sunucu yok, simülasyon tarayıcıda çalışır. Arazi verisi (ESA WorldCover 2021, Terrarium DEM) yalnızca Marmaris, Manavgat, Köyceğiz ve Çeşme için pakette.', 'Demo · no server, the simulation runs in your browser. Terrain data (ESA WorldCover 2021, Terrarium DEM) is bundled only for Marmaris, Manavgat, Köyceğiz and Çeşme.'],
+  demoBannerLive: ['Sunucusuz sürüm · ESA WorldCover ve Terrarium verisi doğrudan tarayıcınıza iner, simülasyon tarayıcıda çalışır.', 'Serverless version · ESA WorldCover and Terrarium data download straight to your browser and the simulation runs there.'],
   lyrDemo: ['WorldCover sınıflarından boyanmış harita + DEM gölgesi (uydu görüntüsü değil)', 'Map painted from WorldCover classes + DEM relief (not satellite imagery)'],
   lgEmber: ['Kor', 'Embers'], lgSmoke: ['Duman', 'Smoke'],
   fxLabel: ['Gerçekçi efektler', 'Realistic effects'],

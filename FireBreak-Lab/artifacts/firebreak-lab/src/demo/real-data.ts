@@ -67,12 +67,39 @@ function load(place: Place): Promise<Loaded> {
   return p;
 }
 
-async function fetchRetry(url: string, tries = 3): Promise<Response> {
+const sleep = (ms: number) => new Promise((z) => setTimeout(z, ms));
+
+/** Mobile connections drop requests now and then: retry network errors and 5xx answers with a short backoff. */
+async function retry<T>(fn: () => Promise<T>, tries = 3): Promise<T> {
   for (let k = 0; ; k++) {
-    const r = await fetch(url);
-    if (r.ok || r.status < 500 || k >= tries - 1) return r;
-    await new Promise((z) => setTimeout(z, 1000 * (k + 1)));
+    try { return await fn(); } catch (e) { if (k >= tries - 1) throw e; }
+    await sleep(800 * (k + 1));
   }
+}
+
+async function fetchRetry(url: string, tries = 3): Promise<Response> {
+  return retry(async () => {
+    const r = await fetch(url);
+    if (r.status >= 500) throw new Error(`${r.status}`);
+    return r;
+  }, tries);
+}
+
+/** Error that names the provider step that failed, so a failure on a phone can be traced to one host. */
+class StepError extends Error {
+  constructor(step: string, cause: unknown) { super(`${step}: ${(cause as Error)?.message ?? cause}`); }
+}
+async function step<T>(name: string, fn: () => Promise<T>) {
+  try { return await fn(); } catch (e) { throw new StepError(name, e); }
+}
+
+const TERRARIUM = ['https://s3.amazonaws.com/elevation-tiles-prod/terrarium', 'https://elevation-tiles-prod.s3.amazonaws.com/terrarium'];
+async function terrariumTile(z: number, x: number, y: number) {
+  let last: unknown;
+  for (const base of TERRARIUM) {
+    try { return await retry(() => pixels(`${base}/${z}/${x}/${y}.png`), 2); } catch (e) { last = e; }
+  }
+  throw last;
 }
 
 const tileX = (lon: number, z: number) => ((lon + 180) / 360) * 2 ** z;
@@ -86,37 +113,56 @@ function loadOnline(b: Bounds): Promise<Loaded> {
   if (!p) {
     p = (async () => {
       const [w, s, e, n] = b;
-      const stac = await fetchRetry(`https://planetarycomputer.microsoft.com/api/stac/v1/search?collections=esa-worldcover&bbox=${w},${s},${e},${n}&limit=20`);
-      if (!stac.ok) throw new Error(`ESA WorldCover search failed (${stac.status}).`);
-      const items = ((await stac.json()).features as { id: string; assets: { map: { href: string } } }[]).filter((f) => f.id.includes('2021'));
-      if (!items.length) throw new Error('ESA WorldCover 2021 coverage is unavailable for this area.');
-      const tokRes = await fetchRetry('https://planetarycomputer.microsoft.com/api/sas/v1/token/esa-worldcover');
-      if (!tokRes.ok) throw new Error(`Planetary Computer token failed (${tokRes.status}).`);
-      const token = (await tokRes.json()).token as string;
-      const grids = (await Promise.all(items.map(async (it): Promise<Raster | null> => {
-        // Only the window around the study area is fetched, with HTTP range requests on the cloud-optimised GeoTIFF.
-        const img = await (await fromUrl(`${it.assets.map.href}?${token}`)).getImage();
-        const [ox, oy] = img.getOrigin();
-        const [rx, ry] = img.getResolution();
-        const W = img.getWidth(), H = img.getHeight();
-        const c0 = Math.max(0, Math.floor((w - ox) / rx) - 1), c1 = Math.min(W, Math.ceil((e - ox) / rx) + 1);
-        const r0 = Math.max(0, Math.floor((n - oy) / ry) - 1), r1 = Math.min(H, Math.ceil((s - oy) / ry) + 1);
-        if (c1 <= c0 || r1 <= r0) return null;
-        const bands = (await img.readRasters({ window: [c0, r0, c1, r1], samples: [0] })) as unknown as ArrayLike<number>[];
-        return { grid: { x0: ox + c0 * rx, y0: oy + r0 * ry, dx: rx, dy: -ry, w: c1 - c0, h: r1 - r0 }, data: bands[0] };
-      }))).filter((g): g is Raster => g !== null);
       const z = 12, tiles = new Map<string, Float64Array>();
       const jobs: Promise<void>[] = [];
       for (let x = Math.floor(tileX(w, z)); x <= Math.floor(tileX(e, z)); x++)
         for (let y = Math.floor(tileY(n, z)); y <= Math.floor(tileY(s, z)); y++)
-          jobs.push(pixels(`https://s3.amazonaws.com/elevation-tiles-prod/terrarium/${z}/${x}/${y}.png`).then((t) => { tiles.set(`${z}/${x}/${y}`, terrarium(t.data)); }));
-      await Promise.all(jobs);
+          jobs.push(terrariumTile(z, x, y).then((t) => { tiles.set(`${z}/${x}/${y}`, terrarium(t.data)); }));
+      const dem = step('Terrarium DEM (s3.amazonaws.com)', () => Promise.all(jobs));
+      dem.catch(() => {}); // awaited below; this only keeps the browser from reporting it early
+      let grids: Raster[];
+      try {
+        grids = await worldCoverOnline(b);
+      } catch (err) {
+        // Same product, already bundled for a few places: use it when the live read fails there.
+        const place = await placeFor(b);
+        if (!place) throw err;
+        grids = (await load(place)).grids;
+      }
+      await dem;
       return { grids, tiles };
     })();
     p.catch(() => online.delete(key));
     online.set(key, p);
   }
   return p;
+}
+
+async function worldCoverOnline(b: Bounds): Promise<Raster[]> {
+  const [w, s, e, n] = b;
+  const items = await step('ESA WorldCover arama (planetarycomputer.microsoft.com)', async () => {
+    const stac = await fetchRetry(`https://planetarycomputer.microsoft.com/api/stac/v1/search?collections=esa-worldcover&bbox=${w},${s},${e},${n}&limit=20`);
+    if (!stac.ok) throw new Error(`${stac.status}`);
+    return ((await stac.json()).features as { id: string; assets: { map: { href: string } } }[]).filter((f) => f.id.includes('2021'));
+  });
+  if (!items.length) throw new Error('ESA WorldCover 2021 coverage is unavailable for this area.');
+  const token = await step('Planetary Computer erişim anahtarı', async () => {
+    const tokRes = await fetchRetry('https://planetarycomputer.microsoft.com/api/sas/v1/token/esa-worldcover');
+    if (!tokRes.ok) throw new Error(`${tokRes.status}`);
+    return (await tokRes.json()).token as string;
+  });
+  return step('ESA WorldCover okuma (ai4edataeuwest.blob.core.windows.net)', () => retry(async () => (await Promise.all(items.map(async (it): Promise<Raster | null> => {
+    // Only the window around the study area is fetched, with HTTP range requests on the cloud-optimised GeoTIFF.
+    const img = await (await fromUrl(`${it.assets.map.href}?${token}`)).getImage();
+    const [ox, oy] = img.getOrigin();
+    const [rx, ry] = img.getResolution();
+    const W = img.getWidth(), H = img.getHeight();
+    const c0 = Math.max(0, Math.floor((w - ox) / rx) - 1), c1 = Math.min(W, Math.ceil((e - ox) / rx) + 1);
+    const r0 = Math.max(0, Math.floor((n - oy) / ry) - 1), r1 = Math.min(H, Math.ceil((s - oy) / ry) + 1);
+    if (c1 <= c0 || r1 <= r0) return null;
+    const bands = (await img.readRasters({ window: [c0, r0, c1, r1], samples: [0] })) as unknown as ArrayLike<number>[];
+    return { grid: { x0: ox + c0 * rx, y0: oy + r0 * ry, dx: rx, dy: -ry, w: c1 - c0, h: r1 - r0 }, data: bands[0] };
+  }))).filter((g): g is Raster => g !== null), 2));
 }
 
 /** Bundled place whose square fully contains these bounds (or contains the point, for the basemap). */
@@ -172,7 +218,7 @@ export async function realTerrain(s: ScenarioInput): Promise<Terrain> {
   let L: Loaded;
   if (LIVE_MAP) {
     try { L = await loadOnline(bounds); } catch (e) {
-      throw new Error(`Gerçek arazi verisi alınamadı (${(e as Error).message}). İnternet bağlantısını kontrol edip tekrar deneyin. Yapay veri kullanılmadı.`);
+      throw new Error(`Gerçek arazi verisi alınamadı. Başarısız adım → ${(e as Error).message}. Bağlantıyı kontrol edip tekrar deneyin (Wi-Fi / mobil veri değiştirmek yardımcı olabilir). Yapay veri kullanılmadı.`);
     }
   } else {
     const place = await placeFor(bounds);

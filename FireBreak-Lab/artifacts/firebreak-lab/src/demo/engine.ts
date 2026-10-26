@@ -8,6 +8,8 @@ import type { Event, Frame, Line, Run, ScenarioInput, Terrain, Zone } from '@wor
 
 const BURNABLE = new Set([10, 20, 30, 40, 90, 95, 100]);
 const DT = 10;
+/** Smart control opens a line when the fire front comes within this distance of it (same as simulation.py). */
+const TRIGGER_M = 20;
 
 function mulberry32(seed: number) {
   let a = seed >>> 0;
@@ -19,7 +21,8 @@ function mulberry32(seed: number) {
   };
 }
 
-type SimLine = Line & { r: number; c: number; dr: number; dc: number };
+/** A boundary segment between two zones or on the outer edge (to = N/S/E/W); see simulation.py. */
+type SimLine = Line & { zones: [number, number][]; axis: 0 | 1; B: number; strip: [number, number, number, number] };
 
 export function simulate(s: ScenarioInput, t: Terrain, ignitions: { row: number; col: number }[], maxSteps: number) {
   const n = t.rows;
@@ -45,13 +48,19 @@ export function simulate(s: ScenarioInput, t: Terrain, ignitions: { row: number;
     seen.add(name); initial.add(name);
   }
   const lines: SimLine[] = [];
+  const add = (a: string, b: string, zones: [number, number][], axis: 0 | 1, B: number, strip: [number, number, number, number]) =>
+    lines.push({ id: `${a}-${b}`, from: a, to: b, on: false, waterL: 0, zones, axis, B, strip });
   for (let r = 0; r < s.zones; r++)
-    for (let c = 0; c < s.zones; c++)
-      for (const [dr, dc] of [[0, 1], [1, 0]])
-        if (r + dr < s.zones && c + dc < s.zones) {
-          const a = zn(r * zs, c * zs), b = zn((r + dr) * zs, (c + dc) * zs);
-          lines.push({ id: `${a}-${b}`, from: a, to: b, on: false, waterL: 0, r, c, dr, dc });
-        }
+    for (let c = 0; c < s.zones; c++) {
+      const z = zn(r * zs, c * zs);
+      const [r0, r1, c0, c1] = [r * zs, (r + 1) * zs, c * zs, (c + 1) * zs];
+      if (c + 1 < s.zones) { const B = (c + 1) * zs; add(z, zn(r * zs, B), [[r, c], [r, c + 1]], 1, B, [r0, r1, Math.max(0, B - 2), Math.min(n, B + 2)]); }
+      if (r + 1 < s.zones) { const B = (r + 1) * zs; add(z, zn(B, c * zs), [[r, c], [r + 1, c]], 0, B, [Math.max(0, B - 2), Math.min(n, B + 2), c0, c1]); }
+      if (r === 0) add(z, 'N', [[r, c]], 0, 0, [0, 2, c0, c1]);
+      if (r === s.zones - 1) add(z, 'S', [[r, c]], 0, n, [n - 2, n, c0, c1]);
+      if (c === 0) add(z, 'W', [[r, c]], 1, 0, [r0, r1, 0, 2]);
+      if (c === s.zones - 1) add(z, 'E', [[r, c]], 1, n, [r0, r1, n - 2, n]);
+    }
   const ang = (((s.windDir + 180) % 360) * Math.PI) / 180;
   const wx = Math.sin(ang), wy = -Math.cos(ang);
   let crossing: number | null = null;
@@ -92,31 +101,17 @@ export function simulate(s: ScenarioInput, t: Terrain, ignitions: { row: number;
     if (!burning.length) { step -= 1; broke = true; break; }
     for (let i = 0; i < N; i++) wet[i] = Math.max(0, wet[i] - 1 / 6);
     for (const line of lines) {
-      const { r, c, dr, dc } = line;
-      const inA: number[] = [], inB: number[] = [];
-      for (const i of burning) {
-        const br = Math.floor(Math.floor(i / n) / zs), bc = Math.floor((i % n) / zs);
-        if (br === r && bc === c) inA.push(i);
-        else if (br === r + dr && bc === c + dc) inB.push(i);
-      }
+      const mine = burning.filter((i) => line.zones.some(([zr, zc]) => Math.floor(Math.floor(i / n) / zs) === zr && Math.floor((i % n) / zs) === zc));
       let on = s.strategy === 'all' || (s.strategy === 'fixed' && step * DT >= (s.fixedDelay ?? 60));
-      if (s.strategy === 'adjacent') on = inA.length > 0 || inB.length > 0;
-      else if (s.strategy === 'smart') {
-        let near = false;
-        for (const i of [...inA, ...inB]) {
-          const d = dr ? Math.abs(Math.floor(i / n) - (r + 1) * zs + 0.5) : Math.abs((i % n) - (c + 1) * zs + 0.5);
-          if (d < 3) { near = true; break; }
-        }
-        const down = (inA.length > 0 && dc * wx + dr * wy > 0.3) || (inB.length > 0 && -dc * wx - dr * wy > 0.3);
-        on = near || (down && s.moisture < 65);
-      }
+      if (s.strategy === 'adjacent') on = mine.length > 0;
+      else if (s.strategy === 'smart')
+        // distance from the edge of each burning cell in the protected zones to this boundary
+        on = mine.some((i) => (Math.abs((line.axis === 0 ? Math.floor(i / n) : i % n) + 0.5 - line.B) - 0.5) * cell <= TRIGGER_M);
       if (on !== line.on) events.push({ time: step * DT, kind: on ? 'line_on' : 'line_off', target: line.id });
       line.on = on;
       if (on) {
         line.waterL += ((s.flowLpm ?? 120) * DT) / 60;
-        const [r0, r1, c0, c1] = dr
-          ? [Math.max(0, (r + 1) * zs - 2), Math.min(n, (r + 1) * zs + 2), c * zs, (c + 1) * zs]
-          : [r * zs, (r + 1) * zs, Math.max(0, (c + 1) * zs - 2), Math.min(n, (c + 1) * zs + 2)];
+        const [r0, r1, c0, c1] = line.strip;
         for (let i = r0; i < r1; i++) for (let j = c0; j < c1; j++) wet[i * n + j] = 1;
       }
     }

@@ -8,6 +8,8 @@ import numpy as np
 
 BURNABLE = [10, 20, 30, 40, 90, 95, 100]
 DT = 10
+# Smart control opens a line when the fire front comes within this distance of it (model assumption).
+TRIGGER_M = 20
 
 
 def simulate(s, terrain, ignitions, max_steps, keep_frames=True):
@@ -31,14 +33,31 @@ def simulate(s, terrain, ignitions, max_steps, keep_frames=True):
             events.append(dict(time=0, kind="ignition", target=name))
         seen.add(name)
         initial.add(name)
+    # Every line is a boundary segment: between two zones, or on the outer edge of the study area
+    # (to = N/S/E/W). "axis" is 0 for a horizontal boundary at row B, 1 for a vertical one at column B;
+    # "zones" are the zone blocks it protects and "strip" the cells it wets (2 cells each side, inside the area).
     lines = []
+    def add(a, b, zones, axis, B, strip):
+        lines.append(dict(id=f"{a}-{b}", **{"from": a}, to=b, on=False, waterL=0.,
+                          zones=zones, axis=axis, B=B, strip=strip))
     for r in range(s.zones):
         for c in range(s.zones):
-            for dr, dc in [(0, 1), (1, 0)]:
-                if r+dr < s.zones and c+dc < s.zones:
-                    a, b = zn(r*zs, c*zs), zn((r+dr)*zs, (c+dc)*zs)
-                    lines.append(dict(id=f"{a}-{b}", **{"from": a}, to=b, on=False, waterL=0.,
-                                      r=r, c=c, dr=dr, dc=dc))
+            z = zn(r*zs, c*zs)
+            rows, cols = (r*zs, (r+1)*zs), (c*zs, (c+1)*zs)
+            if c+1 < s.zones:
+                B = (c+1)*zs
+                add(z, zn(r*zs, B), [(r, c), (r, c+1)], 1, B, (rows, (max(0, B-2), min(n, B+2))))
+            if r+1 < s.zones:
+                B = (r+1)*zs
+                add(z, zn(B, c*zs), [(r, c), (r+1, c)], 0, B, ((max(0, B-2), min(n, B+2)), cols))
+            if r == 0:
+                add(z, "N", [(r, c)], 0, 0, ((0, 2), cols))
+            if r == s.zones-1:
+                add(z, "S", [(r, c)], 0, n, ((n-2, n), cols))
+            if c == 0:
+                add(z, "W", [(r, c)], 1, 0, (rows, (0, 2)))
+            if c == s.zones-1:
+                add(z, "E", [(r, c)], 1, n, (rows, (n-2, n)))
     a = math.radians((s.windDir+180) % 360)
     wx, wy = math.sin(a), -math.cos(a)
     crossing = None
@@ -67,30 +86,24 @@ def simulate(s, terrain, ignitions, max_steps, keep_frames=True):
             break
         wet[:] = np.maximum(0, wet - 1/6)
         for line in lines:
-            r, c, dr, dc = (line[k] for k in ("r", "c", "dr", "dc"))
-            in_a = (burning[:, 0]//zs == r)&(burning[:, 1]//zs == c)
-            in_b = (burning[:, 0]//zs == r+dr)&(burning[:, 1]//zs == c+dc)
+            mine = np.zeros(len(burning), dtype=bool)
+            for zr, zc in line["zones"]:
+                mine |= (burning[:, 0]//zs == zr)&(burning[:, 1]//zs == zc)
             on = s.strategy == "all" or (s.strategy == "fixed" and step*DT >= s.fixedDelay)
             if s.strategy == "adjacent":
-                on = bool(np.any(in_a | in_b))
+                on = bool(np.any(mine))
             elif s.strategy == "smart":
-                # Distance to THIS boundary, not either edge of the zone.
-                near = False
-                for cells in [burning[in_a], burning[in_b]]:
-                    if len(cells):
-                        distance = np.abs(cells[:, 0] - (r+1)*zs + .5) if dr else np.abs(cells[:, 1] - (c+1)*zs + .5)
-                        near |= bool(np.any(distance < 3))
-                down = (np.any(in_a) and dc*wx+dr*wy > .3) or (np.any(in_b) and -dc*wx-dr*wy > .3)
-                on = bool(near or (down and s.moisture < 65))
+                # Distance from the edge of each burning cell in the protected zones to this boundary.
+                cells = burning[mine]
+                gap = (np.abs(cells[:, line["axis"]] + .5 - line["B"]) - .5)*cell
+                on = bool(np.any(gap <= TRIGGER_M))
             if on != line["on"]:
                 events.append(dict(time=step*DT, kind="line_on" if on else "line_off", target=line["id"]))
             line["on"] = on
             if on:
                 line["waterL"] += s.flowLpm*DT/60
-                if dr:
-                    wet[max(0,(r+1)*zs-2):min(n,(r+1)*zs+2), c*zs:(c+1)*zs] = 1
-                else:
-                    wet[r*zs:(r+1)*zs, max(0,(c+1)*zs-2):min(n,(c+1)*zs+2)] = 1
+                (r0, r1), (c0, c1) = line["strip"]
+                wet[r0:r1, c0:c1] = 1
         # All cell/direction random values are drawn each step, independent of
         # strategy, giving paired comparisons common random numbers.
         randoms = rng.random((8, n, n))

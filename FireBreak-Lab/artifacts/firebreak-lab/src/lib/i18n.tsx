@@ -31,7 +31,7 @@ const dict = {
   s_all: ['Tümü açık', 'All lines on'],
   s_fixed: ['Sabit gecikmeli', 'Fixed delay'],
   s_adjacent: ['Komşu bölge', 'Adjacent zones'],
-  s_smart: ['Akıllı (tahmini)', 'Smart (predictive)'],
+  s_smart: ['Akıllı (20 m yakınlık)', 'Smart (20 m proximity)'],
   loadTerrain: ['Gerçek araziyi yükle', 'Load real terrain'],
   loadingTerrain: ['Arazi indiriliyor…', 'Fetching terrain…'],
   terrainReady: ['Arazi hazır', 'Terrain ready'],

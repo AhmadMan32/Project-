@@ -279,9 +279,15 @@ export class SimRenderer {
     const zs = Math.max(1, Math.floor(s.rows / s.zones));
     for (const l of fl.lines) {
       if (!l.on) continue;
-      const a = /^([A-Z])(\d+)$/.exec(l.from), b = /^([A-Z])(\d+)$/.exec(l.to);
-      if (!a || !b) continue;
-      const ar = a[1].charCodeAt(0) - 65, ac = Number(a[2]) - 1, br = b[1].charCodeAt(0) - 65, bc = Number(b[2]) - 1;
+      const a = /^([A-Z])(\d+)$/.exec(l.from);
+      if (!a) continue;
+      const ar = a[1].charCodeAt(0) - 65, ac = Number(a[2]) - 1;
+      // outer-edge lines spray along the study area border
+      if (l.to === 'N' || l.to === 'S') { const r = l.to === 'N' ? 0 : s.rows; this.activeLines.push({ x0: ac * zs, y0: r, x1: Math.min(s.cols, (ac + 1) * zs), y1: r }); continue; }
+      if (l.to === 'W' || l.to === 'E') { const c = l.to === 'W' ? 0 : s.cols; this.activeLines.push({ x0: c, y0: ar * zs, x1: c, y1: Math.min(s.rows, (ar + 1) * zs) }); continue; }
+      const b = /^([A-Z])(\d+)$/.exec(l.to);
+      if (!b) continue;
+      const br = b[1].charCodeAt(0) - 65, bc = Number(b[2]) - 1;
       if (ar === br) {
         const c = Math.max(ac, bc) * zs;
         this.activeLines.push({ x0: c, y0: ar * zs, x1: c, y1: Math.min(s.rows, (ar + 1) * zs) });

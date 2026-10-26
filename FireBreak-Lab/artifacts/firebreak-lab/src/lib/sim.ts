@@ -99,7 +99,15 @@ export function zoneGeometry(b: Bounds, n: number) {
     return m ? { r: m[1].charCodeAt(0) - 65, c: Number(m[2]) - 1 } : null;
   };
   const segment = (from: string, to: string): [number, number][] | null => {
-    const a = parse(from), z = parse(to);
+    const a = parse(from);
+    // outer-edge lines: "A1-N", "C3-E", ...
+    if (a && /^[NSEW]$/.test(to)) {
+      if (to === 'N') return [[lon(a.c), lat(0)], [lon(a.c + 1), lat(0)]];
+      if (to === 'S') return [[lon(a.c), lat(n)], [lon(a.c + 1), lat(n)]];
+      if (to === 'W') return [[lon(0), lat(a.r)], [lon(0), lat(a.r + 1)]];
+      return [[lon(n), lat(a.r)], [lon(n), lat(a.r + 1)]];
+    }
+    const z = parse(to);
     if (!a || !z) return null;
     if (a.r === z.r && Math.abs(a.c - z.c) === 1) {
       const c = Math.max(a.c, z.c);

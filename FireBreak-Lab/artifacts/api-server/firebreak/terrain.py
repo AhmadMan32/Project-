@@ -4,6 +4,7 @@ import io
 import json
 import math
 import os
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor
@@ -81,7 +82,12 @@ def load(s):
         # Read only the needed raster windows; remote COG range reads are cached by GDAL.
         for item in items:
             href = item["assets"]["map"]["href"]
-            signed = client.get("https://planetarycomputer.microsoft.com/api/sas/v1/sign", params={"href": href})
+            # The signing service sometimes answers 5xx for a moment; try it a few times before giving up.
+            for attempt in range(3):
+                signed = client.get("https://planetarycomputer.microsoft.com/api/sas/v1/sign", params={"href": href})
+                if signed.status_code < 500:
+                    break
+                time.sleep(1 + attempt)
             signed.raise_for_status()
             with rasterio.Env(GDAL_DISABLE_READDIR_ON_OPEN="EMPTY_DIR", GDAL_HTTP_TIMEOUT="45"):
                 with rasterio.open(signed.json()["href"]) as ds:

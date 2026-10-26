@@ -55,3 +55,9 @@ WorldCover classes and DEM relief; it is not satellite imagery.
 `pnpm --filter @workspace/firebreak-lab run build:pages` writes the same demo to `docs/` at the repository root, with
 `VITE_LIVE_MAP=1`: live Esri World Imagery and the 3D Terrarium DEM, like the full app, with the bundled terrain data and
 in-browser simulation. Serve it with GitHub Pages (Settings → Pages → Deploy from a branch → `/docs`).
+
+## Run on your own computer
+
+`FireBreak-Lab/local/` runs the full app (real API + web) in one Python process: double-click `baslat-windows.bat`
+(Windows) or run `./baslat-mac-linux.sh`, then open http://127.0.0.1:8000. Needs Python 3.11+ and internet access.
+Rebuild the web part with `pnpm --filter @workspace/firebreak-lab run build:local`.

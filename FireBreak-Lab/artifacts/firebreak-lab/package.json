@@ -9,7 +9,8 @@
     "serve": "vite preview --config vite.config.ts --host 0.0.0.0",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "build:demo": "vite build --config vite.demo.config.ts",
-    "build:pages": "VITE_LIVE_MAP=1 DEMO_OUT_DIR=../../../docs vite build --config vite.demo.config.ts && touch ../../../docs/.nojekyll"
+    "build:pages": "VITE_LIVE_MAP=1 DEMO_OUT_DIR=../../../docs vite build --config vite.demo.config.ts && touch ../../../docs/.nojekyll",
+    "build:local": "PORT=8000 BASE_PATH=/ vite build --config vite.config.ts --outDir ../../local/web --emptyOutDir"
   },
   "devDependencies": {
     "@hookform/resolvers": "^3.10.0",

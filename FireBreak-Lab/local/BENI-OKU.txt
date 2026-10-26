@@ -1,0 +1,21 @@
+FireBreak Lab - bilgisayarınızda çalıştırma
+==========================================
+
+Bu klasör, Replit'teki sitenin aynısını kendi bilgisayarınızda çalıştırır:
+gerçek Python sunucusu (FastAPI + NumPy), Esri uydu görüntüsü, 3D arazi ve
+her konum için internetten indirilen ESA WorldCover 2021 / Terrarium DEM verisi.
+
+GEREKENLER
+- Python 3.11 veya yenisi: https://www.python.org/downloads/
+  (Windows kurulumunda "Add python.exe to PATH" kutusunu işaretleyin.)
+- İnternet bağlantısı (ilk kurulum, arazi verisi ve uydu görüntüsü için).
+
+BAŞLATMA
+- Windows: "baslat-windows.bat" dosyasına çift tıklayın.
+- macOS / Linux: terminalde bu klasörde  ./baslat-mac-linux.sh
+
+İlk açılışta gerekli paketler kurulur (birkaç dakika). Sonra tarayıcıda
+http://127.0.0.1:8000 kendiliğinden açılır. Açılmazsa bu adresi elle yazın.
+Kapatmak için siyah penceredeki Ctrl+C veya pencereyi kapatın.
+
+Kaydettiğiniz senaryolar ve çalıştırmalar "data" klasöründe tutulur.

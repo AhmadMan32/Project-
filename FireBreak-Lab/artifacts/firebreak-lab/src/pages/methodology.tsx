@@ -1,3 +1,4 @@
+import { motion } from 'framer-motion';
 import { NavBar } from '@/components/bits';
 import { useI18n } from '@/lib/i18n';
 
@@ -30,27 +31,30 @@ export default function MethodologyPage() {
         <nav className="hidden md:block" aria-label="Contents">
           <ol className="sticky top-8 space-y-2 text-sm">
             {secs.map((s, i) => (
-              <li key={i}><a href={`#s${i}`} className="flex gap-3 text-muted-foreground hover:text-foreground"><span className="num text-xs text-primary">{String(i + 1).padStart(2, '0')}</span>{s.h}</a></li>
+              <motion.li key={i} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 + i * 0.05 }}>
+                <a href={`#s${i}`} className="group flex gap-3 text-muted-foreground hover:text-foreground"><span className="num text-xs text-primary transition-transform duration-300 group-hover:translate-x-0.5">{String(i + 1).padStart(2, '0')}</span>{s.h}</a>
+              </motion.li>
             ))}
           </ol>
         </nav>
         <article>
           <p className="eyebrow">{lang === 'tr' ? 'Model varsayımları ve kaynaklar' : 'Model assumptions & sources'}</p>
-          <h1 className="mt-2 max-w-2xl text-4xl font-semibold leading-tight tracking-tight md:text-5xl">
+          <motion.h1 initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }} className="mt-2 max-w-2xl text-4xl font-semibold leading-tight tracking-tight md:text-5xl">
             {lang === 'tr' ? 'Ne bildiğimizi ve bilmediğimizi açıkça yazıyoruz.' : 'We write down what we know, and what we do not.'}
-          </h1>
+          </motion.h1>
           <div className="mt-12 space-y-12">
             {secs.map((s, i) => (
-              <section key={i} id={`s${i}`} className="grid gap-4 border-t border-border pt-6 md:grid-cols-[60px_1fr]">
+              <motion.section key={i} id={`s${i}`} className="grid gap-4 border-t border-border pt-6 md:grid-cols-[60px_1fr]"
+                initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: '-60px' }} transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}>
                 <span className="num text-sm text-primary">{String(i + 1).padStart(2, '0')}</span>
                 <div>
                   <h2 className="text-xl font-medium">{s.h}</h2>
                   {s.p.map((p, j) => <p key={j} className="mt-3 max-w-2xl leading-relaxed text-foreground/80">{p}</p>)}
                 </div>
-              </section>
+              </motion.section>
             ))}
           </div>
-          <section className="mt-14 rounded-2xl border border-border bg-card p-6 text-sm">
+          <motion.section initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.55 }} className="mt-14 rounded-2xl border border-border bg-card p-6 text-sm">
             <h2 className="eyebrow mb-3">{lang === 'tr' ? 'Kaynaklar' : 'Sources'}</h2>
             <ul className="space-y-1.5 text-muted-foreground">
               <li>Zanaga, D. et al. (2022). ESA WorldCover 10 m 2021 v200. doi:10.5281/zenodo.7254221</li>
@@ -59,7 +63,7 @@ export default function MethodologyPage() {
               <li>Rothermel, R. C. (1972). A mathematical model for predicting fire spread in wildland fuels. USDA Forest Service INT-115.</li>
               <li>Esri World Imagery basemap (visual reference only).</li>
             </ul>
-          </section>
+          </motion.section>
         </article>
       </main>
     </div>

@@ -1,4 +1,5 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { Link, useLocation } from 'wouter';
 import { Flame, Search, Crosshair, Loader2, Languages } from 'lucide-react';
 import { useHealthCheck, useSearchPlaces, getSearchPlacesQueryKey, getHealthCheckQueryKey } from '@workspace/api-client-react';
@@ -13,8 +14,8 @@ import { cn } from '@/lib/utils';
 export function Brand() {
   return (
     <Link href="/" className="flex shrink-0 items-center gap-2.5 whitespace-nowrap" data-testid="link-home">
-      <span className="relative grid h-8 w-8 place-items-center rounded-md bg-gradient-to-br from-[#ff7a2e] to-[#c9301a]">
-        <Flame className="h-4 w-4 text-[#1a0d06]" strokeWidth={2.5} />
+      <span className="fb-brand relative grid h-8 w-8 place-items-center rounded-md bg-gradient-to-br from-[#ff7a2e] to-[#c9301a]">
+        <Flame className="fb-brand-flame h-4 w-4 text-[#1a0d06]" strokeWidth={2.5} />
         <span className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-[#11181c] bg-[#3a9bff]" />
       </span>
       <span className="leading-tight">
@@ -34,7 +35,7 @@ export function NavBar({ floating = false }: { floating?: boolean }) {
   return (
     <header className={cn('z-30 flex items-center gap-3 px-3 py-2', floating ? 'glass rounded-xl' : 'border-b border-border bg-card/60 backdrop-blur')}>
       <Brand />
-      {floating ? <select aria-label={t('lab')} value={loc} onChange={(e) => navigate(e.target.value)} className="min-w-0 flex-1 rounded-md bg-[#192329] px-2 py-2 text-xs text-primary">
+      {floating ? <select aria-label={t('lab')} value={loc} onChange={(e) => navigate(e.target.value)} className="fb-select min-w-0 flex-1 rounded-md border border-white/10 bg-[#192329] px-2 py-2 text-xs text-primary">
         {links.map(([href,k]) => <option key={href} value={href}>{t(k)}</option>)}
       </select> : <nav className="ml-2 flex items-center gap-0.5 overflow-x-auto" aria-label="Main">
         {links.map(([href, k]) => (
@@ -43,11 +44,14 @@ export function NavBar({ floating = false }: { floating?: boolean }) {
             href={href}
             data-testid={`link-nav-${k}`}
             className={cn(
-              'whitespace-nowrap rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors',
-              loc === href ? 'bg-primary/15 text-primary' : 'text-muted-foreground hover:text-foreground hover:bg-white/5',
+              'relative whitespace-nowrap rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors',
+              loc === href ? 'text-primary' : 'text-muted-foreground hover:text-foreground hover:bg-white/5',
             )}
           >
-            {t(k)}
+            {loc === href && (
+              <motion.span layoutId="nav-pill" className="absolute inset-0 rounded-md bg-primary/15 shadow-[inset_0_0_0_1px_hsl(18_92%_55%/0.25)]" transition={{ type: 'spring', stiffness: 420, damping: 34 }} />
+            )}
+            <span className="relative">{t(k)}</span>
           </Link>
         ))}
       </nav>}
@@ -57,17 +61,24 @@ export function NavBar({ floating = false }: { floating?: boolean }) {
           data-testid="status-api"
           title={health.isError ? t('apiDown') : ok ? t('apiOk') : t('apiChecking')}
         >
-          <span className={cn('h-2 w-2 rounded-full', health.isLoading ? 'bg-yellow-400/80' : ok ? 'bg-emerald-400' : 'bg-red-500')} />
+          <span className="relative flex h-2 w-2">
+            {ok && <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />}
+            <span className={cn('relative h-2 w-2 rounded-full', health.isLoading ? 'bg-yellow-400/80' : ok ? 'bg-emerald-400' : 'bg-red-500')} />
+          </span>
           {health.isLoading ? t('apiChecking') : ok ? t('apiOk') : t('apiDown')}
         </span>
         <button
           onClick={() => setLang(lang === 'tr' ? 'en' : 'tr')}
-          className="flex items-center gap-1 rounded-md border border-border px-2 py-1 text-[11px] font-semibold hover:bg-white/5"
+          className="flex items-center gap-1 overflow-hidden rounded-md border border-border px-2 py-1 text-[11px] font-semibold hover:border-primary/40 hover:bg-white/5"
           data-testid="button-lang"
           aria-label="Language / Dil"
         >
           <Languages className="h-3.5 w-3.5" />
-          {lang === 'tr' ? 'TR' : 'EN'}
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.span key={lang} initial={{ y: 8, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: -8, opacity: 0 }} transition={{ duration: 0.18 }}>
+              {lang === 'tr' ? 'TR' : 'EN'}
+            </motion.span>
+          </AnimatePresence>
         </button>
       </div>
     </header>
@@ -85,23 +96,42 @@ export function StatusBanner({ status, frame }: { status: FireStatus; frame?: Fr
     truncated: { k: 'truncated' as Key, cls: 'bg-[#3a2c0a]/90 text-[#ffe6a8] border-[#e8b23a]/50', dot: 'bg-[#e8b23a]' },
   }[status];
   return (
-    <div
+    <motion.div
+      layout
       role="status"
       aria-live="polite"
       data-testid="status-fire"
-      className={cn('flex items-center gap-2.5 rounded-full border px-4 py-1.5 backdrop-blur-md shadow-lg', map.cls)}
+      className={cn('flex items-center gap-2.5 overflow-hidden rounded-full border px-4 py-1.5 shadow-lg backdrop-blur-md transition-colors duration-500', map.cls, status === 'fire' && 'fb-status-fire')}
+      transition={{ type: 'spring', stiffness: 380, damping: 32 }}
     >
-      <span className={cn('h-2.5 w-2.5 rounded-full', map.dot)} />
-       <span className="text-xs font-semibold">{status === 'fire' && frame ? `${lang === 'tr' ? 'Yanan bölge' : 'Burning zone'}: ${burning} | ${lang === 'tr' ? 'Püskürten hat' : 'Active line'}: ${active || '—'}` : t(map.k)}</span>
-    </div>
+      <span className={cn('h-2.5 w-2.5 shrink-0 rounded-full', map.dot)} />
+      <AnimatePresence mode="popLayout" initial={false}>
+        <motion.span
+          key={status}
+          className="text-xs font-semibold"
+          initial={{ opacity: 0, y: 10, filter: 'blur(4px)' }}
+          animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+          exit={{ opacity: 0, y: -10, filter: 'blur(4px)' }}
+          transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+        >
+          {status === 'fire' && frame ? `${lang === 'tr' ? 'Yanan bölge' : 'Burning zone'}: ${burning} | ${lang === 'tr' ? 'Püskürten hat' : 'Active line'}: ${active || '—'}` : t(map.k)}
+        </motion.span>
+      </AnimatePresence>
+    </motion.div>
   );
 }
 
 export function WindRose({ dir, speed, size = 88 }: { dir: number; speed: number; size?: number }) {
   const { t } = useI18n();
   const r = size / 2;
-  // wind "from" dir; arrow points where it blows to
-  const to = (dir + 180) % 360;
+  // wind "from" dir; arrow points where it blows to. The angle is unwrapped so 350° → 10° turns the short way.
+  const target = (dir + 180) % 360;
+  const angle = useRef(target);
+  const diff = ((target - (angle.current % 360)) % 360 + 540) % 360 - 180;
+  angle.current += diff;
+  const to = angle.current;
+  const amp = speed <= 0 ? 0 : Math.min(9, 1.5 + speed * 0.35);
+  const streakDur = `${Math.max(0.35, 2.2 - speed * 0.08)}s`;
   return (
     <figure className="flex items-center gap-3" data-testid="display-wind">
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} role="img" aria-label={`${t('wind')} ${dir}° ${speed} m/s`}>
@@ -122,9 +152,17 @@ export function WindRose({ dir, speed, size = 88 }: { dir: number; speed: number
             </text>
           );
         })}
-        <g transform={`rotate(${to} ${r} ${r})`} style={{ transition: 'transform .4s ease' }}>
-          <line x1={r} y1={r + r * 0.5} x2={r} y2={r - r * 0.45} stroke="#59b0ff" strokeWidth="2.5" strokeLinecap="round" />
-          <path d={`M ${r} ${r - r * 0.62} L ${r - 6} ${r - r * 0.36} L ${r + 6} ${r - r * 0.36} Z`} fill="#59b0ff" />
+        <g style={{ transform: `rotate(${to}deg)`, transformOrigin: `${r}px ${r}px`, transition: 'transform .8s cubic-bezier(.34,1.56,.64,1)' }}>
+          <g className={amp > 0 ? 'fb-gust' : undefined} style={{ '--rot': '0deg', '--amp': `${amp}deg`, transformOrigin: `${r}px ${r}px` } as CSSProperties}>
+            {speed > 0 && [-0.32, 0, 0.32].map((o, i) => (
+              <line key={i} className="fb-streak" x1={r + o * r} y1={r + r * 0.62} x2={r + o * r} y2={r - r * 0.62}
+                stroke="#9fd0ff" strokeOpacity={i === 1 ? 0 : 0.45} strokeWidth="1.2" strokeLinecap="round"
+                style={{ '--dur': streakDur, animationDelay: `${i * 0.27}s` } as CSSProperties} />
+            ))}
+            <line x1={r} y1={r + r * 0.5} x2={r} y2={r - r * 0.45} stroke="#59b0ff" strokeWidth="2.5" strokeLinecap="round" />
+            <path d={`M ${r} ${r - r * 0.62} L ${r - 6} ${r - r * 0.36} L ${r + 6} ${r - r * 0.36} Z`} fill="#59b0ff" style={{ filter: 'drop-shadow(0 0 3px #3a9bff)' }} />
+            <circle cx={r} cy={r} r={2.5} fill="#cfe7ff" />
+          </g>
         </g>
       </svg>
       <figcaption className="text-xs">
@@ -153,7 +191,7 @@ export function SearchBox({ onPick }: { onPick: (lng: number, lat: number) => vo
   const res = useSearchPlaces({ q: dq }, { query: { enabled, queryKey: getSearchPlacesQueryKey({ q: dq }), retry: 0 } });
   return (
     <div className="relative">
-      <div className="glass flex items-center gap-2 rounded-xl px-3">
+      <div className="glass flex items-center gap-2 rounded-xl px-3 transition-shadow duration-300 focus-within:shadow-[0_0_0_1px_hsl(18_92%_55%/0.45),0_10px_40px_-12px_hsl(18_92%_55%/0.4)]">
         <Search className="h-4 w-4 text-muted-foreground" aria-hidden />
         <input
           value={q}
@@ -171,8 +209,13 @@ export function SearchBox({ onPick }: { onPick: (lng: number, lat: number) => vo
         />
         {res.isFetching && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
       </div>
+      <AnimatePresence>
       {open && q.trim().length >= 2 && (
-        <ul className="glass absolute left-0 right-0 top-12 z-40 max-h-72 overflow-auto rounded-xl p-1 text-sm" role="listbox">
+        <motion.ul
+          className="glass absolute left-0 right-0 top-12 z-40 max-h-72 origin-top overflow-auto rounded-xl p-1 text-sm" role="listbox"
+          initial={{ opacity: 0, y: -6, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -6, scale: 0.98 }}
+          transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+        >
           {validCoord && (
             <li>
               <button className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left hover:bg-white/5" onMouseDown={() => { onPick(lon, lat); setOpen(false); }} data-testid="button-goto-coords">
@@ -183,15 +226,16 @@ export function SearchBox({ onPick }: { onPick: (lng: number, lat: number) => vo
           {enabled && res.isError && <li className="px-3 py-2 text-destructive text-xs">{(res.error as Error)?.message ?? 'Search failed'}</li>}
           {enabled && res.data && res.data.length === 0 && <li className="px-3 py-2 text-muted-foreground text-xs">{t('noResults')}</li>}
           {enabled && res.data?.map((pl, i) => (
-            <li key={i}>
+            <motion.li key={i} initial={{ opacity: 0, x: -6 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.03 }}>
               <button className="w-full rounded-lg px-3 py-2 text-left hover:bg-white/5" onMouseDown={() => { onPick(pl.lon, pl.lat); setOpen(false); setQ(pl.name.split(',')[0]); }} data-testid={`button-place-${i}`}>
                 <div className="truncate">{pl.name}</div>
                 <div className="num text-[11px] text-muted-foreground">{pl.lat.toFixed(4)}, {pl.lon.toFixed(4)}</div>
               </button>
-            </li>
+            </motion.li>
           ))}
-        </ul>
+        </motion.ul>
       )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -210,7 +254,7 @@ function Field({ label, value, unit, children }: { label: string; value: string 
 
 export function ScenarioFields({ s, set, disabled }: { s: ScenarioInput; set: (p: Partial<ScenarioInput>) => void; disabled?: boolean }) {
   const { t } = useI18n();
-  const sl = (k: keyof ScenarioInput, min: number, max: number, step: number, unit: string, label: Key) => (
+  const sl = (k: keyof ScenarioInput, min: number, max: number, step: number, unit: string, label: Key, tone: 'fire' | 'water' = 'fire') => (
     <Field label={t(label)} value={s[k] as number} unit={unit}>
       <Slider
         value={[s[k] as number]}
@@ -218,6 +262,7 @@ export function ScenarioFields({ s, set, disabled }: { s: ScenarioInput; set: (p
         max={max}
         step={step}
         disabled={disabled}
+        tone={tone}
         onValueChange={([v]) => set({ [k]: v } as Partial<ScenarioInput>)}
         aria-label={t(label)}
         data-testid={`slider-${k}`}
@@ -245,17 +290,17 @@ export function ScenarioFields({ s, set, disabled }: { s: ScenarioInput; set: (p
       {sl('zones', 2, 6, 1, '', 'zones')}
       {sl('windDir', 0, 359, 1, '°', 'windDir')}
       {sl('windSpeed', 0, 30, 0.5, ' m/s', 'windSpeed')}
-      {sl('moisture', 0, 100, 1, ' %', 'moisture')}
+      {sl('moisture', 0, 100, 1, ' %', 'moisture', 'water')}
       <div className="space-y-1.5">
         <span className="text-xs text-muted-foreground">{t('strategy')}</span>
         <Select value={s.strategy} onValueChange={(v) => set({ strategy: v as ScenarioInput['strategy'] })} disabled={disabled}>
-          <SelectTrigger className="h-8 bg-black/20" data-testid="select-strategy" aria-label={t('strategy')}><SelectValue /></SelectTrigger>
+          <SelectTrigger className="h-8 bg-black/20 transition-colors hover:border-primary/40" data-testid="select-strategy" aria-label={t('strategy')}><SelectValue /></SelectTrigger>
           <SelectContent>
             {STRATEGIES.map((x) => <SelectItem key={x} value={x}>{t(`s_${x}` as Key)}</SelectItem>)}
           </SelectContent>
         </Select>
       </div>
-      {sl('flowLpm', 20, 400, 5, ' L/min', 'flow')}
+      {sl('flowLpm', 20, 400, 5, ' L/min', 'flow', 'water')}
       {sl('fixedDelay', 0, 600, 10, ' s', 'fixedDelay')}
       <div className="space-y-1.5">
         <label className="text-xs text-muted-foreground" htmlFor="sc-seed">{t('seed')}</label>

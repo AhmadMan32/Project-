@@ -1,4 +1,5 @@
 import { useState, type ReactNode } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { Link, useLocation } from 'wouter';
 import { useQueryClient } from '@tanstack/react-query';
 import { Plus, Trash2, MapPin, Wind, Droplets, Loader2, AlertTriangle, BookMarked, Copy } from 'lucide-react';
@@ -55,7 +56,7 @@ export default function ScenariosPage() {
             <p className="eyebrow">{lang === 'tr' ? 'Kayıtlı deney koşulları' : 'Saved experiment conditions'}</p>
             <h1 className="mt-1 text-3xl font-semibold tracking-tight">{t('scenarios')}</h1>
           </div>
-          <Button className="ml-auto" onClick={() => setDraft({ ...DEFAULT_SCENARIO })} data-testid="button-new-scenario"><Plus className="mr-1.5 h-4 w-4" />{lang === 'tr' ? 'Yeni senaryo' : 'New scenario'}</Button>
+          <Button className="fb-cta group ml-auto" onClick={() => setDraft({ ...DEFAULT_SCENARIO })} data-testid="button-new-scenario"><Plus className="mr-1.5 h-4 w-4 transition-transform duration-300 group-hover:rotate-90" />{lang === 'tr' ? 'Yeni senaryo' : 'New scenario'}</Button>
         </div>
 
         {list.isLoading ? (
@@ -67,17 +68,22 @@ export default function ScenariosPage() {
             <Button variant="secondary" size="sm" onClick={() => list.refetch()} data-testid="button-retry">{t('retry')}</Button>
           </div>
         ) : (list.data ?? []).length === 0 ? (
-          <div className="flex flex-col items-center gap-4 rounded-2xl border border-dashed border-border p-16 text-center">
-            <span className="grid h-14 w-14 place-items-center rounded-full bg-accent/10 text-accent"><BookMarked className="h-6 w-6" /></span>
+          <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="flex flex-col items-center gap-4 rounded-2xl border border-dashed border-border p-16 text-center">
+            <motion.span animate={{ y: [0, -5, 0] }} transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }} className="grid h-14 w-14 place-items-center rounded-full bg-accent/10 text-accent"><BookMarked className="h-6 w-6" /></motion.span>
             <div>
               <p className="font-medium">{lang === 'tr' ? 'Henüz senaryo yok' : 'No scenarios yet'}</p>
               <p className="mt-1 max-w-sm text-sm text-muted-foreground">{lang === 'tr' ? 'Tekrarlanabilir deneyler için konum, rüzgar ve strateji ayarlarını kaydedin.' : 'Save location, wind and strategy settings for reproducible experiments.'}</p>
             </div>
-          </div>
+          </motion.div>
         ) : (
           <ul className="grid gap-4 md:grid-cols-2">
-            {list.data!.map((s) => (
-              <li key={s.id} className="group rounded-2xl border border-border bg-card p-5 transition-colors hover:border-primary/40" data-testid={`card-scenario-${s.id}`}>
+            <AnimatePresence initial={true}>
+            {list.data!.map((s, k) => (
+              <motion.li key={s.id} layout
+                initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.2 } }}
+                transition={{ delay: Math.min(k, 10) * 0.05, duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+                whileHover={{ y: -3 }}
+                className="group rounded-2xl border border-border bg-card p-5 transition-[border-color,box-shadow] duration-300 hover:border-primary/40 hover:shadow-[0_18px_40px_-20px_hsl(18_92%_55%/0.45)]" data-testid={`card-scenario-${s.id}`}>
                 <div className="flex items-start gap-4">
                   <WindRose dir={s.windDir} speed={s.windSpeed} size={64} />
                   <div className="min-w-0 flex-1">
@@ -98,8 +104,9 @@ export default function ScenariosPage() {
                   <Button size="sm" variant="secondary" onClick={() => setDraft({ ...strip(s), name: `${s.name} (2)` })} data-testid={`button-duplicate-${s.id}`}><Copy className="mr-1 h-3.5 w-3.5" />{lang === 'tr' ? 'Düzenle / kopya' : 'Edit as new'}</Button>
                   <Button size="sm" variant="ghost" className="ml-auto text-destructive hover:text-destructive" onClick={() => setToDelete(s)} aria-label={t('delete')} data-testid={`button-delete-${s.id}`}><Trash2 className="h-4 w-4" /></Button>
                 </div>
-              </li>
+              </motion.li>
             ))}
+            </AnimatePresence>
           </ul>
         )}
         <p className="mt-8 text-xs text-muted-foreground">

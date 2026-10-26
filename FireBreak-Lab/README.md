@@ -30,3 +30,10 @@ SQLite and terrain caches are local files. Back them up. A production host must 
 - Saved frames and CSV contain experimental model outputs, not observed fires. Keep settings, terrain provenance, random seed and model version with reports. Field/bench validation and uncertainty analysis are still required for scientific claims.
 
 The attached starter remains the conceptual source: zone boundaries, wet strips, wind-sensitive control, seeded strategy comparisons. This implementation replaces browser-only state with FastAPI/NumPy and SQLite.
+
+## Visual layer
+
+The map raster is drawn by `artifacts/firebreak-lab/src/lib/fire-renderer.ts`. It is visual only and never changes results:
+each cell's ignition and burn-out step is read from the saved frames and jittered within its step so the fire front
+moves continuously; flames, cooling embers, char/ash, smoke, sparks, sprinkler mist and steam are drawn on top.
+Smoke/sparks/mist can be turned off under **Layers → Realistic effects**. All UI motion respects `prefers-reduced-motion`.

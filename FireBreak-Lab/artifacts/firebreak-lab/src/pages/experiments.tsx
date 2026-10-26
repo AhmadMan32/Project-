@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { Link } from 'wouter';
 import { Download, Play, FlaskConical, AlertTriangle, GitCompare, X } from 'lucide-react';
 import { useListRuns, getListRunsQueryKey } from '@workspace/api-client-react';
@@ -36,8 +37,9 @@ export default function ExperimentsPage() {
           </div>
           <div className="ml-auto flex flex-wrap gap-1.5" role="group" aria-label={t('strategy')}>
             {['all-s', ...STRATEGIES].map((s) => (
-              <button key={s} onClick={() => setFilter(s)} className={cn('rounded-full border px-3 py-1 text-xs', filter === s ? 'border-primary bg-primary/15 text-primary' : 'border-border text-muted-foreground hover:text-foreground')} data-testid={`button-filter-${s}`}>
-                {s === 'all-s' ? '∗' : t(`s_${s}` as Key)}
+              <button key={s} onClick={() => setFilter(s)} className={cn('relative rounded-full border px-3 py-1 text-xs', filter === s ? 'border-primary text-primary' : 'border-border text-muted-foreground hover:border-white/25 hover:text-foreground')} data-testid={`button-filter-${s}`}>
+                {filter === s && <motion.span layoutId="exp-filter" className="absolute inset-0 rounded-full bg-primary/15" transition={{ type: 'spring', stiffness: 420, damping: 34 }} />}
+                <span className="relative">{s === 'all-s' ? '∗' : t(`s_${s}` as Key)}</span>
               </button>
             ))}
           </div>
@@ -55,12 +57,12 @@ export default function ExperimentsPage() {
               </div>
             ) : list.length === 0 ? (
               <div className="flex flex-col items-center gap-4 p-16 text-center">
-                <span className="grid h-14 w-14 place-items-center rounded-full bg-primary/10 text-primary"><FlaskConical className="h-6 w-6" /></span>
+                <motion.span animate={{ rotate: [0, -8, 8, 0], y: [0, -3, 0] }} transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }} className="grid h-14 w-14 place-items-center rounded-full bg-primary/10 text-primary"><FlaskConical className="h-6 w-6" /></motion.span>
                 <div>
                   <p className="font-medium">{lang === 'tr' ? 'Henüz kayıtlı deney yok' : 'No saved runs yet'}</p>
                   <p className="mt-1 max-w-sm text-sm text-muted-foreground">{lang === 'tr' ? 'Laboratuvarda arazi yükleyip tutuşma noktası seçerek ilk simülasyonu çalıştırın.' : 'Load terrain in the laboratory, place an ignition and run your first simulation.'}</p>
                 </div>
-                <Link href="/" className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground" data-testid="link-go-lab">{t('lab')}</Link>
+                <Link href="/" className="fb-cta rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground" data-testid="link-go-lab">{t('lab')}</Link>
               </div>
             ) : (
               <div className="overflow-x-auto">
@@ -78,8 +80,12 @@ export default function ExperimentsPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {list.map((r) => (
-                      <tr key={r.id} className={cn('border-b border-border/50 hover:bg-white/[0.02]', sel.has(r.id) && 'bg-primary/5')} data-testid={`row-run-${r.id}`}>
+                    <AnimatePresence initial={true}>
+                    {list.map((r, k) => (
+                      <motion.tr key={r.id} layout="position"
+                        initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }}
+                        transition={{ delay: Math.min(k, 15) * 0.03, duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+                        className={cn('border-b border-border/50 transition-colors duration-300 hover:bg-white/[0.03]', sel.has(r.id) && 'bg-primary/[0.07] shadow-[inset_3px_0_0_hsl(18_92%_55%)]')} data-testid={`row-run-${r.id}`}>
                         <td className="p-3"><Checkbox checked={sel.has(r.id)} onCheckedChange={() => toggle(r.id)} aria-label={`select ${r.name}`} data-testid={`checkbox-run-${r.id}`} /></td>
                         <td className="p-3">
                           <div className="font-medium">{r.name}</div>
@@ -92,12 +98,13 @@ export default function ExperimentsPage() {
                         <td className="p-3 text-xs"><span className={cn('rounded px-1.5 py-0.5', r.status === 'completed' ? 'bg-emerald-500/10 text-emerald-300' : 'bg-[#e8b23a]/15 text-[#ffd48a]')}>{r.status === 'completed' ? t('completed') : t('truncatedS')}</span></td>
                         <td className="p-3">
                           <div className="flex justify-end gap-1">
-                            <Link href={`/?run=${r.id}`} className="grid h-8 w-8 place-items-center rounded-md border border-border hover:bg-white/5" aria-label={t('replay')} title={t('replay')} data-testid={`link-replay-${r.id}`}><Play className="h-3.5 w-3.5" /></Link>
+                            <Link href={`/?run=${r.id}`} className="grid h-8 w-8 place-items-center rounded-md border border-border hover:border-primary/50 hover:bg-primary/10 hover:text-primary" aria-label={t('replay')} title={t('replay')} data-testid={`link-replay-${r.id}`}><Play className="h-3.5 w-3.5" /></Link>
                             <a href={`/api/runs/${r.id}/export.csv`} download className="grid h-8 w-8 place-items-center rounded-md border border-border hover:bg-white/5" aria-label={t('export')} title={t('export')} data-testid={`link-export-${r.id}`}><Download className="h-3.5 w-3.5" /></a>
                           </div>
                         </td>
-                      </tr>
+                      </motion.tr>
                     ))}
+                    </AnimatePresence>
                   </tbody>
                 </table>
               </div>
@@ -111,11 +118,15 @@ export default function ExperimentsPage() {
                 <h2 className="text-sm font-medium">{t('compare')}</h2>
                 {sel.size > 0 && <button onClick={() => setSel(new Set())} className="ml-auto flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground" data-testid="button-clear-selection"><X className="h-3 w-3" />{t('clear')}</button>}
               </div>
+              <AnimatePresence mode="wait" initial={false}>
               {selected.length < 2 ? (
-                <p className="text-xs text-muted-foreground">{lang === 'tr' ? 'Karşılaştırmak için tablodan en az iki çalıştırma seçin.' : 'Select at least two runs from the table to compare.'}</p>
+                <motion.p key="hint" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-xs text-muted-foreground">{lang === 'tr' ? 'Karşılaştırmak için tablodan en az iki çalıştırma seçin.' : 'Select at least two runs from the table to compare.'}</motion.p>
               ) : (
-                <CompareTable runs={selected} />
+                <motion.div key="table" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+                  <CompareTable runs={selected} />
+                </motion.div>
               )}
+              </AnimatePresence>
             </div>
           </aside>
         </div>

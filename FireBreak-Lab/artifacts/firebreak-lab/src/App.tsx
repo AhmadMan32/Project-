@@ -10,19 +10,29 @@ import ScenariosPage from '@/pages/scenarios';
 import MethodologyPage from '@/pages/methodology';
 import { I18nProvider } from '@/lib/i18n';
 import { Route, Switch, useLocation, Router as WouterRouter } from 'wouter';
+import { MotionConfig, motion } from 'framer-motion';
 
 const queryClient = new QueryClient({ defaultOptions: { queries: { refetchOnWindowFocus: false } } });
 
 function Router() {
+  const [location] = useLocation();
   return (
     <RoutedErrorBoundary>
-      <Switch>
+      {/* Each page fades and lifts in; no exit animation so the heavy map never mounts twice. */}
+      <motion.div
+        key={location}
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0, transitionEnd: { transform: 'none' } }}
+        transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+      >
+      <Switch location={location}>
         <Route path="/" component={LabPage} />
         <Route path="/experiments" component={ExperimentsPage} />
         <Route path="/scenarios" component={ScenariosPage} />
         <Route path="/methodology" component={MethodologyPage} />
         <Route component={NotFound} />
       </Switch>
+      </motion.div>
     </RoutedErrorBoundary>
   );
 }
@@ -36,12 +46,14 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <I18nProvider>
+        <MotionConfig reducedMotion="user">
         <TooltipProvider>
           <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}>
             <Router />
           </WouterRouter>
           <Toaster />
         </TooltipProvider>
+        </MotionConfig>
       </I18nProvider>
     </QueryClientProvider>
   );

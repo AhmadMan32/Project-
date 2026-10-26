@@ -5,6 +5,10 @@ import type { CanvasSource, GeoJSONSource, Map as MLMap, MapMouseEvent, ErrorEve
 import type { Line } from '@workspace/api-client-react';
 import type { FeatureCollection, Feature } from 'geojson';
 import { zoneGeometry, cellCenter, type Bounds, type SimRenderer } from '@/lib/sim';
+import {
+  cornerBrackets, dashSequence, fmtWidth, handleHtml, ignitionHtml, prefersReducedMotion, rippleHtml, zoneAtLngLat, zoneRing,
+  type ClickFx,
+} from '@/components/map-fx';
 
 maplibregl.setWorkerUrl(maplibreWorkerUrl);
 
@@ -21,7 +25,12 @@ type Props = {
   ignitions: { row: number; col: number }[];
   zonesN: number;
   lines: Line[];
-  onMapClick: (lng: number, lat: number) => void;
+  onMapClick: (lng: number, lat: number) => ClickFx;
+  /** Zones can be hovered / selected (terrain loaded and current). */
+  zonesActive: boolean;
+  selectedZone: string | null;
+  clickMode: 'ignite' | 'inspect';
+  widthM: number;
   onCursor: (c: { lng: number; lat: number; elev: number | null } | null) => void;
   fly: FlyTarget | null;
   terrain3d: boolean;
@@ -150,34 +159,53 @@ export function MapView(p: Props) {
       });
       m.addLayer({ id: 'sim', type: 'raster', source: 'sim', paint: { 'raster-opacity': 0.92, 'raster-fade-duration': 0, 'raster-resampling': 'linear' } });
       m.addSource('area', { type: 'geojson', data: EMPTY });
-      m.addLayer({ id: 'area-fill', type: 'fill', source: 'area', paint: { 'fill-color': '#ff6a2b', 'fill-opacity': 0.05 } });
-      m.addLayer({ id: 'area-line', type: 'line', source: 'area', paint: { 'line-color': '#ffb36b', 'line-width': 2, 'line-dasharray': [3, 2] } });
+      m.addLayer({ id: 'area-fill', type: 'fill', source: 'area', paint: { 'fill-color': '#ff6a2b', 'fill-opacity': 0.04 } });
+      m.addLayer({ id: 'area-glow', type: 'line', source: 'area', paint: { 'line-color': '#ff8a3d', 'line-width': 9, 'line-opacity': 0.18, 'line-blur': 7 } });
+      m.addLayer({ id: 'area-line', type: 'line', source: 'area', paint: { 'line-color': '#ffc58f', 'line-width': 1.8, 'line-dasharray': [3, 2] } });
+      m.addSource('area-corners', { type: 'geojson', data: EMPTY });
+      m.addLayer({
+        id: 'area-corners', type: 'line', source: 'area-corners',
+        layout: { 'line-cap': 'round', 'line-join': 'round' },
+        paint: { 'line-color': '#fff1dc', 'line-width': 3.5, 'line-opacity': 0.95 },
+      });
+      m.addSource('area-label', { type: 'geojson', data: EMPTY });
+      m.addLayer({
+        id: 'area-label', type: 'symbol', source: 'area-label',
+        layout: { 'text-field': ['get', 't'], 'text-font': ['Open Sans Semibold'], 'text-size': 11, 'text-offset': [0, -1.1], 'text-allow-overlap': true },
+        paint: { 'text-color': '#ffd9b5', 'text-halo-color': '#0d1316', 'text-halo-width': 1.6 },
+      });
       m.addSource('zgrid', { type: 'geojson', data: EMPTY });
-      m.addLayer({ id: 'zgrid', type: 'line', source: 'zgrid', paint: { 'line-color': '#e8e1d4', 'line-opacity': 0.55, 'line-width': 1.25 } });
+      m.addLayer({ id: 'zgrid', type: 'line', source: 'zgrid', paint: { 'line-color': '#e8e1d4', 'line-opacity': 0.45, 'line-width': 1.1 } });
+      m.addSource('zhover', { type: 'geojson', data: EMPTY });
+      m.addLayer({ id: 'zhover-fill', type: 'fill', source: 'zhover', paint: { 'fill-color': '#fff1dc', 'fill-opacity': 0.07, 'fill-opacity-transition': { duration: 180 } } });
+      m.addLayer({ id: 'zhover-line', type: 'line', source: 'zhover', paint: { 'line-color': '#fff1dc', 'line-width': 1.6, 'line-opacity': 0.7 } });
+      m.addSource('zsel', { type: 'geojson', data: EMPTY });
+      m.addLayer({ id: 'zsel-fill', type: 'fill', source: 'zsel', paint: { 'fill-color': '#59b0ff', 'fill-opacity': 0.1 } });
+      m.addLayer({ id: 'zsel-glow', type: 'line', source: 'zsel', paint: { 'line-color': '#59b0ff', 'line-width': 10, 'line-opacity': 0.35, 'line-blur': 6 } });
+      m.addLayer({ id: 'zsel-line', type: 'line', source: 'zsel', layout: { 'line-join': 'round' }, paint: { 'line-color': '#cfe7ff', 'line-width': 2.4 } });
       m.addSource('slines', { type: 'geojson', data: EMPTY });
       m.addLayer({
-        id: 'slines-glow', type: 'line', source: 'slines', filter: ['==', ['get', 'on'], true],
-        paint: { 'line-color': '#3a9bff', 'line-width': 10, 'line-opacity': 0.3, 'line-blur': 6 },
+        id: 'slines-off', type: 'line', source: 'slines', filter: ['==', ['get', 'on'], false],
+        paint: { 'line-color': '#7d93a6', 'line-width': 1.5, 'line-opacity': 0.8, 'line-dasharray': [2, 1.2] },
       });
       m.addLayer({
-        id: 'slines', type: 'line', source: 'slines',
-        paint: {
-          'line-color': ['case', ['get', 'on'], '#59b0ff', '#7d93a6'],
-          'line-width': ['case', ['get', 'on'], 3.5, 1.5],
-          'line-dasharray': [2, 1.2],
-        },
+        id: 'slines-glow', type: 'line', source: 'slines', filter: ['==', ['get', 'on'], true],
+        paint: { 'line-color': '#3a9bff', 'line-width': 14, 'line-opacity': 0.32, 'line-blur': 8 },
+      });
+      m.addLayer({
+        id: 'slines-pipe', type: 'line', source: 'slines', filter: ['==', ['get', 'on'], true],
+        layout: { 'line-cap': 'round' },
+        paint: { 'line-color': '#1d5fa8', 'line-width': 4.5 },
+      });
+      m.addLayer({
+        id: 'slines-on', type: 'line', source: 'slines', filter: ['==', ['get', 'on'], true],
+        paint: { 'line-color': '#bfe2ff', 'line-width': 2.2, 'line-dasharray': [2, 1.5] },
       });
       m.addSource('zlabels', { type: 'geojson', data: EMPTY });
       m.addLayer({
         id: 'zlabels', type: 'symbol', source: 'zlabels',
         layout: { 'text-field': ['get', 'id'], 'text-font': ['Open Sans Semibold'], 'text-size': 12, 'text-allow-overlap': true },
         paint: { 'text-color': '#f1ebe0', 'text-halo-color': '#0d1316', 'text-halo-width': 1.4, 'text-opacity': 0.9 },
-      });
-      m.addSource('ign', { type: 'geojson', data: EMPTY });
-      m.addLayer({ id: 'ign-halo', type: 'circle', source: 'ign', paint: { 'circle-radius': 13, 'circle-color': '#ff5a1f', 'circle-opacity': 0.25 } });
-      m.addLayer({
-        id: 'ign', type: 'circle', source: 'ign',
-        paint: { 'circle-radius': 5.5, 'circle-color': '#ff5a1f', 'circle-stroke-color': '#fff1dc', 'circle-stroke-width': 2 },
       });
       setLoaded(true);
       cb.current.onReady?.();
@@ -223,30 +251,66 @@ export function MapView(p: Props) {
     m.on('style.load', initializeOverlays);
     m.on('load', initializeOverlays);
     if (m.isStyleLoaded()) initializeOverlays();
-    m.on('click', (e: MapMouseEvent) => cb.current.onMapClick(e.lngLat.lng, e.lngLat.lat));
+    m.on('click', (e: MapMouseEvent) => {
+      const fx = cb.current.onMapClick(e.lngLat.lng, e.lngLat.lat);
+      if (fx && !prefersReducedMotion()) {
+        const d = document.createElement('div');
+        d.innerHTML = rippleHtml(fx);
+        const mk = new maplibregl.Marker({ element: d }).setLngLat(e.lngLat).addTo(m);
+        window.setTimeout(() => mk.remove(), 1100);
+      }
+    });
+    let hoverId: string | null = null;
+    const setHover = (id: string | null) => {
+      if (id === hoverId || !m.getSource('zhover')) return;
+      hoverId = id;
+      const ring = id ? zoneRing(id, cb.current.bounds, cb.current.zonesN) : null;
+      (m.getSource('zhover') as GeoJSONSource).setData(ring
+        ? { type: 'Feature', properties: {}, geometry: { type: 'Polygon', coordinates: [ring] } }
+        : EMPTY);
+    };
     m.on('mousemove', (e: MapMouseEvent) => {
       const elev = m.queryTerrainElevation ? m.queryTerrainElevation(e.lngLat) : null;
       cb.current.onCursor({ lng: e.lngLat.lng, lat: e.lngLat.lat, elev: elev ?? null });
+      const z = cb.current.zonesActive ? zoneAtLngLat(e.lngLat.lng, e.lngLat.lat, cb.current.bounds, cb.current.zonesN) : null;
+      setHover(z);
+      m.getCanvas().style.cursor = z ? (cb.current.clickMode === 'ignite' && !cb.current.locked ? 'crosshair' : 'pointer') : '';
     });
-    m.on('mouseout', () => cb.current.onCursor(null));
+    m.on('mouseout', () => { cb.current.onCursor(null); setHover(null); });
 
-    const mkEl = (cls: string, label: string) => {
+    // Marching-ants selection outline, flowing water in active lines and a breathing selected zone.
+    const antSeq = dashSequence(3, 2, 16);
+    const flowSeq = dashSequence(2, 1.5, 14);
+    let tick = 0;
+    const anim = window.setInterval(() => {
+      if (!styleReady || prefersReducedMotion() || document.hidden) return;
+      tick++;
+      try {
+        if (!cb.current.locked) m.setPaintProperty('area-line', 'line-dasharray', antSeq[tick % antSeq.length]);
+        if (cb.current.lines.some((l) => l.on)) m.setPaintProperty('slines-on', 'line-dasharray', flowSeq[(flowSeq.length - (tick % flowSeq.length)) % flowSeq.length]);
+        if (cb.current.selectedZone) m.setPaintProperty('zsel-glow', 'line-opacity', 0.22 + 0.2 * (1 + Math.sin(tick * 0.18)));
+      } catch { /* style not ready */ }
+    }, 70);
+
+    const mkEl = (kind: 'move' | 'resize', label: string) => {
       const d = document.createElement('div');
-      d.className = cls;
-      d.setAttribute('role', 'button');
-      d.setAttribute('aria-label', label);
-      d.title = label;
+      d.innerHTML = handleHtml(kind, label);
       return d;
     };
-    const c = mkEl('h-5 w-5 rounded-full border-2 border-[#fff1dc] bg-[#ff6a2b]/80 shadow-lg cursor-move', 'Drag study area');
+    const dragCls = (mk: maplibregl.Marker, on: boolean) => mk.getElement().classList.toggle('fb-dragging', on);
+    const c = mkEl('move', 'Drag study area');
     centerMk.current = new maplibregl.Marker({ element: c, draggable: true }).setLngLat(p.center).addTo(m);
+    centerMk.current.on('dragstart', () => dragCls(centerMk.current!, true));
     centerMk.current.on('dragend', () => {
+      dragCls(centerMk.current!, false);
       const ll = centerMk.current!.getLngLat();
       cb.current.onMoveArea(ll.lng, ll.lat);
     });
-    const k = mkEl('h-4 w-4 rotate-45 border-2 border-[#fff1dc] bg-[#ffb36b] cursor-nwse-resize', 'Resize study area');
+    const k = mkEl('resize', 'Resize study area');
     cornerMk.current = new maplibregl.Marker({ element: k, draggable: true }).setLngLat([p.bounds[2], p.bounds[1]]).addTo(m);
+    cornerMk.current.on('dragstart', () => dragCls(cornerMk.current!, true));
     cornerMk.current.on('dragend', () => {
+      dragCls(cornerMk.current!, false);
       const ll = cornerMk.current!.getLngLat();
       const [clng, clat] = cb.current.center;
       const dx = Math.abs(ll.lng - clng) * 111320 * Math.cos((clat * Math.PI) / 180);
@@ -255,6 +319,7 @@ export function MapView(p: Props) {
     });
     map.current = m;
     return () => {
+      window.clearInterval(anim);
       if (imageryTimer !== undefined) window.clearTimeout(imageryTimer);
       if (styleTimer !== undefined) window.clearTimeout(styleTimer);
       try { m.remove(); } catch { /* ignore */ }
@@ -276,9 +341,18 @@ export function MapView(p: Props) {
     cornerMk.current?.setLngLat([e, s]);
     centerMk.current?.setDraggable(!p.locked);
     cornerMk.current?.setDraggable(!p.locked);
-    const op = p.locked ? '0.35' : '1';
-    centerMk.current?.getElement().style.setProperty('opacity', op);
-    cornerMk.current?.getElement().style.setProperty('opacity', op);
+    centerMk.current?.getElement().classList.toggle('fb-locked', p.locked);
+    cornerMk.current?.getElement().classList.toggle('fb-locked', p.locked);
+    (m.getSource('area-corners') as GeoJSONSource).setData({
+      type: 'FeatureCollection',
+      features: cornerBrackets(p.bounds).map((c) => ({ type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: c } })),
+    });
+    (m.getSource('area-label') as GeoJSONSource).setData({
+      type: 'Feature', properties: { t: `${fmtWidth(p.widthM)} × ${fmtWidth(p.widthM)}` },
+      geometry: { type: 'Point', coordinates: [(w + e) / 2, n] },
+    });
+    m.setPaintProperty('area-line', 'line-opacity', p.locked ? 0.55 : 1);
+    m.setPaintProperty('area-glow', 'line-opacity', p.locked ? 0.08 : 0.18);
     (m.getSource('sim') as CanvasSource).setCoordinates([[w, n], [e, n], [e, s], [w, s]]);
     const g = zoneGeometry(p.bounds, p.zonesN);
     (m.getSource('zgrid') as GeoJSONSource).setData({
@@ -289,7 +363,7 @@ export function MapView(p: Props) {
       type: 'FeatureCollection',
       features: g.labels.map((l) => ({ type: 'Feature', properties: { id: l.id }, geometry: { type: 'Point', coordinates: l.pos } })),
     });
-  }, [loaded, p.bounds, p.center, p.locked, p.zonesN]);
+  }, [loaded, p.bounds, p.center, p.locked, p.zonesN, p.widthM]);
 
   // Sprinkler lines
   useEffect(() => {
@@ -304,22 +378,38 @@ export function MapView(p: Props) {
     (m.getSource('slines') as GeoJSONSource).setData({ type: 'FeatureCollection', features: feats });
   }, [loaded, p.lines, p.bounds, p.zonesN]);
 
-  // Ignitions
+  // Selected zone
   useEffect(() => {
     const m = map.current;
-    if (!m || !loaded || !p.grid) {
-      if (m && loaded) (m.getSource('ign') as GeoJSONSource).setData(EMPTY);
-      return;
+    if (!m || !loaded) return;
+    const ring = p.selectedZone && p.zonesActive ? zoneRing(p.selectedZone, p.bounds, p.zonesN) : null;
+    (m.getSource('zsel') as GeoJSONSource).setData(ring
+      ? { type: 'Feature', properties: {}, geometry: { type: 'Polygon', coordinates: [ring] } }
+      : EMPTY);
+  }, [loaded, p.selectedZone, p.zonesActive, p.bounds, p.zonesN]);
+
+  // Ignitions: animated DOM markers; only newly placed ones play the drop-in animation.
+  const ignMk = useRef(new Map<string, maplibregl.Marker>());
+  useEffect(() => {
+    const m = map.current;
+    const cur = ignMk.current;
+    if (!m || !loaded) return;
+    const want = new Map<string, [number, number]>();
+    if (p.grid) {
+      const { rows, cols } = p.grid;
+      for (const i of p.ignitions) want.set(`${i.row}:${i.col}`, cellCenter(i.row, i.col, p.bounds, rows, cols));
     }
-    const { rows, cols } = p.grid;
-    (m.getSource('ign') as GeoJSONSource).setData({
-      type: 'FeatureCollection',
-      features: p.ignitions.map((i) => ({
-        type: 'Feature', properties: {},
-        geometry: { type: 'Point', coordinates: cellCenter(i.row, i.col, p.bounds, rows, cols) },
-      })),
-    });
+    for (const [k, mk] of cur) if (!want.has(k)) { mk.remove(); cur.delete(k); }
+    const fresh = cur.size > 0 || want.size === 1;
+    for (const [k, pos] of want) {
+      const old = cur.get(k);
+      if (old) { old.setLngLat(pos); continue; }
+      const d = document.createElement('div');
+      d.innerHTML = ignitionHtml(fresh);
+      cur.set(k, new maplibregl.Marker({ element: d }).setLngLat(pos).addTo(m));
+    }
   }, [loaded, p.ignitions, p.grid, p.bounds]);
+  useEffect(() => () => { ignMk.current.forEach((mk) => mk.remove()); ignMk.current.clear(); }, []);
 
   // Raster overlay: the renderer paints the shared canvas; ask MapLibre to redraw after every paint.
   useEffect(() => {
@@ -328,7 +418,7 @@ export function MapView(p: Props) {
 
   useEffect(() => {
     if (!p.fly || !map.current) return;
-    map.current.flyTo({ center: [p.fly.lng, p.fly.lat], zoom: p.fly.zoom ?? 13.2, speed: 1.4, essential: true });
+    map.current.flyTo({ center: [p.fly.lng, p.fly.lat], zoom: p.fly.zoom ?? 13.2, speed: 1.1, curve: 1.5, essential: true });
   }, [p.fly]);
 
   useEffect(() => {

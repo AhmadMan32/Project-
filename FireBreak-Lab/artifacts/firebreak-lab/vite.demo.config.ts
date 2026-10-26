@@ -17,6 +17,8 @@ export default defineConfig({
     dedupe: ['react', 'react-dom'],
   },
   root: path.resolve(import.meta.dirname),
+  // demo-public holds the bundled real data (WorldCover crops, Terrarium tiles); only this build ships it.
+  publicDir: path.resolve(import.meta.dirname, 'demo-public'),
   build: {
     outDir: path.resolve(import.meta.dirname, 'dist/demo'),
     emptyOutDir: true,

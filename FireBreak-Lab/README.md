@@ -41,6 +41,11 @@ Smoke/sparks/mist can be turned off under **Layers → Realistic effects**. All 
 ## Offline demo build
 
 `pnpm --filter @workspace/firebreak-lab run build:demo` builds a static demo into `artifacts/firebreak-lab/dist/demo`.
-It needs no API server: requests to `/api` are answered in the browser (`src/demo/mock-api.ts`), the simulation is a
-TypeScript port of `simulation.py` (`src/demo/engine.ts`, different random generator), and terrain plus basemap are
-**synthetic** (`src/demo/landscape.ts`) and labelled as such. Use it to show the interface, never for results.
+It needs no API server: requests to `/api` are answered in the browser (`src/demo/mock-api.ts`) and the simulation is a
+TypeScript port of `simulation.py` (`src/demo/engine.ts`, different random generator, so seeds do not match server runs).
+Terrain is **real** open data bundled in `demo-public/demo-data`, only for Marmaris, Manavgat, Köyceğiz and Çeşme
+(about 12 km around each): ESA WorldCover 2021 v200 cut on its native 10 m grid without resampling, and the AWS Terrarium
+z12 tiles covering the same area. Cells are sampled like `terrain.py` (slope, aspect and elevation match it); the server
+reads WorldCover through GDAL, which can use overviews, so about 9 % of land-cover cells can differ. Outside the bundled
+areas the demo refuses to load terrain, as the server does when providers fail. The basemap is painted from the
+WorldCover classes and DEM relief; it is not satellite imagery.

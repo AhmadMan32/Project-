@@ -1,22 +1,12 @@
 import type { Run, RunInput, Scenario, ScenarioInput, Terrain } from '@workspace/api-client-react';
-import { demoTerrain, terrainIdentity } from '@/demo/landscape';
+import { places, realTerrain, terrainIdentity } from '@/demo/real-data';
 import { simulate } from '@/demo/engine';
 
 /**
  * Answers the app's /api requests inside the browser for the offline demo.
  * Scenarios are kept in this browser's storage; terrain and runs live for the session.
+ * Terrain comes from the real WorldCover / Terrarium data bundled for a few places.
  */
-
-const PLACES = [
-  { name: 'Marmaris, Muğla, Türkiye', lat: 36.85, lon: 28.25 },
-  { name: 'Manavgat, Antalya, Türkiye', lat: 36.79, lon: 31.44 },
-  { name: 'Köyceğiz, Muğla, Türkiye', lat: 36.97, lon: 28.68 },
-  { name: 'Kemer, Antalya, Türkiye', lat: 36.6, lon: 30.56 },
-  { name: 'Çeşme, İzmir, Türkiye', lat: 38.32, lon: 26.3 },
-  { name: 'Gelibolu, Çanakkale, Türkiye', lat: 40.41, lon: 26.67 },
-  { name: 'Bodrum, Muğla, Türkiye', lat: 37.03, lon: 27.43 },
-  { name: 'Datça, Muğla, Türkiye', lat: 36.73, lon: 27.69 },
-];
 
 const terrains = new Map<string, Terrain>();
 const runs = new Map<string, Run>();
@@ -61,8 +51,9 @@ async function handle(method: string, path: string, query: URLSearchParams, body
     return { status: 'deleted' };
   }
   if (path === '/api/terrain') {
-    await wait(900); // lets the scan animation play, like a real download
-    const t = demoTerrain(body as ScenarioInput);
+    await wait(500);
+    let t: Terrain;
+    try { t = await realTerrain(body as ScenarioInput); } catch (e) { throw new HttpError(502, (e as Error).message); }
     terrains.set(t.id, t);
     return t;
   }
@@ -85,7 +76,7 @@ async function handle(method: string, path: string, query: URLSearchParams, body
     const m = /^\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*$/.exec(q);
     if (m) return [{ name: q, lat: Number(m[1]), lon: Number(m[2]) }];
     const k = q.toLocaleLowerCase('tr');
-    return PLACES.filter((p) => p.name.toLocaleLowerCase('tr').includes(k));
+    return (await places()).filter((p) => p.name.toLocaleLowerCase('tr').includes(k)).map(({ name, lat, lon }) => ({ name, lat, lon }));
   }
   throw new HttpError(404, 'Not found');
 }

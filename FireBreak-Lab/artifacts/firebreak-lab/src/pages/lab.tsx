@@ -15,7 +15,7 @@ import { MapView, hasWebGL2, type FlyTarget } from '@/components/map-view';
 import { LeafletView } from '@/components/leaflet-view';
 import type { ClickFx } from '@/components/map-fx';
 import { IS_DEMO } from '@/demo/flag';
-import { demoBasemap } from '@/demo/landscape';
+import { realBasemap } from '@/demo/real-data';
 import { NavBar, SearchBox, StatusBanner, WindRose, ScenarioFields } from '@/components/bits';
 import { useI18n, type Key } from '@/lib/i18n';
 import {
@@ -85,9 +85,12 @@ export default function LabPage() {
   const [basemap, setBasemap] = useState<{ url: string; bounds: Bounds } | null>(null);
   useEffect(() => {
     if (!IS_DEMO) return;
-    const id = window.setTimeout(() => setBasemap(demoBasemap(sc.lat, sc.lon, Math.max(16000, sc.widthM * 8), 960)), 250);
-    return () => window.clearTimeout(id);
-  }, [sc.lat, sc.lon, sc.widthM]);
+    let live = true;
+    const id = window.setTimeout(() => {
+      realBasemap(sc.lat, sc.lon).then((b) => { if (live && b) setBasemap((cur) => (cur?.url === b.url ? cur : b)); }).catch(() => {});
+    }, 200);
+    return () => { live = false; window.clearTimeout(id); };
+  }, [sc.lat, sc.lon]);
   const [fx, setFx] = useState(readFx);
   useEffect(() => { try { localStorage.setItem('fb-fx', fx ? '1' : '0'); } catch { /* storage blocked */ } }, [fx]);
 
@@ -649,7 +652,7 @@ export default function LabPage() {
               <span className="fb-radar" />
               <div>
                 <div className="font-medium">{t('loadingTerrain')}</div>
-                <div className="num text-[10px] text-muted-foreground">{IS_DEMO ? 'DEMO · sentetik / synthetic' : 'ESA WorldCover · AWS Terrarium'}</div>
+                <div className="num text-[10px] text-muted-foreground">ESA WorldCover · AWS Terrarium</div>
               </div>
             </div>
           </motion.div>

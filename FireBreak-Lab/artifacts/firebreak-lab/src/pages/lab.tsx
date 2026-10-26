@@ -583,6 +583,7 @@ export default function LabPage() {
 
   return (
     <div className="relative h-[100dvh] w-full overflow-hidden bg-background">
+      {/* Ignition markers show only while choosing them; once a run exists the fire itself marks the spot. */}
       {mapMode === '3d' ? (
         <MapView
         center={[sc.lon, sc.lat]}
@@ -592,7 +593,7 @@ export default function LabPage() {
         onResizeArea={(w) => set({ widthM: Math.max(500, Math.min(4000, Math.round(w / 50) * 50)) })}
         grid={grid}
         renderer={renderer}
-        ignitions={terrainB ? ignitions : []}
+        ignitions={terrainB && !run ? ignitions : []}
         zonesN={sc.zones}
         lines={frame?.lines ?? []}
         onMapClick={onMapClick}
@@ -615,7 +616,7 @@ export default function LabPage() {
         onResizeArea={(w) => set({ widthM: Math.max(500, Math.min(4000, Math.round(w / 50) * 50)) })}
         grid={grid}
         renderer={renderer}
-        ignitions={terrainB ? ignitions : []}
+        ignitions={terrainB && !run ? ignitions : []}
         zonesN={sc.zones}
         lines={frame?.lines ?? []}
         onMapClick={onMapClick}

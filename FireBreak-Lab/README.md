@@ -49,3 +49,9 @@ z12 tiles covering the same area. Cells are sampled like `terrain.py` (slope, as
 reads WorldCover through GDAL, which can use overviews, so about 9 % of land-cover cells can differ. Outside the bundled
 areas the demo refuses to load terrain, as the server does when providers fail. The basemap is painted from the
 WorldCover classes and DEM relief; it is not satellite imagery.
+
+### GitHub Pages
+
+`pnpm --filter @workspace/firebreak-lab run build:pages` writes the same demo to `docs/` at the repository root, with
+`VITE_LIVE_MAP=1`: live Esri World Imagery and the 3D Terrarium DEM, like the full app, with the bundled terrain data and
+in-browser simulation. Serve it with GitHub Pages (Settings → Pages → Deploy from a branch → `/docs`).

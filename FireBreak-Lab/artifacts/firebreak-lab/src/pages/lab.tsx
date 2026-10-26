@@ -14,7 +14,7 @@ import type { Frame, Run, ScenarioInput, Terrain } from '@workspace/api-client-r
 import { MapView, hasWebGL2, type FlyTarget } from '@/components/map-view';
 import { LeafletView } from '@/components/leaflet-view';
 import type { ClickFx } from '@/components/map-fx';
-import { IS_DEMO } from '@/demo/flag';
+import { IS_DEMO, LIVE_MAP } from '@/demo/flag';
 import { realBasemap } from '@/demo/real-data';
 import { NavBar, SearchBox, StatusBanner, WindRose, ScenarioFields } from '@/components/bits';
 import { useI18n, type Key } from '@/lib/i18n';
@@ -79,18 +79,19 @@ export default function LabPage() {
   const [tab, setTab] = useState('setup');
   const [mapErr, setMapErr] = useState<string | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
-  // The offline demo cannot reach tile or DEM servers, so it always uses the 2D view over a painted basemap.
-  const [mapMode, setMapMode] = useState<'3d' | '2d'>(() => (!IS_DEMO && hasWebGL2() ? '3d' : '2d'));
-  const [fallbackReason, setFallbackReason] = useState<string | null>(() => (IS_DEMO || hasWebGL2() ? null : 'uyumlu 2D görünüm'));
+  // A sandboxed offline demo cannot reach tile or DEM servers: it uses the 2D view over a painted basemap.
+  const paintedBase = IS_DEMO && !LIVE_MAP;
+  const [mapMode, setMapMode] = useState<'3d' | '2d'>(() => (!paintedBase && hasWebGL2() ? '3d' : '2d'));
+  const [fallbackReason, setFallbackReason] = useState<string | null>(() => (paintedBase || hasWebGL2() ? null : 'uyumlu 2D görünüm'));
   const [basemap, setBasemap] = useState<{ url: string; bounds: Bounds } | null>(null);
   useEffect(() => {
-    if (!IS_DEMO) return;
+    if (!paintedBase) return;
     let live = true;
     const id = window.setTimeout(() => {
       realBasemap(sc.lat, sc.lon).then((b) => { if (live && b) setBasemap((cur) => (cur?.url === b.url ? cur : b)); }).catch(() => {});
     }, 200);
     return () => { live = false; window.clearTimeout(id); };
-  }, [sc.lat, sc.lon]);
+  }, [sc.lat, sc.lon, paintedBase]);
   const [fx, setFx] = useState(readFx);
   useEffect(() => { try { localStorage.setItem('fb-fx', fx ? '1' : '0'); } catch { /* storage blocked */ } }, [fx]);
 
@@ -625,15 +626,15 @@ export default function LabPage() {
         onCursor={setCursor}
         fly={fly}
         onError={setMapErr}
-        {...(IS_DEMO ? { basemap } : {})}
+        {...(paintedBase ? { basemap } : {})}
       />
       )}
       {IS_DEMO && (
         <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4, duration: 0.4, ease: EASE }} role="note" data-testid="banner-demo" className="glass absolute left-1/2 top-[10.5rem] z-20 max-w-[92vw] -translate-x-1/2 rounded-lg border-[#59b0ff]/40 px-3 py-2 text-[11px] text-[#cfe7ff] md:top-28 md:left-[calc(50%+200px)]">
-          <AlertTriangle className="mr-1.5 inline h-3.5 w-3.5" />{t('demoBanner')}
+          <AlertTriangle className="mr-1.5 inline h-3.5 w-3.5" />{t(LIVE_MAP ? 'demoBannerLive' : 'demoBanner')}
         </motion.div>
       )}
-      {mapMode === '2d' && !IS_DEMO && (
+      {mapMode === '2d' && !paintedBase && (
         <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4, duration: 0.4, ease: EASE }} role="alert" data-testid="banner-2d-fallback" className="glass absolute left-1/2 top-[10.5rem] z-20 max-w-[92vw] -translate-x-1/2 rounded-lg border-[#e8b23a]/40 px-3 py-2 text-[11px] text-[#ffe6a8] md:top-28 md:left-[calc(50%+200px)]">
           <AlertTriangle className="mr-1.5 inline h-3.5 w-3.5" />{t('fallback2d')}
           {fallbackReason && <span className="num ml-1 text-muted-foreground">({fallbackReason.slice(0, 60)})</span>}
@@ -691,7 +692,7 @@ export default function LabPage() {
           </PopoverTrigger>
           <PopoverContent className="w-72 text-xs" align="end">
             <ul className="space-y-2">
-              <li className="flex items-center gap-2">{IS_DEMO ? <AlertTriangle className="h-3.5 w-3.5 text-[#e8b23a]" /> : <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />} {IS_DEMO ? t('lyrDemo') : t('lyrEsri')}</li>
+              <li className="flex items-center gap-2">{paintedBase ? <AlertTriangle className="h-3.5 w-3.5 text-[#e8b23a]" /> : <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />} {paintedBase ? t('lyrDemo') : t('lyrEsri')}</li>
               <li className="flex items-center gap-2">{mapMode === '3d' ? <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" /> : <AlertTriangle className="h-3.5 w-3.5 text-[#e8b23a]" />} {mapMode === '3d' ? 'AWS Terrarium DEM · 3D' : t('dem3dOff')}</li>
               <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" /> {t('lyrSim')}</li>
               <li className="flex items-center gap-2 text-muted-foreground" data-testid="text-google-unavailable"><AlertTriangle className="h-3.5 w-3.5" /> {t('googleUnavailable')}</li>

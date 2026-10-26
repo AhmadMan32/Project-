@@ -11,7 +11,10 @@ import { defineConfig } from 'vite';
 export default defineConfig({
   base: './',
   plugins: [react(), tailwindcss()],
-  define: { 'import.meta.env.VITE_DEMO': JSON.stringify('1') },
+  define: {
+    'import.meta.env.VITE_DEMO': JSON.stringify('1'),
+    'import.meta.env.VITE_LIVE_MAP': JSON.stringify(process.env.VITE_LIVE_MAP ?? '0'),
+  },
   resolve: {
     alias: { '@': path.resolve(import.meta.dirname, 'src') },
     dedupe: ['react', 'react-dom'],
@@ -20,7 +23,7 @@ export default defineConfig({
   // demo-public holds the bundled real data (WorldCover crops, Terrarium tiles); only this build ships it.
   publicDir: path.resolve(import.meta.dirname, 'demo-public'),
   build: {
-    outDir: path.resolve(import.meta.dirname, 'dist/demo'),
+    outDir: process.env.DEMO_OUT_DIR ? path.resolve(process.env.DEMO_OUT_DIR) : path.resolve(import.meta.dirname, 'dist/demo'),
     emptyOutDir: true,
     assetsInlineLimit: 0,
     rollupOptions: {

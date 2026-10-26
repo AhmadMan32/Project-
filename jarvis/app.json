@@ -1,0 +1,78 @@
+{
+  "expo": {
+    "name": "JARVIS",
+    "slug": "jarvis",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.ahmet.jarvis"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#020814",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false,
+      "package": "com.ahmet.jarvis"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-background-task",
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "Jarvis seni duyabilmek için mikrofona erişir.",
+          "enableBackgroundPlayback": false
+        }
+      ],
+      "expo-secure-store",
+      "expo-sqlite",
+      [
+        "expo-speech-recognition",
+        {
+          "microphonePermission": "Jarvis seni duyabilmek için mikrofona erişir.",
+          "speechRecognitionPermission": "Jarvis Türkçe konuşmanı yazıya çevirmek için konuşma tanımayı kullanır.",
+          "androidSpeechServicePackages": [
+            "com.google.android.googlequicksearchbox",
+            "com.google.android.as"
+          ]
+        }
+      ],
+      [
+        "expo-calendar",
+        {
+          "calendarPermission": "Jarvis etkinliklerini takip etmek ve takvimine plan eklemek için takvimine erişir."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "color": "#22D3EE"
+        }
+      ],
+      "expo-asset",
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#020814",
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 220,
+          "dark": {
+            "backgroundColor": "#020814",
+            "image": "./assets/splash-icon.png"
+          }
+        }
+      ]
+    ],
+    "scheme": "jarvis",
+    "backgroundColor": "#020814"
+  }
+}

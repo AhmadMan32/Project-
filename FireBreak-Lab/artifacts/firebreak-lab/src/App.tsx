@@ -11,6 +11,11 @@ import MethodologyPage from '@/pages/methodology';
 import { I18nProvider } from '@/lib/i18n';
 import { Route, Switch, useLocation, Router as WouterRouter } from 'wouter';
 import { MotionConfig, motion } from 'framer-motion';
+import { memoryLocation } from 'wouter/memory-location';
+import { IS_DEMO } from '@/demo/flag';
+
+// The demo runs inside a sandboxed frame whose URL cannot change, so it routes in memory.
+const demoLocation = IS_DEMO ? memoryLocation({ path: '/' }) : null;
 
 const queryClient = new QueryClient({ defaultOptions: { queries: { refetchOnWindowFocus: false } } });
 
@@ -48,7 +53,7 @@ function App() {
       <I18nProvider>
         <MotionConfig reducedMotion="user">
         <TooltipProvider>
-          <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}>
+          <WouterRouter {...(demoLocation ? { hook: demoLocation.hook, searchHook: demoLocation.searchHook } : { base: import.meta.env.BASE_URL.replace(/\/$/, '') })}>
             <Router />
           </WouterRouter>
           <Toaster />

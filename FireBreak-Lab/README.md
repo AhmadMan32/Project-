@@ -37,3 +37,10 @@ The map raster is drawn by `artifacts/firebreak-lab/src/lib/fire-renderer.ts`. I
 each cell's ignition and burn-out step is read from the saved frames and jittered within its step so the fire front
 moves continuously; flames, cooling embers, char/ash, smoke, sparks, sprinkler mist and steam are drawn on top.
 Smoke/sparks/mist can be turned off under **Layers → Realistic effects**. All UI motion respects `prefers-reduced-motion`.
+
+## Offline demo build
+
+`pnpm --filter @workspace/firebreak-lab run build:demo` builds a static demo into `artifacts/firebreak-lab/dist/demo`.
+It needs no API server: requests to `/api` are answered in the browser (`src/demo/mock-api.ts`), the simulation is a
+TypeScript port of `simulation.py` (`src/demo/engine.ts`, different random generator), and terrain plus basemap are
+**synthetic** (`src/demo/landscape.ts`) and labelled as such. Use it to show the interface, never for results.

@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
+import { IS_DEMO } from '@/demo/flag';
 
 export default function ExperimentsPage() {
   const { t, lang } = useI18n();
@@ -99,7 +100,7 @@ export default function ExperimentsPage() {
                         <td className="p-3">
                           <div className="flex justify-end gap-1">
                             <Link href={`/?run=${r.id}`} className="grid h-8 w-8 place-items-center rounded-md border border-border hover:border-primary/50 hover:bg-primary/10 hover:text-primary" aria-label={t('replay')} title={t('replay')} data-testid={`link-replay-${r.id}`}><Play className="h-3.5 w-3.5" /></Link>
-                            <a href={`/api/runs/${r.id}/export.csv`} download className="grid h-8 w-8 place-items-center rounded-md border border-border hover:bg-white/5" aria-label={t('export')} title={t('export')} data-testid={`link-export-${r.id}`}><Download className="h-3.5 w-3.5" /></a>
+                            {!IS_DEMO && <a href={`/api/runs/${r.id}/export.csv`} download className="grid h-8 w-8 place-items-center rounded-md border border-border hover:bg-white/5" aria-label={t('export')} title={t('export')} data-testid={`link-export-${r.id}`}><Download className="h-3.5 w-3.5" /></a>}
                           </div>
                         </td>
                       </motion.tr>

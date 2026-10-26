@@ -108,6 +108,8 @@ const dict = {
   perRun: ['çalıştırma bazında', 'per run'],
   compareNote: ['Yalnızca gözlenen çalıştırmaların aritmetik ortalaması. Güven aralığı hesaplanmaz. Geçiş ortalaması yalnızca geçiş olan çalıştırmaları kullanır.', 'Arithmetic mean of observed runs only. No confidence intervals are estimated. Crossing mean uses only runs where a crossing occurred.'],
   runsN: ['çalıştırma', 'runs'],
+  demoBanner: ['Çevrimdışı demo · arazi sentetiktir, gerçek veri değildir. Simülasyon tarayıcıda çalışır.', 'Offline demo · terrain is synthetic, not real data. The simulation runs in your browser.'],
+  lyrDemo: ['Sentetik demo zemini (gerçek uydu değil)', 'Synthetic demo basemap (not real imagery)'],
   lgEmber: ['Kor', 'Embers'], lgSmoke: ['Duman', 'Smoke'],
   fxLabel: ['Gerçekçi efektler', 'Realistic effects'],
   fxNote: ['Duman, kıvılcım, su spreyi ve buhar. Yalnızca görseldir; sonuçları değiştirmez.', 'Smoke, sparks, sprinkler mist and steam. Visual only; results are unchanged.'],
@@ -141,9 +143,9 @@ const Ctx = createContext<{ lang: Lang; setLang: (l: Lang) => void; t: (k: Key) 
 });
 
 export function I18nProvider({ children }: { children: ReactNode }) {
-  const [lang, setLang] = useState<Lang>(() => (localStorage.getItem('fb-lang') as Lang) || 'tr');
+  const [lang, setLang] = useState<Lang>(() => { try { return (localStorage.getItem('fb-lang') as Lang) || 'tr'; } catch { return 'tr'; } });
   useEffect(() => {
-    localStorage.setItem('fb-lang', lang);
+    try { localStorage.setItem('fb-lang', lang); } catch { /* storage blocked */ }
     document.documentElement.lang = lang;
   }, [lang]);
   const t = (k: Key) => (dict[k] ? dict[k][lang === 'tr' ? 0 : 1] : String(k));

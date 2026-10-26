@@ -27,6 +27,8 @@ type Props = {
   onCursor: (c: { lng: number; lat: number; elev: number | null } | null) => void;
   fly: FlyTarget | null;
   onError?: (msg: string) => void;
+  /** Offline demo: no tile servers, a locally painted basemap instead. */
+  basemap?: { url: string; bounds: Bounds } | null;
 };
 
 const ll = (lng: number, lat: number): L.LatLngTuple => [lat, lng];
@@ -123,11 +125,13 @@ export function LeafletView(p: Props) {
       cb.current.onError?.(e instanceof Error ? e.message : String(e));
       return;
     }
+    const offline = p.basemap !== undefined;
     const tiles = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
       maxZoom: 19,
       maxNativeZoom: 17,
       attribution: 'Imagery © Esri, Maxar, Earthstar Geographics (visual only)',
-    }).addTo(m);
+    });
+    if (!offline) tiles.addTo(m);
     const osmTiles = L.tileLayer('https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png', {
       maxZoom: 19,
       attribution: '© OpenStreetMap contributors © CARTO',
@@ -146,7 +150,7 @@ export function LeafletView(p: Props) {
       osmTiles.bringToBack();
       cb.current.onError?.(message);
     };
-    imageryTimer = window.setTimeout(() => {
+    if (!offline) imageryTimer = window.setTimeout(() => {
       if (!esriLoaded) switchToOsm('Uydu görüntüsü yanıt vermedi; açık harita tabanı gösteriliyor.');
     }, 7000);
     tiles.once('load', () => {
@@ -303,6 +307,25 @@ export function LeafletView(p: Props) {
     const ring = p.selectedZone && p.zonesActive ? zoneRing(p.selectedZone, p.bounds, p.zonesN) : null;
     L_.sel.setLatLngs(ring ? ring.map(([x, y]) => ll(x, y)) : []);
   }, [ready, p.selectedZone, p.zonesActive, p.bounds, p.zonesN]);
+
+  // Demo basemap image under everything else.
+  const baseLayer = useRef<L.ImageOverlay | null>(null);
+  useEffect(() => {
+    const m = map.current;
+    if (!ready || !m || !p.basemap) return;
+    const [w, s, e, n] = p.basemap.bounds;
+    const b = L.latLngBounds(ll(w, s), ll(e, n));
+    const next = L.imageOverlay(p.basemap.url, b, { interactive: false, className: 'fb-basemap' }).addTo(m);
+    next.bringToBack();
+    const prev = baseLayer.current;
+    prev?.bringToBack();
+    baseLayer.current = next;
+    // cross-fade: the new image fades in over the old one, then the old one goes
+    const el = next.getElement();
+    if (el) { el.style.opacity = '0'; requestAnimationFrame(() => { el.style.transition = 'opacity .6s ease'; el.style.opacity = '1'; }); }
+    const tm = window.setTimeout(() => { if (prev) m.removeLayer(prev); }, 700);
+    return () => window.clearTimeout(tm);
+  }, [ready, p.basemap]);
 
   useEffect(() => {
     if (!p.fly || !map.current) return;

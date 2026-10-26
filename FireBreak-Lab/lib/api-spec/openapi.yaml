@@ -1,0 +1,245 @@
+openapi: 3.1.0
+info:
+  title: Api
+  version: 1.0.0
+servers:
+  - url: /api
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Health
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/HealthStatus' }
+  /scenarios:
+    get:
+      operationId: listScenarios
+      responses:
+        '200':
+          description: Scenarios
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/Scenario' } }
+    post:
+      operationId: saveScenario
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ScenarioInput' }
+      responses:
+        '200':
+          description: Saved
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Scenario' }
+  /scenarios/{id}:
+    delete:
+      operationId: deleteScenario
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Deleted
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/HealthStatus' }
+  /terrain:
+    post:
+      operationId: loadTerrain
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ScenarioInput' }
+      responses:
+        '200':
+          description: Real sampled terrain
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Terrain' }
+  /runs:
+    get:
+      operationId: listRuns
+      responses:
+        '200':
+          description: Results
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/Run' } }
+    post:
+      operationId: createRun
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RunInput' }
+      responses:
+        '200':
+          description: Run
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Run' }
+  /runs/{id}:
+    get:
+      operationId: getRun
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Run and replay frames
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Run' }
+  /compare:
+    post:
+      operationId: compareStrategies
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RunInput' }
+      responses:
+        '200':
+          description: Paired seeded experiments
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/Run' } }
+  /search:
+    get:
+      operationId: searchPlaces
+      parameters:
+        - { name: q, in: query, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Places
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/Place' } }
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      required: [status]
+      properties:
+        status: { type: string }
+    ScenarioInput:
+      type: object
+      required: [name, lat, lon, widthM, cellSize, zones, windDir, windSpeed, moisture, strategy, seed]
+      properties:
+        name: { type: string }
+        lat: { type: number }
+        lon: { type: number }
+        widthM: { type: number }
+        cellSize: { type: number }
+        zones: { type: integer }
+        windDir: { type: number }
+        windSpeed: { type: number }
+        moisture: { type: number }
+        strategy: { type: string, enum: [none, all, fixed, adjacent, smart] }
+        seed: { type: integer }
+        flowLpm: { type: number, default: 120 }
+        fixedDelay: { type: number, default: 60 }
+    Scenario:
+      allOf:
+        - { $ref: '#/components/schemas/ScenarioInput' }
+        - type: object
+          required: [id, createdAt]
+          properties:
+            id: { type: string }
+            createdAt: { type: string }
+    Terrain:
+      type: object
+      required: [id, rows, cols, cellSize, bounds, fuel, elevation, slope, aspect, source, fetchedAt]
+      properties:
+        id: { type: string }
+        rows: { type: integer }
+        cols: { type: integer }
+        cellSize: { type: number }
+        bounds: { type: array, items: { type: number } }
+        fuel: { type: array, items: { type: integer } }
+        elevation: { type: array, items: { type: number } }
+        slope: { type: array, items: { type: number } }
+        aspect: { type: array, items: { type: number } }
+        source: { type: string }
+        fetchedAt: { type: string }
+    Ignition:
+      type: object
+      required: [row, col]
+      properties:
+        row: { type: integer }
+        col: { type: integer }
+    RunInput:
+      type: object
+      required: [scenario, terrainId, ignitions]
+      properties:
+        scenario: { $ref: '#/components/schemas/ScenarioInput' }
+        terrainId: { type: string }
+        ignitions: { type: array, items: { $ref: '#/components/schemas/Ignition' } }
+        maxSteps: { type: integer, default: 180 }
+        repeats: { type: integer, default: 5 }
+    Event:
+      type: object
+      required: [time, kind, target]
+      properties:
+        time: { type: number }
+        kind: { type: string }
+        target: { type: string }
+    Line:
+      type: object
+      required: [id, from, to, on, waterL]
+      properties:
+        id: { type: string }
+        from: { type: string }
+        to: { type: string }
+        on: { type: boolean }
+        waterL: { type: number }
+    Zone:
+      type: object
+      required: [id, state, burnedPct, wet]
+      properties:
+        id: { type: string }
+        state: { type: string }
+        burnedPct: { type: number }
+        wet: { type: boolean }
+    Frame:
+      type: object
+      required: [step, time, state, wet, waterL, burnedHa, zones, lines, events, finished]
+      properties:
+        step: { type: integer }
+        time: { type: number }
+        state: { type: array, items: { type: integer } }
+        wet: { type: array, items: { type: number } }
+        waterL: { type: number }
+        burnedHa: { type: number }
+        zones: { type: array, items: { $ref: '#/components/schemas/Zone' } }
+        lines: { type: array, items: { $ref: '#/components/schemas/Line' } }
+        events: { type: array, items: { $ref: '#/components/schemas/Event' } }
+        finished: { type: boolean }
+    Run:
+      type: object
+      required: [id, name, strategy, seed, status, createdAt, waterL, burnedHa, duration, crossingTime, scenario, terrainId]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        strategy: { type: string }
+        seed: { type: integer }
+        status: { type: string }
+        createdAt: { type: string }
+        waterL: { type: number }
+        burnedHa: { type: number }
+        duration: { type: number }
+        crossingTime: { type: [number, 'null'] }
+        scenario: { $ref: '#/components/schemas/ScenarioInput' }
+        terrainId: { type: string }
+        frames: { type: array, items: { $ref: '#/components/schemas/Frame' } }
+    Place:
+      type: object
+      required: [name, lat, lon]
+      properties:
+        name: { type: string }
+        lat: { type: number }
+        lon: { type: number }

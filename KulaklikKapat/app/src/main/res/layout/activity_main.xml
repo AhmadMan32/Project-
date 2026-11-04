@@ -215,21 +215,21 @@
                     android:text="@string/method_auto_hint" />
 
                 <RadioButton
-                    android:id="@+id/method_shizuku"
+                    android:id="@+id/method_adb"
                     style="@style/Option"
-                    android:text="@string/method_shizuku_option" />
+                    android:text="@string/method_adb_option" />
 
                 <TextView
                     style="@style/OptionHint"
-                    android:text="@string/method_shizuku_hint" />
+                    android:text="@string/method_adb_hint" />
 
                 <TextView
-                    android:id="@+id/shizuku_status"
+                    android:id="@+id/adb_status"
                     style="@style/OptionHint"
                     android:textStyle="bold" />
 
                 <TextView
-                    android:id="@+id/btn_shizuku"
+                    android:id="@+id/btn_adb"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="32dp"
@@ -243,6 +243,27 @@
                     android:paddingTop="8dp"
                     android:paddingEnd="16dp"
                     android:paddingBottom="8dp"
+                    android:textColor="@color/primary"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    android:visibility="gone" />
+
+                <TextView
+                    android:id="@+id/btn_adb_pair"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="32dp"
+                    android:layout_marginBottom="8dp"
+                    android:background="@drawable/bg_outline_button"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:gravity="center"
+                    android:minHeight="44dp"
+                    android:paddingStart="16dp"
+                    android:paddingTop="8dp"
+                    android:paddingEnd="16dp"
+                    android:paddingBottom="8dp"
+                    android:text="@string/adb_btn_repair"
                     android:textColor="@color/primary"
                     android:textSize="14sp"
                     android:textStyle="bold"

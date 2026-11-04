@@ -64,8 +64,8 @@ final class DeviceLabels {
                 return c.getString(R.string.method_media);
             case AudioRouter.METHOD_COMMUNICATION:
                 return c.getString(R.string.method_comm);
-            case AudioRouter.METHOD_SHIZUKU:
-                return c.getString(R.string.method_shizuku);
+            case AudioRouter.METHOD_ADB:
+                return c.getString(R.string.method_adb);
             default:
                 return c.getString(R.string.method_none);
         }

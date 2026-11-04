@@ -8,8 +8,8 @@ Kulaklık girişi bozulunca ya da içine nem veya toz kaçınca telefon kulaklı
 
 ## Kurulum (APK)
 
-1. [`apk/KulaklikKapat-1.1.apk`](apk/KulaklikKapat-1.1.apk) dosyasını telefona indirin.
-   - **1.0 sürümü yüklüyse önce onu kaldırın.** 1.1 farklı bir anahtarla imzalandığı için eskisinin üzerine kurulamaz.
+1. [`apk/KulaklikKapat-1.2.apk`](apk/KulaklikKapat-1.2.apk) dosyasını telefona indirin.
+   - **1.0 sürümü yüklüyse önce onu kaldırın.** Yeni sürüm farklı bir anahtarla imzalandığı için 1.0'ın üzerine kurulamaz. 1.1'in üzerine doğrudan kurulur.
 2. Dosyayı açın. Android "bilinmeyen kaynaklardan yükleme" izni isterse verin.
 3. **Yükle**'ye dokunun.
 
@@ -22,21 +22,25 @@ Android 6.0 ve üzeri sürümlerde çalışır.
 - Bildirim panelindeki Hızlı Ayarlar'a **Kulaklık Kapat** kutucuğunu ekleyerek uygulamayı tek dokunuşla açıp kapatabilirsiniz.
 - Uygulama çalışırken bir bildirim görünür. **Durdur** ile her şey normale döner.
 
-### Medya sesi arama sesi gibi çıkıyorsa: Shizuku (Android 9+)
+### Medya sesi arama sesi gibi çıkıyorsa: kablosuz hata ayıklama (Android 11+)
 
-İletişim modunda Android medya sesini telefon görüşmesi gibi işler (görüşme ekolayzırı, ses işleme, çoğu zaman mono). Sesin normal kalitede çıkması için **Shizuku ile medya yönlendirme** yöntemini kullanın. Bilgisayar ya da root gerekmez, telefon yeterli:
+İletişim modunda Android medya sesini telefon görüşmesi gibi işler (görüşme ekolayzırı, ses işleme, çoğu zaman mono). Sesin normal kalitede çıkması için **Kablosuz hata ayıklama ile medya** yöntemini kullanın. Uygulamanın içinde Shizuku benzeri bir ADB istemcisi var. Başka uygulama, bilgisayar ya da root gerekmez:
 
-1. Play Store'dan **Shizuku** uygulamasını kurun (uygulamadaki *Shizuku'yu indir* düğmesi de oraya götürür).
-2. Telefonda geliştirici seçeneklerini açın: *Ayarlar → Telefon hakkında → OS sürümü*'ne 7 kez dokunun.
-3. Wi-Fi'ye bağlıyken Shizuku'yu açın, **Kablosuz hata ayıklama ile başlat** bölümündeki adımları izleyin (eşleştirme kodu bildirimden girilir).
-   - Xiaomi/Redmi'de *Ek ayarlar → Geliştirici seçenekleri* içindeki **USB hata ayıklama (Güvenlik ayarları)** seçeneğini de açmanız gerekebilir.
-4. Kulaklık Kapat'ı açın. *Shizuku izni ver* düğmesine dokunup izin verin.
-5. Yöntem olarak **Shizuku ile medya yönlendirme**'yi (ya da *Otomatik*) seçin. Durum satırında *Shizuku: hazır ✓*, "Kullanılan yöntem" satırında *Shizuku ile medya* görünmelidir.
+1. Geliştirici seçeneklerini açın: *Ayarlar → Telefon hakkında → OS sürümü*'ne 7 kez dokunun.
+   - Xiaomi/Redmi'de *Ek ayarlar → Geliştirici seçenekleri* içindeki **USB hata ayıklama (Güvenlik ayarları)** seçeneğini de açın. Bu açık değilse uygulama, telefon yeniden başladığında kablosuz hata ayıklamayı kendisi açma iznini alamaz.
+2. Wi-Fi'ye bağlanın.
+3. Kulaklık Kapat'ta **Kablosuz hata ayıklama ile eşleştir**'e dokunun. Geliştirici seçenekleri açılır.
+4. **Kablosuz hata ayıklama**'yı açın, içine girin ve **Eşleştirme kodu ile cihaz eşleştir**'e dokunun. 6 haneli bir kod çıkar.
+5. Kod penceresi açıkken bildirim panelini aşağı çekin. *Kulaklık Kapat: eşleştirme kodu* bildiriminde **Kodu gir**'e dokunup kodu yazın.
+6. "Eşleştirme başarılı" bildirimi gelir. Uygulamada yöntem olarak **Kablosuz hata ayıklama ile medya**'yı (ya da *Otomatik*) seçin. Durum satırında *Hazır ✓*, "Kullanılan yöntem" satırında *Kablosuz hata ayıklama ile medya* görünmelidir.
+
+Nasıl çalışır: uygulama telefonun kendi `adbd` servisine `127.0.0.1` üzerinden TLS ile bağlanır ([libadb-android](https://github.com/MuntashirAkon/libadb-android)). Bu bağlantıyla `app_process` üzerinden küçük bir yardımcı (`ForceCli`) başlatır. Yardımcı ADB kabuk kullanıcısı (uid 2000) olarak çalışır ve `AudioSystem.setForceUse(FOR_MEDIA, FORCE_SPEAKER)` çağrısını yapar. Kabuk kullanıcısında `MODIFY_AUDIO_ROUTING` izni olduğu için audioserver çağrıyı kabul eder.
 
 Notlar:
 
-- Shizuku root olmadan kullanıldığında **telefon her yeniden başladığında Shizuku'yu tekrar başlatmanız** gerekir. Shizuku kapalıyken uygulama sesin kesilmemesi için geçici olarak iletişim moduna geçer, Shizuku başlayınca kendiliğinden geri döner.
-- Bazı üretici yazılımları bu çağrıyı ADB yetkisiyle de reddedebilir. O durumda durum satırında *telefon medya yönlendirmesine izin vermedi (kod …)* yazar ve iletişim modu kullanılmaya devam eder.
+- Android, telefon yeniden başlayınca kablosuz hata ayıklamayı kapatır. Uygulama ilk bağlantıda kendine `WRITE_SECURE_SETTINGS` iznini verir (`pm grant`). Böylece sonraki açılışlarda Wi-Fi bağlıysa kablosuz hata ayıklamayı kendisi açıp yeniden bağlanır. Eşleştirme bir kez yapılır.
+- Bağlantı yokken (Wi-Fi kapalı vb.) uygulama, ses kesilmesin diye geçici olarak iletişim moduna geçer. Bağlantı gelince kendiliğinden geri döner.
+- Bazı üretici yazılımları bu çağrıyı ADB yetkisiyle de reddedebilir. O durumda durum satırında hata kodu yazar ve iletişim modu kullanılmaya devam eder.
 
 ### Ayarlar
 
@@ -53,10 +57,10 @@ Notlar:
 | Android sürümü | Yöntem | Ayrıntı |
 |---|---|---|
 | 6.0 – 8.1 | **Medya yönlendirme** | Gizli `AudioSystem.setForceUse(FOR_MEDIA, FORCE_SPEAKER)` çağrısıyla medya sesi doğrudan hoparlöre gönderilir. Bu sürümlerde yalnızca `MODIFY_AUDIO_SETTINGS` izni yeterlidir. Ses kalitesi en iyi bu yöntemdedir. |
-| 9 ve üzeri + Shizuku | **Shizuku ile medya** | Aynı `setForceUse(FOR_MEDIA, FORCE_SPEAKER)` çağrısı, Shizuku'nun ADB kabuğu (uid 2000) yetkisiyle çalıştırdığı küçük bir yardımcı süreçten (`ForceUseService`) yapılır. Kabuk kullanıcısında `MODIFY_AUDIO_ROUTING` izni olduğu için audioserver çağrıyı kabul eder. Medya normal stereo yolunda kalır, ses kalitesi bozulmaz. |
+| 11 ve üzeri + kablosuz hata ayıklama | **Kablosuz hata ayıklama ile medya** | Aynı `setForceUse(FOR_MEDIA, FORCE_SPEAKER)` çağrısı, uygulamanın kendi kablosuz hata ayıklama bağlantısıyla ADB kabuğu (uid 2000) olarak başlattığı küçük bir yardımcıdan (`ForceCli`) yapılır. Kabuk kullanıcısında `MODIFY_AUDIO_ROUTING` izni olduğu için audioserver çağrıyı kabul eder. Medya normal stereo yolunda kalır, ses kalitesi bozulmaz. |
 | 8.0 ve üzeri (12, 13, 14, 15… dahil) | **İletişim modu** | Telefon `MODE_IN_COMMUNICATION` moduna alınır ve iletişim cihazı olarak hoparlör seçilir (Android 12+ `setCommunicationDevice`, öncesinde `setSpeakerphoneOn`). Android ses motoru, "görüşme" sırasında tüm medya seslerini görüşme yönlendirmesine bağlar, bu yüzden her uygulamanın sesi hoparlörden çıkar. Android 12+ sessiz kalan uygulamanın modunu sıfırladığı için arka planda sessiz bir ses kanalı açık tutulur. |
 
-Android 9'dan itibaren `setForceUse` için sistem uygulamalarına özel `MODIFY_AUDIO_ROUTING` izni gerekir. Bu yüzden yeni telefonlarda Shizuku yoksa iletişim modu kullanılır. Bu davranış AOSP kaynak koduna (`AudioPolicyInterfaceImpl.cpp`, `enginedefault/Engine.cpp`, `AudioService.java`) bakılarak doğrulandı.
+Android 9'dan itibaren `setForceUse` için sistem uygulamalarına özel `MODIFY_AUDIO_ROUTING` izni gerekir. Bu yüzden yeni telefonlarda kablosuz hata ayıklama bağlantısı yoksa iletişim modu kullanılır. Bu davranış AOSP kaynak koduna (`AudioPolicyInterfaceImpl.cpp`, `enginedefault/Engine.cpp`, `AudioService.java`) bakılarak doğrulandı.
 
 Arka plandaki servis kulaklık takma/çıkarma ve ses modu değişikliklerini dinler. Ayrıca yönlendirmeyi birkaç saniyede bir yeniden kontrol eder.
 
@@ -78,7 +82,7 @@ export ANDROID_HOME=/android/sdk/yolu
 # Çıktı: app/build/outputs/apk/release/app-release.apk
 ```
 
-Tek dış kütüphane Shizuku istemci kütüphanesidir (`dev.rikka.shizuku:api` ve `provider`). APK yaklaşık 80 KB'tır.
+Dış kütüphaneler: `libadb-android` (JitPack) ve `conscrypt-android`. APK yaklaşık 7 MB'tır (çoğu ADB eşleştirmesi için gereken şifreleme kodu).
 
 ### Dosyalar
 

@@ -31,9 +31,10 @@ import java.util.List;
  *    Downside: media goes through the voice-call audio path (call EQ, voice processing, often
  *    mono and narrow band), so music and videos sound like a phone call.
  *
- * 3. {@link #METHOD_SHIZUKU}: the same force use as method 1, but issued from a Shizuku helper
- *    process running as the ADB shell user, which holds MODIFY_AUDIO_ROUTING. Media keeps its
- *    normal quality on any Android version. Needs the Shizuku app to be running.
+ * 3. {@link #METHOD_ADB}: the same force use as method 1, but issued from a helper process
+ *    ({@link ForceCli}) started over the app's built-in wireless debugging connection, so it runs
+ *    as the ADB shell user, which holds MODIFY_AUDIO_ROUTING. Media keeps its normal quality on
+ *    Android 11+. See {@link AdbForce}.
  */
 final class AudioRouter {
 
@@ -41,7 +42,7 @@ final class AudioRouter {
     static final int METHOD_AUTO = 0;
     static final int METHOD_FORCE_MEDIA = 1;
     static final int METHOD_COMMUNICATION = 2;
-    static final int METHOD_SHIZUKU = 3;
+    static final int METHOD_ADB = 3;
 
     // Hidden constants from android.media.AudioSystem.
     private static final int FOR_MEDIA = 1;
@@ -78,22 +79,22 @@ final class AudioRouter {
      * @return true if the routing is confirmed to be in place.
      */
     boolean engage(int preferred) {
-        // Shizuku first: best quality on Android 9+. When it is not available (e.g. right after a
-        // reboot, before Shizuku is started again) fall back to communication mode so the speaker
-        // still works; the watchdog switches back as soon as the helper is connected.
-        boolean tryShizuku = preferred == METHOD_SHIZUKU
-                || (preferred == METHOD_AUTO && !isForceMediaLikelySupported());
-        if (tryShizuku && ShizukuForce.isReady()) {
-            if (ShizukuForce.setForceMedia(true)) {
-                if (active == METHOD_COMMUNICATION) {
-                    releaseCommunication();
-                }
-                active = METHOD_SHIZUKU;
-                return true;
+        // Built-in wireless debugging first: best quality on Android 11+. It works
+        // asynchronously; until the helper confirms the force use (or when wireless debugging is
+        // unavailable) communication mode keeps the speaker working. AdbForce notifies the
+        // service when the state changes, which calls engage() again.
+        boolean tryAdb = AdbForce.isSupported() && AdbForce.isPaired()
+                && (preferred == METHOD_ADB
+                || (preferred == METHOD_AUTO && !isForceMediaLikelySupported()));
+        AdbForce.setWanted(tryAdb);
+        if (tryAdb && AdbForce.isForced()) {
+            if (active == METHOD_COMMUNICATION) {
+                releaseCommunication();
             }
+            active = METHOD_ADB;
+            return true;
         }
-        if (active == METHOD_SHIZUKU) {
-            ShizukuForce.setForceMedia(false);
+        if (active == METHOD_ADB) {
             active = METHOD_NONE;
         }
 
@@ -122,9 +123,8 @@ final class AudioRouter {
 
     /** Restores normal routing. */
     void release() {
-        if (active == METHOD_SHIZUKU) {
-            ShizukuForce.setForceMedia(false);
-        } else if (active == METHOD_FORCE_MEDIA) {
+        AdbForce.setWanted(false);
+        if (active == METHOD_FORCE_MEDIA) {
             setForceMedia(false);
         } else if (active == METHOD_COMMUNICATION) {
             releaseCommunication();

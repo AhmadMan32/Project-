@@ -27,19 +27,36 @@
     <string name="method_media">Medya yönlendirme</string>
     <string name="method_comm">İletişim modu</string>
 
-    <string name="method_shizuku">Shizuku ile medya</string>
-    <string name="method_shizuku_option">Shizuku ile medya yönlendirme (en iyi ses)</string>
-    <string name="method_shizuku_hint">Android 9 ve üzeri için. Medya sesi normal kalitesiyle hoparlöre gönderilir, arama sesi gibi bozulmaz. Ücretsiz Shizuku uygulaması gerekir (bilgisayar ya da root gerekmez). Shizuku kapalıyken geçici olarak iletişim moduna geçilir.</string>
-    <string name="shizuku_state_unsupported">Shizuku bu Android sürümünde kullanılamaz.</string>
-    <string name="shizuku_state_not_installed">Shizuku: yüklü değil</string>
-    <string name="shizuku_state_not_running">Shizuku: çalışmıyor. Shizuku uygulamasını açıp \"Başlat\" deyin (telefon yeniden başlayınca tekrar gerekir).</string>
-    <string name="shizuku_state_no_permission">Shizuku: bu uygulamaya izin verilmedi</string>
-    <string name="shizuku_state_connecting">Shizuku: bağlanıyor…</string>
-    <string name="shizuku_state_ready">Shizuku: hazır ✓</string>
-    <string name="shizuku_state_failed">Shizuku: telefon medya yönlendirmesine izin vermedi (kod %1$d). İletişim modu kullanılıyor.</string>
-    <string name="shizuku_btn_install">Shizuku\'yu indir</string>
-    <string name="shizuku_btn_open">Shizuku\'yu aç</string>
-    <string name="shizuku_btn_permission">Shizuku izni ver</string>
+    <string name="method_adb">Kablosuz hata ayıklama ile medya</string>
+    <string name="method_adb_option">Kablosuz hata ayıklama ile medya (en iyi ses)</string>
+    <string name="method_adb_hint">Android 11 ve üzeri için. Uygulama telefonun kendi kablosuz hata ayıklamasına bağlanır ve medya sesini normal kalitesiyle hoparlöre gönderir. Ses arama sesi gibi bozulmaz. Bir kez eşleştirmek yeterli, başka uygulama, bilgisayar ya da root gerekmez. Wi-Fi bağlı olmalıdır. Bağlantı yokken geçici olarak iletişim modu kullanılır.</string>
+    <string name="adb_state_unsupported">Kablosuz hata ayıklama için Android 11 veya üzeri gerekir.</string>
+    <string name="adb_state_not_paired">Eşleştirilmedi. Aşağıdaki düğmeye dokunun, Geliştirici seçenekleri açılır: Kablosuz hata ayıklama → \"Eşleştirme kodu ile cihaz eşleştir\". Ekranda çıkan 6 haneli kodu bu uygulamanın bildirimine yazın.</string>
+    <string name="adb_state_waiting_code">Kod bekleniyor. Kablosuz hata ayıklama → \"Eşleştirme kodu ile cihaz eşleştir\" penceresini açın, bildirim panelini aşağı çekip \"Kodu gir\"e dokunun ve 6 haneli kodu yazın. Kod penceresi açık kalmalı.</string>
+    <string name="adb_state_pairing">Eşleştiriliyor…</string>
+    <string name="adb_state_not_connected">Bağlı değil. Wi-Fi\'ye bağlanın ve Geliştirici seçeneklerinde \"Kablosuz hata ayıklama\"yı açın.</string>
+    <string name="adb_state_connecting">Bağlanıyor…</string>
+    <string name="adb_state_ready">Hazır ✓ (ADB yetkisiyle bağlı)</string>
+    <string name="adb_state_failed">Bağlandı ama medya yönlendirmesi yapılamadı.</string>
+    <string name="adb_detail_refused">Telefon isteği reddetti (kod %1$d).</string>
+    <string name="adb_detail_helper">Yardımcı başlatılamadı: %1$s</string>
+    <string name="adb_detail_unpaired">Telefon eşleştirmeyi unutmuş, yeniden eşleştirin.</string>
+    <string name="adb_btn_pair">Kablosuz hata ayıklama ile eşleştir</string>
+    <string name="adb_btn_cancel">Eşleştirmeyi iptal et</string>
+    <string name="adb_btn_settings">Geliştirici seçeneklerini aç</string>
+    <string name="adb_btn_retry">Tekrar dene</string>
+    <string name="adb_btn_repair">Yeniden eşleştir</string>
+    <string name="adb_no_dev_options">Geliştirici seçenekleri kapalı. Ayarlar → Telefon hakkında → OS sürümü\'ne 7 kez dokunun.</string>
+    <string name="pair_channel">Kablosuz hata ayıklama eşleştirme</string>
+    <string name="pair_notif_title">Kulaklık Kapat: eşleştirme kodu</string>
+    <string name="pair_notif_text">Kablosuz hata ayıklama → \"Eşleştirme kodu ile cihaz eşleştir\" penceresindeki 6 haneli kodu girin.</string>
+    <string name="pair_notif_working">Eşleştiriliyor…</string>
+    <string name="pair_code_label">6 haneli kod</string>
+    <string name="pair_enter_code">Kodu gir</string>
+    <string name="pair_no_service">Eşleştirme penceresi bulunamadı. \"Eşleştirme kodu ile cihaz eşleştir\" penceresi açıkken ve Wi-Fi bağlıyken tekrar deneyin.</string>
+    <string name="pair_failed">Eşleştirme başarısız. Kod yanlış ya da süresi dolmuş olabilir. Yeni kodla tekrar deneyin.</string>
+    <string name="pair_done">Eşleştirme başarılı ✓</string>
+    <string name="pair_toast">Kablosuz hata ayıklama → \"Eşleştirme kodu ile cihaz eşleştir\"e dokunun, sonra kodu bildirime yazın.</string>
 
     <string name="out_speaker">Telefon hoparlörü</string>
     <string name="out_earpiece">Ahize</string>
@@ -59,7 +76,7 @@
     <string name="settings_title">Ayarlar</string>
     <string name="method_title">Yönlendirme yöntemi</string>
     <string name="method_auto">Otomatik (önerilen)</string>
-    <string name="method_auto_hint">Cihaza en uygun yöntemi kendisi seçer. Android 9 ve üzerinde Shizuku hazırsa onu, değilse iletişim modunu kullanır.</string>
+    <string name="method_auto_hint">Cihaza en uygun yöntemi kendisi seçer. Eşleştirildiyse kablosuz hata ayıklamayı, bağlantı yoksa iletişim modunu kullanır.</string>
     <string name="method_media_option">Medya yönlendirme</string>
     <string name="method_media_hint">Android 6–8 için. En iyi ses kalitesi.</string>
     <string name="method_media_unsupported">Android 6–8 için. Bu cihazda desteklenmiyor.</string>
@@ -71,7 +88,7 @@
     <string name="battery_btn">Pil kısıtlamasını kaldır (arka planda kapanmasın)</string>
 
     <string name="info_title">Nasıl çalışır?</string>
-    <string name="info_body">Kulaklık girişi bozulduğunda, nem ya da toz kaçtığında telefon kulaklık takılı sanır ve hoparlörü susturur. Bu uygulama kulaklık çıkışını yazılımsal olarak devre dışı bırakır ve tüm sesleri telefonun kendi hoparlörüne yönlendirir. Root gerekmez.\n\n• Android 6–8: medya sesi doğrudan hoparlöre zorlanır.\n• Android 9 ve üzeri + Shizuku: medya sesi normal kalitesiyle doğrudan hoparlöre zorlanır. Shizuku uygulamasını kurun, \"Kablosuz hata ayıklama\" ile başlatın ve bu uygulamaya izin verin.\n• Android 8 ve üzeri (Shizuku yoksa): telefon \"iletişim modu\"na alınır ve hoparlör seçilir. Bu modda ses düğmeleri arama sesini değiştirir; medya sesi arama sesiyle sınırlandığı için ses yükseltmek için de ses düğmelerini kullanabilirsiniz.\n• Bildirim panelindeki Hızlı Ayarlar\'a \"Kulaklık Kapat\" kutucuğunu ekleyerek tek dokunuşla açıp kapatabilirsiniz.\n• Uygulama çalışırken bildirimde görünür; \"Durdur\" ile normale döner.</string>
+    <string name="info_body">Kulaklık girişi bozulduğunda, nem ya da toz kaçtığında telefon kulaklık takılı sanır ve hoparlörü susturur. Bu uygulama kulaklık çıkışını yazılımsal olarak devre dışı bırakır ve tüm sesleri telefonun kendi hoparlörüne yönlendirir. Root gerekmez.\n\n• Android 6–8: medya sesi doğrudan hoparlöre zorlanır.\n• Android 11 ve üzeri + kablosuz hata ayıklama: uygulama telefonun kendi kablosuz hata ayıklamasına bir kez eşleşir, sonra medya sesini normal kalitesiyle doğrudan hoparlöre zorlar. Telefon yeniden başlayınca kablosuz hata ayıklamayı kendisi tekrar açar (Wi-Fi bağlı olmalı).\n• Android 8 ve üzeri (bağlantı yoksa): telefon \"iletişim modu\"na alınır ve hoparlör seçilir. Bu modda ses düğmeleri arama sesini değiştirir; medya sesi arama sesiyle sınırlandığı için ses yükseltmek için de ses düğmelerini kullanabilirsiniz.\n• Bildirim panelindeki Hızlı Ayarlar\'a \"Kulaklık Kapat\" kutucuğunu ekleyerek tek dokunuşla açıp kapatabilirsiniz.\n• Uygulama çalışırken bildirimde görünür; \"Durdur\" ile normale döner.</string>
 
     <string name="notif_channel">Hoparlör yönlendirme</string>
     <string name="notif_forcing">Kulaklık devre dışı — ses hoparlörde</string>

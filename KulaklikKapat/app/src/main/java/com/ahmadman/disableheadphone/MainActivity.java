@@ -50,9 +50,10 @@ public class MainActivity extends Activity implements SpeakerService.Listener {
     private SeekBar seekMedia;
     private SeekBar seekCall;
     private TextView batteryButton;
-    private TextView shizukuStatus;
-    private TextView shizukuButton;
-    private final Runnable shizukuListener = this::refreshUi;
+    private TextView adbStatus;
+    private TextView adbButton;
+    private TextView adbPairButton;
+    private final Runnable adbListener = this::refreshUi;
 
     private AudioTrack testTrack;
     private final Runnable stopTestRunnable = this::stopTest;
@@ -89,10 +90,12 @@ public class MainActivity extends Activity implements SpeakerService.Listener {
         seekMedia = findViewById(R.id.seek_media);
         seekCall = findViewById(R.id.seek_call);
         batteryButton = findViewById(R.id.btn_battery);
-        shizukuStatus = findViewById(R.id.shizuku_status);
-        shizukuButton = findViewById(R.id.btn_shizuku);
-        ShizukuForce.init(this);
-        shizukuButton.setOnClickListener(v -> onShizukuButton());
+        adbStatus = findViewById(R.id.adb_status);
+        adbButton = findViewById(R.id.btn_adb);
+        adbPairButton = findViewById(R.id.btn_adb_pair);
+        AdbForce.init(this);
+        adbButton.setOnClickListener(v -> onAdbButton());
+        adbPairButton.setOnClickListener(v -> startPairing());
 
         ((TextView) findViewById(R.id.value_android)).setText(getString(
                 R.string.status_android_value, Build.VERSION.RELEASE, Build.VERSION.SDK_INT));
@@ -117,7 +120,8 @@ public class MainActivity extends Activity implements SpeakerService.Listener {
     protected void onStart() {
         super.onStart();
         SpeakerService.addListener(this);
-        ShizukuForce.addListener(shizukuListener);
+        AdbForce.addListener(adbListener);
+        AdbForce.setUiActive(true);
         am.registerAudioDeviceCallback(deviceCallback, handler);
         refreshUi();
     }
@@ -133,7 +137,8 @@ public class MainActivity extends Activity implements SpeakerService.Listener {
     @Override
     protected void onStop() {
         SpeakerService.removeListener(this);
-        ShizukuForce.removeListener(shizukuListener);
+        AdbForce.removeListener(adbListener);
+        AdbForce.setUiActive(false);
         am.unregisterAudioDeviceCallback(deviceCallback);
         stopTest();
         super.onStop();
@@ -219,63 +224,104 @@ public class MainActivity extends Activity implements SpeakerService.Listener {
         valueOutput.setText(currentMediaOutput(headphones, running && forcing && ok));
         valueMethod.setText(DeviceLabels.method(this,
                 running && forcing ? SpeakerService.getActiveMethod() : AudioRouter.METHOD_NONE));
-        refreshShizuku();
+        refreshAdb();
     }
 
     // ---------------------------------------------------------------------------------------
-    // Shizuku
+    // Built-in wireless debugging
     // ---------------------------------------------------------------------------------------
 
-    private void refreshShizuku() {
-        int state = ShizukuForce.state(this);
+    private void refreshAdb() {
+        int state = AdbForce.isSupported() ? AdbForce.state() : AdbForce.STATE_UNSUPPORTED;
         String text;
         int button = 0;
+        boolean repair = false;
         int color = R.color.text_secondary;
         switch (state) {
-            case ShizukuForce.STATE_UNSUPPORTED:
-                text = getString(R.string.shizuku_state_unsupported);
+            case AdbForce.STATE_UNSUPPORTED:
+                text = getString(R.string.adb_state_unsupported);
                 break;
-            case ShizukuForce.STATE_NOT_INSTALLED:
-                text = getString(R.string.shizuku_state_not_installed);
-                button = R.string.shizuku_btn_install;
+            case AdbForce.STATE_NOT_PAIRED:
+                text = getString(R.string.adb_state_not_paired);
+                button = R.string.adb_btn_pair;
                 break;
-            case ShizukuForce.STATE_NOT_RUNNING:
-                text = getString(R.string.shizuku_state_not_running);
-                button = R.string.shizuku_btn_open;
+            case AdbForce.STATE_WAITING_CODE:
+                text = getString(R.string.adb_state_waiting_code);
+                button = R.string.adb_btn_cancel;
+                color = R.color.primary;
+                break;
+            case AdbForce.STATE_PAIRING:
+                text = getString(R.string.adb_state_pairing);
+                color = R.color.primary;
+                break;
+            case AdbForce.STATE_NOT_CONNECTED:
+                text = getString(R.string.adb_state_not_connected);
+                button = R.string.adb_btn_settings;
+                repair = true;
                 color = R.color.warning;
                 break;
-            case ShizukuForce.STATE_NO_PERMISSION:
-                text = getString(R.string.shizuku_state_no_permission);
-                button = R.string.shizuku_btn_permission;
-                color = R.color.warning;
-                break;
-            case ShizukuForce.STATE_READY:
-                text = getString(R.string.shizuku_state_ready);
+            case AdbForce.STATE_READY:
+                text = getString(R.string.adb_state_ready);
                 color = R.color.success;
                 break;
-            case ShizukuForce.STATE_FAILED:
-                text = getString(R.string.shizuku_state_failed, ShizukuForce.lastResult());
+            case AdbForce.STATE_FAILED:
+                text = getString(R.string.adb_state_failed);
+                button = R.string.adb_btn_retry;
+                repair = true;
                 color = R.color.warning;
                 break;
             default:
-                text = getString(R.string.shizuku_state_connecting);
+                text = getString(R.string.adb_state_connecting);
                 break;
         }
-        shizukuStatus.setText(text);
-        shizukuStatus.setTextColor(getColor(color));
-        if (button != 0) {
-            shizukuButton.setText(button);
-            shizukuButton.setVisibility(View.VISIBLE);
-        } else {
-            shizukuButton.setVisibility(View.GONE);
+        String detail = AdbForce.detail();
+        if (detail != null && !detail.isEmpty()) {
+            text = text + "\n" + detail;
         }
+        adbStatus.setText(text);
+        adbStatus.setTextColor(getColor(color));
+        adbButton.setTag(state);
+        if (button != 0) {
+            adbButton.setText(button);
+            adbButton.setVisibility(View.VISIBLE);
+        } else {
+            adbButton.setVisibility(View.GONE);
+        }
+        adbPairButton.setVisibility(repair ? View.VISIBLE : View.GONE);
     }
 
-    private void onShizukuButton() {
-        if (ShizukuForce.state(this) == ShizukuForce.STATE_NO_PERMISSION) {
-            ShizukuForce.requestPermission();
-        } else {
-            ShizukuForce.openShizuku(this);
+    private void onAdbButton() {
+        Object tag = adbButton.getTag();
+        int state = tag instanceof Integer ? (Integer) tag : AdbForce.state();
+        switch (state) {
+            case AdbForce.STATE_NOT_PAIRED:
+                startPairing();
+                break;
+            case AdbForce.STATE_WAITING_CODE:
+                AdbForce.cancelPairing();
+                break;
+            case AdbForce.STATE_NOT_CONNECTED:
+                openDeveloperOptions();
+                AdbForce.retry();
+                break;
+            default:
+                AdbForce.retry();
+                break;
+        }
+        refreshUi();
+    }
+
+    private void startPairing() {
+        requestNotificationPermission();
+        AdbForce.startPairing(this);
+        Toast.makeText(this, R.string.pair_toast, Toast.LENGTH_LONG).show();
+    }
+
+    private void openDeveloperOptions() {
+        try {
+            startActivity(new Intent(Settings.ACTION_APPLICATION_DEVELOPMENT_SETTINGS));
+        } catch (RuntimeException e) {
+            Toast.makeText(this, R.string.adb_no_dev_options, Toast.LENGTH_LONG).show();
         }
     }
 
@@ -311,18 +357,18 @@ public class MainActivity extends Activity implements SpeakerService.Listener {
             media.setEnabled(false);
             ((TextView) findViewById(R.id.method_media_hint)).setText(R.string.method_media_unsupported);
         }
-        if (!ShizukuForce.isSupported()) {
-            findViewById(R.id.method_shizuku).setEnabled(false);
+        if (!AdbForce.isSupported()) {
+            findViewById(R.id.method_adb).setEnabled(false);
         }
         int method = Prefs.method(this);
         group.check(method == AudioRouter.METHOD_FORCE_MEDIA ? R.id.method_media
                 : method == AudioRouter.METHOD_COMMUNICATION ? R.id.method_comm
-                : method == AudioRouter.METHOD_SHIZUKU ? R.id.method_shizuku
+                : method == AudioRouter.METHOD_ADB ? R.id.method_adb
                 : R.id.method_auto);
         group.setOnCheckedChangeListener((g, id) -> {
             int m = id == R.id.method_media ? AudioRouter.METHOD_FORCE_MEDIA
                     : id == R.id.method_comm ? AudioRouter.METHOD_COMMUNICATION
-                    : id == R.id.method_shizuku ? AudioRouter.METHOD_SHIZUKU
+                    : id == R.id.method_adb ? AudioRouter.METHOD_ADB
                     : AudioRouter.METHOD_AUTO;
             Prefs.setMethod(this, m);
             SpeakerService.refresh(this);

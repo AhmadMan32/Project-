@@ -10,12 +10,13 @@ android {
         applicationId = "com.ahmadman.disableheadphone"
         minSdk = 23
         targetSdk = 35
-        versionCode = 2
-        versionName = "1.1"
-    }
+        versionCode = 3
+        versionName = "1.2"
 
-    buildFeatures {
-        aidl = true
+        // Conscrypt ships native code; phones only need the ARM builds.
+        ndk {
+            abiFilters += listOf("arm64-v8a", "armeabi-v7a")
+        }
     }
 
     buildTypes {
@@ -33,9 +34,10 @@ android {
 }
 
 dependencies {
-    // Shizuku: runs a tiny helper with ADB (shell) rights, which may force media audio to the
-    // speaker without the call-like "communication mode". See ShizukuForce.java.
-    val shizuku = "13.1.5"
-    implementation("dev.rikka.shizuku:api:$shizuku")
-    implementation("dev.rikka.shizuku:provider:$shizuku")
+    // Built-in wireless debugging client (ADB pairing + TLS connection to the phone itself).
+    // Gives a helper process ADB shell rights, which may force media audio to the speaker
+    // without the call-like "communication mode". See AdbForce.java.
+    implementation("com.github.MuntashirAkon:libadb-android:3.1.1")
+    // TLS 1.3 key export needed by ADB pairing; the platform copy is a hidden API.
+    implementation("org.conscrypt:conscrypt-android:2.5.3")
 }

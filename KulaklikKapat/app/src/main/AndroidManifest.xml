@@ -10,14 +10,20 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+    <!-- Built-in wireless debugging client: talks to the phone's own adbd on localhost. -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <!-- Granted through ADB after pairing (pm grant): lets the app switch wireless debugging back
+         on by itself after a reboot. Cannot be requested from the user. -->
+    <uses-permission
+        android:name="android.permission.WRITE_SECURE_SETTINGS"
+        tools:ignore="ProtectedPermissions" />
 
-    <!-- The Shizuku client library needs Android 7.0+; it is only used there (see ShizukuForce). -->
-    <uses-sdk tools:overrideLibrary="rikka.shizuku.api" />
-
-    <!-- Lets the app see whether the Shizuku app is installed (Android 11+ package visibility). -->
-    <queries>
-        <package android:name="moe.shizuku.privileged.api" />
-    </queries>
+    <!-- Added implicitly because libadb-android declares minSdk 1; not needed. -->
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" tools:node="remove" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" tools:node="remove" />
+    <uses-permission android:name="android.permission.READ_PHONE_STATE" tools:node="remove" />
 
     <application
         android:allowBackup="true"
@@ -60,14 +66,10 @@
                 android:value="true" />
         </service>
 
-        <!-- Receives the Shizuku binder. Disabled below Android 7.0 (values-v24/bools.xml). -->
-        <provider
-            android:name="rikka.shizuku.ShizukuProvider"
-            android:authorities="${applicationId}.shizuku"
-            android:enabled="@bool/shizuku_supported"
-            android:exported="true"
-            android:multiprocess="false"
-            android:permission="android.permission.INTERACT_ACROSS_USERS_FULL" />
+        <!-- Receives the pairing code typed into the notification. -->
+        <receiver
+            android:name=".PairingReceiver"
+            android:exported="false" />
 
         <receiver
             android:name=".BootReceiver"

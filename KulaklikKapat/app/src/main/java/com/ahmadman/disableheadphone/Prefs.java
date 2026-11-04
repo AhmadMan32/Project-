@@ -34,6 +34,9 @@ final class Prefs {
         if (m == AudioRouter.METHOD_FORCE_MEDIA && !AudioRouter.isForceMediaLikelySupported()) {
             return AudioRouter.METHOD_AUTO;
         }
+        if (m == AudioRouter.METHOD_SHIZUKU && !ShizukuForce.isSupported()) {
+            return AudioRouter.METHOD_AUTO;
+        }
         return m;
     }
 

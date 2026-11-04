@@ -8,7 +8,8 @@ Kulaklık girişi bozulunca ya da içine nem veya toz kaçınca telefon kulaklı
 
 ## Kurulum (APK)
 
-1. [`apk/KulaklikKapat-1.0.apk`](apk/KulaklikKapat-1.0.apk) dosyasını telefona indirin.
+1. [`apk/KulaklikKapat-1.1.apk`](apk/KulaklikKapat-1.1.apk) dosyasını telefona indirin.
+   - **1.0 sürümü yüklüyse önce onu kaldırın.** 1.1 farklı bir anahtarla imzalandığı için eskisinin üzerine kurulamaz.
 2. Dosyayı açın. Android "bilinmeyen kaynaklardan yükleme" izni isterse verin.
 3. **Yükle**'ye dokunun.
 
@@ -20,6 +21,22 @@ Android 6.0 ve üzeri sürümlerde çalışır.
 - **Test sesi çal** ile sesin nereden çıktığını kontrol edin.
 - Bildirim panelindeki Hızlı Ayarlar'a **Kulaklık Kapat** kutucuğunu ekleyerek uygulamayı tek dokunuşla açıp kapatabilirsiniz.
 - Uygulama çalışırken bir bildirim görünür. **Durdur** ile her şey normale döner.
+
+### Medya sesi arama sesi gibi çıkıyorsa: Shizuku (Android 9+)
+
+İletişim modunda Android medya sesini telefon görüşmesi gibi işler (görüşme ekolayzırı, ses işleme, çoğu zaman mono). Sesin normal kalitede çıkması için **Shizuku ile medya yönlendirme** yöntemini kullanın. Bilgisayar ya da root gerekmez, telefon yeterli:
+
+1. Play Store'dan **Shizuku** uygulamasını kurun (uygulamadaki *Shizuku'yu indir* düğmesi de oraya götürür).
+2. Telefonda geliştirici seçeneklerini açın: *Ayarlar → Telefon hakkında → OS sürümü*'ne 7 kez dokunun.
+3. Wi-Fi'ye bağlıyken Shizuku'yu açın, **Kablosuz hata ayıklama ile başlat** bölümündeki adımları izleyin (eşleştirme kodu bildirimden girilir).
+   - Xiaomi/Redmi'de *Ek ayarlar → Geliştirici seçenekleri* içindeki **USB hata ayıklama (Güvenlik ayarları)** seçeneğini de açmanız gerekebilir.
+4. Kulaklık Kapat'ı açın. *Shizuku izni ver* düğmesine dokunup izin verin.
+5. Yöntem olarak **Shizuku ile medya yönlendirme**'yi (ya da *Otomatik*) seçin. Durum satırında *Shizuku: hazır ✓*, "Kullanılan yöntem" satırında *Shizuku ile medya* görünmelidir.
+
+Notlar:
+
+- Shizuku root olmadan kullanıldığında **telefon her yeniden başladığında Shizuku'yu tekrar başlatmanız** gerekir. Shizuku kapalıyken uygulama sesin kesilmemesi için geçici olarak iletişim moduna geçer, Shizuku başlayınca kendiliğinden geri döner.
+- Bazı üretici yazılımları bu çağrıyı ADB yetkisiyle de reddedebilir. O durumda durum satırında *telefon medya yönlendirmesine izin vermedi (kod …)* yazar ve iletişim modu kullanılmaya devam eder.
 
 ### Ayarlar
 
@@ -36,9 +53,10 @@ Android 6.0 ve üzeri sürümlerde çalışır.
 | Android sürümü | Yöntem | Ayrıntı |
 |---|---|---|
 | 6.0 – 8.1 | **Medya yönlendirme** | Gizli `AudioSystem.setForceUse(FOR_MEDIA, FORCE_SPEAKER)` çağrısıyla medya sesi doğrudan hoparlöre gönderilir. Bu sürümlerde yalnızca `MODIFY_AUDIO_SETTINGS` izni yeterlidir. Ses kalitesi en iyi bu yöntemdedir. |
+| 9 ve üzeri + Shizuku | **Shizuku ile medya** | Aynı `setForceUse(FOR_MEDIA, FORCE_SPEAKER)` çağrısı, Shizuku'nun ADB kabuğu (uid 2000) yetkisiyle çalıştırdığı küçük bir yardımcı süreçten (`ForceUseService`) yapılır. Kabuk kullanıcısında `MODIFY_AUDIO_ROUTING` izni olduğu için audioserver çağrıyı kabul eder. Medya normal stereo yolunda kalır, ses kalitesi bozulmaz. |
 | 8.0 ve üzeri (12, 13, 14, 15… dahil) | **İletişim modu** | Telefon `MODE_IN_COMMUNICATION` moduna alınır ve iletişim cihazı olarak hoparlör seçilir (Android 12+ `setCommunicationDevice`, öncesinde `setSpeakerphoneOn`). Android ses motoru, "görüşme" sırasında tüm medya seslerini görüşme yönlendirmesine bağlar, bu yüzden her uygulamanın sesi hoparlörden çıkar. Android 12+ sessiz kalan uygulamanın modunu sıfırladığı için arka planda sessiz bir ses kanalı açık tutulur. |
 
-Android 9'dan itibaren `setForceUse` için sistem uygulamalarına özel `MODIFY_AUDIO_ROUTING` izni gerekir. Bu yüzden yeni telefonlarda iletişim modu kullanılır. Bu davranış AOSP kaynak koduna (`AudioPolicyInterfaceImpl.cpp`, `enginedefault/Engine.cpp`, `AudioService.java`) bakılarak doğrulandı.
+Android 9'dan itibaren `setForceUse` için sistem uygulamalarına özel `MODIFY_AUDIO_ROUTING` izni gerekir. Bu yüzden yeni telefonlarda Shizuku yoksa iletişim modu kullanılır. Bu davranış AOSP kaynak koduna (`AudioPolicyInterfaceImpl.cpp`, `enginedefault/Engine.cpp`, `AudioService.java`) bakılarak doğrulandı.
 
 Arka plandaki servis kulaklık takma/çıkarma ve ses modu değişikliklerini dinler. Ayrıca yönlendirmeyi birkaç saniyede bir yeniden kontrol eder.
 
@@ -54,13 +72,13 @@ Arka plandaki servis kulaklık takma/çıkarma ve ses modu değişikliklerini di
 Gereksinimler: JDK 17+ ve Android SDK (platform 35, build-tools 35).
 
 ```bash
-cd disable-headphone
+cd KulaklikKapat
 export ANDROID_HOME=/android/sdk/yolu
 ./gradlew assembleRelease
 # Çıktı: app/build/outputs/apk/release/app-release.apk
 ```
 
-Proje hiçbir dış kütüphane kullanmaz. Yalnızca Android framework API'leri kullanılır ve APK yaklaşık 50 KB'tır.
+Tek dış kütüphane Shizuku istemci kütüphanesidir (`dev.rikka.shizuku:api` ve `provider`). APK yaklaşık 80 KB'tır.
 
 ### Dosyalar
 

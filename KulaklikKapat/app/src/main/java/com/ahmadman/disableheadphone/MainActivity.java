@@ -50,6 +50,9 @@ public class MainActivity extends Activity implements SpeakerService.Listener {
     private SeekBar seekMedia;
     private SeekBar seekCall;
     private TextView batteryButton;
+    private TextView shizukuStatus;
+    private TextView shizukuButton;
+    private final Runnable shizukuListener = this::refreshUi;
 
     private AudioTrack testTrack;
     private final Runnable stopTestRunnable = this::stopTest;
@@ -86,6 +89,10 @@ public class MainActivity extends Activity implements SpeakerService.Listener {
         seekMedia = findViewById(R.id.seek_media);
         seekCall = findViewById(R.id.seek_call);
         batteryButton = findViewById(R.id.btn_battery);
+        shizukuStatus = findViewById(R.id.shizuku_status);
+        shizukuButton = findViewById(R.id.btn_shizuku);
+        ShizukuForce.init(this);
+        shizukuButton.setOnClickListener(v -> onShizukuButton());
 
         ((TextView) findViewById(R.id.value_android)).setText(getString(
                 R.string.status_android_value, Build.VERSION.RELEASE, Build.VERSION.SDK_INT));
@@ -110,6 +117,7 @@ public class MainActivity extends Activity implements SpeakerService.Listener {
     protected void onStart() {
         super.onStart();
         SpeakerService.addListener(this);
+        ShizukuForce.addListener(shizukuListener);
         am.registerAudioDeviceCallback(deviceCallback, handler);
         refreshUi();
     }
@@ -125,6 +133,7 @@ public class MainActivity extends Activity implements SpeakerService.Listener {
     @Override
     protected void onStop() {
         SpeakerService.removeListener(this);
+        ShizukuForce.removeListener(shizukuListener);
         am.unregisterAudioDeviceCallback(deviceCallback);
         stopTest();
         super.onStop();
@@ -210,6 +219,64 @@ public class MainActivity extends Activity implements SpeakerService.Listener {
         valueOutput.setText(currentMediaOutput(headphones, running && forcing && ok));
         valueMethod.setText(DeviceLabels.method(this,
                 running && forcing ? SpeakerService.getActiveMethod() : AudioRouter.METHOD_NONE));
+        refreshShizuku();
+    }
+
+    // ---------------------------------------------------------------------------------------
+    // Shizuku
+    // ---------------------------------------------------------------------------------------
+
+    private void refreshShizuku() {
+        int state = ShizukuForce.state(this);
+        String text;
+        int button = 0;
+        int color = R.color.text_secondary;
+        switch (state) {
+            case ShizukuForce.STATE_UNSUPPORTED:
+                text = getString(R.string.shizuku_state_unsupported);
+                break;
+            case ShizukuForce.STATE_NOT_INSTALLED:
+                text = getString(R.string.shizuku_state_not_installed);
+                button = R.string.shizuku_btn_install;
+                break;
+            case ShizukuForce.STATE_NOT_RUNNING:
+                text = getString(R.string.shizuku_state_not_running);
+                button = R.string.shizuku_btn_open;
+                color = R.color.warning;
+                break;
+            case ShizukuForce.STATE_NO_PERMISSION:
+                text = getString(R.string.shizuku_state_no_permission);
+                button = R.string.shizuku_btn_permission;
+                color = R.color.warning;
+                break;
+            case ShizukuForce.STATE_READY:
+                text = getString(R.string.shizuku_state_ready);
+                color = R.color.success;
+                break;
+            case ShizukuForce.STATE_FAILED:
+                text = getString(R.string.shizuku_state_failed, ShizukuForce.lastResult());
+                color = R.color.warning;
+                break;
+            default:
+                text = getString(R.string.shizuku_state_connecting);
+                break;
+        }
+        shizukuStatus.setText(text);
+        shizukuStatus.setTextColor(getColor(color));
+        if (button != 0) {
+            shizukuButton.setText(button);
+            shizukuButton.setVisibility(View.VISIBLE);
+        } else {
+            shizukuButton.setVisibility(View.GONE);
+        }
+    }
+
+    private void onShizukuButton() {
+        if (ShizukuForce.state(this) == ShizukuForce.STATE_NO_PERMISSION) {
+            ShizukuForce.requestPermission();
+        } else {
+            ShizukuForce.openShizuku(this);
+        }
     }
 
     private String currentMediaOutput(List<AudioDeviceInfo> headphones, boolean forced) {
@@ -244,13 +311,18 @@ public class MainActivity extends Activity implements SpeakerService.Listener {
             media.setEnabled(false);
             ((TextView) findViewById(R.id.method_media_hint)).setText(R.string.method_media_unsupported);
         }
+        if (!ShizukuForce.isSupported()) {
+            findViewById(R.id.method_shizuku).setEnabled(false);
+        }
         int method = Prefs.method(this);
         group.check(method == AudioRouter.METHOD_FORCE_MEDIA ? R.id.method_media
                 : method == AudioRouter.METHOD_COMMUNICATION ? R.id.method_comm
+                : method == AudioRouter.METHOD_SHIZUKU ? R.id.method_shizuku
                 : R.id.method_auto);
         group.setOnCheckedChangeListener((g, id) -> {
             int m = id == R.id.method_media ? AudioRouter.METHOD_FORCE_MEDIA
                     : id == R.id.method_comm ? AudioRouter.METHOD_COMMUNICATION
+                    : id == R.id.method_shizuku ? AudioRouter.METHOD_SHIZUKU
                     : AudioRouter.METHOD_AUTO;
             Prefs.setMethod(this, m);
             SpeakerService.refresh(this);

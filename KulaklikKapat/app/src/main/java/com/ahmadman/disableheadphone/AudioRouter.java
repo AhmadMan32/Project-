@@ -16,7 +16,7 @@ import java.util.List;
  * Forces audio to the phone's built-in speaker even when the system believes
  * headphones are plugged in (e.g. a broken or wet headphone jack).
  *
- * Two techniques are used, chosen per device:
+ * Three techniques are used, chosen per device:
  *
  * 1. {@link #METHOD_FORCE_MEDIA}: hidden {@code AudioSystem.setForceUse(FOR_MEDIA, FORCE_SPEAKER)}.
  *    Android 6.0 - 8.1 only allow this with the normal MODIFY_AUDIO_SETTINGS permission;
@@ -28,6 +28,12 @@ import java.util.List;
  *    setSpeakerphoneOn before). While "in call", the audio policy engine routes media through
  *    the phone strategy, so every app's sound follows the speaker. Since Android 12 the mode is
  *    dropped if the requesting app is not playing audio, so a silent keep-alive track runs.
+ *    Downside: media goes through the voice-call audio path (call EQ, voice processing, often
+ *    mono and narrow band), so music and videos sound like a phone call.
+ *
+ * 3. {@link #METHOD_SHIZUKU}: the same force use as method 1, but issued from a Shizuku helper
+ *    process running as the ADB shell user, which holds MODIFY_AUDIO_ROUTING. Media keeps its
+ *    normal quality on any Android version. Needs the Shizuku app to be running.
  */
 final class AudioRouter {
 
@@ -35,6 +41,7 @@ final class AudioRouter {
     static final int METHOD_AUTO = 0;
     static final int METHOD_FORCE_MEDIA = 1;
     static final int METHOD_COMMUNICATION = 2;
+    static final int METHOD_SHIZUKU = 3;
 
     // Hidden constants from android.media.AudioSystem.
     private static final int FOR_MEDIA = 1;
@@ -71,6 +78,25 @@ final class AudioRouter {
      * @return true if the routing is confirmed to be in place.
      */
     boolean engage(int preferred) {
+        // Shizuku first: best quality on Android 9+. When it is not available (e.g. right after a
+        // reboot, before Shizuku is started again) fall back to communication mode so the speaker
+        // still works; the watchdog switches back as soon as the helper is connected.
+        boolean tryShizuku = preferred == METHOD_SHIZUKU
+                || (preferred == METHOD_AUTO && !isForceMediaLikelySupported());
+        if (tryShizuku && ShizukuForce.isReady()) {
+            if (ShizukuForce.setForceMedia(true)) {
+                if (active == METHOD_COMMUNICATION) {
+                    releaseCommunication();
+                }
+                active = METHOD_SHIZUKU;
+                return true;
+            }
+        }
+        if (active == METHOD_SHIZUKU) {
+            ShizukuForce.setForceMedia(false);
+            active = METHOD_NONE;
+        }
+
         boolean tryMedia = preferred == METHOD_FORCE_MEDIA
                 || (preferred == METHOD_AUTO && isForceMediaLikelySupported() && !sAutoMediaFailed);
         if (tryMedia) {
@@ -96,7 +122,9 @@ final class AudioRouter {
 
     /** Restores normal routing. */
     void release() {
-        if (active == METHOD_FORCE_MEDIA) {
+        if (active == METHOD_SHIZUKU) {
+            ShizukuForce.setForceMedia(false);
+        } else if (active == METHOD_FORCE_MEDIA) {
             setForceMedia(false);
         } else if (active == METHOD_COMMUNICATION) {
             releaseCommunication();

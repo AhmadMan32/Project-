@@ -27,6 +27,20 @@
     <string name="method_media">Media routing</string>
     <string name="method_comm">Communication mode</string>
 
+    <string name="method_shizuku">Media via Shizuku</string>
+    <string name="method_shizuku_option">Media routing via Shizuku (best sound)</string>
+    <string name="method_shizuku_hint">For Android 9 and newer. Media audio goes to the speaker at normal quality instead of sounding like a phone call. Needs the free Shizuku app (no PC or root). While Shizuku is off, communication mode is used temporarily.</string>
+    <string name="shizuku_state_unsupported">Shizuku is not available on this Android version.</string>
+    <string name="shizuku_state_not_installed">Shizuku: not installed</string>
+    <string name="shizuku_state_not_running">Shizuku: not running. Open the Shizuku app and tap \"Start\" (needed again after every reboot).</string>
+    <string name="shizuku_state_no_permission">Shizuku: permission not granted to this app</string>
+    <string name="shizuku_state_connecting">Shizuku: connecting…</string>
+    <string name="shizuku_state_ready">Shizuku: ready ✓</string>
+    <string name="shizuku_state_failed">Shizuku: the phone refused media routing (code %1$d). Using communication mode.</string>
+    <string name="shizuku_btn_install">Get Shizuku</string>
+    <string name="shizuku_btn_open">Open Shizuku</string>
+    <string name="shizuku_btn_permission">Grant Shizuku permission</string>
+
     <string name="out_speaker">Phone speaker</string>
     <string name="out_earpiece">Earpiece</string>
     <string name="out_other">Other device</string>
@@ -45,7 +59,7 @@
     <string name="settings_title">Settings</string>
     <string name="method_title">Routing method</string>
     <string name="method_auto">Automatic (recommended)</string>
-    <string name="method_auto_hint">Picks the best method for this device.</string>
+    <string name="method_auto_hint">Picks the best method for this device. On Android 9+ it uses Shizuku when ready, otherwise communication mode.</string>
     <string name="method_media_option">Media routing</string>
     <string name="method_media_hint">For Android 6–8. Best sound quality.</string>
     <string name="method_media_unsupported">For Android 6–8. Not supported on this device.</string>
@@ -57,7 +71,7 @@
     <string name="battery_btn">Remove battery restriction (keep running in background)</string>
 
     <string name="info_title">How does it work?</string>
-    <string name="info_body">A broken, wet or dusty headphone jack can make the phone believe headphones are plugged in, which mutes the speaker. This app disables the headphone output in software and sends all sound to the phone\'s own speaker. No root needed.\n\n• Android 6–8: media audio is forced straight to the speaker.\n• Android 8 and newer: the phone is put into \"communication mode\" with the speaker selected. In this mode the volume keys change the call volume; media volume is capped by it, so the volume keys still make things louder.\n• Add the \"Disable Headphone\" tile to Quick Settings to toggle it with one tap.\n• While running, a notification is shown; tap \"Stop\" to go back to normal.</string>
+    <string name="info_body">A broken, wet or dusty headphone jack can make the phone believe headphones are plugged in, which mutes the speaker. This app disables the headphone output in software and sends all sound to the phone\'s own speaker. No root needed.\n\n• Android 6–8: media audio is forced straight to the speaker.\n• Android 9 and newer + Shizuku: media audio is forced straight to the speaker at normal quality. Install Shizuku, start it with \"Wireless debugging\" and grant this app permission.\n• Android 8 and newer (without Shizuku): the phone is put into \"communication mode\" with the speaker selected. In this mode the volume keys change the call volume; media volume is capped by it, so the volume keys still make things louder.\n• Add the \"Disable Headphone\" tile to Quick Settings to toggle it with one tap.\n• While running, a notification is shown; tap \"Stop\" to go back to normal.</string>
 
     <string name="notif_channel">Speaker routing</string>
     <string name="notif_forcing">Headphone disabled — sound on speaker</string>

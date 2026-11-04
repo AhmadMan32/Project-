@@ -215,6 +215,40 @@
                     android:text="@string/method_auto_hint" />
 
                 <RadioButton
+                    android:id="@+id/method_shizuku"
+                    style="@style/Option"
+                    android:text="@string/method_shizuku_option" />
+
+                <TextView
+                    style="@style/OptionHint"
+                    android:text="@string/method_shizuku_hint" />
+
+                <TextView
+                    android:id="@+id/shizuku_status"
+                    style="@style/OptionHint"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/btn_shizuku"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="32dp"
+                    android:layout_marginBottom="8dp"
+                    android:background="@drawable/bg_outline_button"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:gravity="center"
+                    android:minHeight="44dp"
+                    android:paddingStart="16dp"
+                    android:paddingTop="8dp"
+                    android:paddingEnd="16dp"
+                    android:paddingBottom="8dp"
+                    android:textColor="@color/primary"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    android:visibility="gone" />
+
+                <RadioButton
                     android:id="@+id/method_media"
                     style="@style/Option"
                     android:text="@string/method_media_option" />

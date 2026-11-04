@@ -108,6 +108,7 @@ public class SpeakerService extends Service {
     private Object modeListener;
 
     private final Runnable evaluateRunnable = this::evaluate;
+    private final Runnable shizukuListener = () -> scheduleEvaluate(DEBOUNCE_MS);
 
     private final Runnable watchdog = new Runnable() {
         @Override
@@ -134,6 +135,8 @@ public class SpeakerService extends Service {
         super.onCreate();
         am = (AudioManager) getSystemService(AUDIO_SERVICE);
         router = new AudioRouter(this);
+        ShizukuForce.init(this);
+        ShizukuForce.addListener(shizukuListener);
         createChannel();
         am.registerAudioDeviceCallback(deviceCallback, handler);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -167,6 +170,7 @@ public class SpeakerService extends Service {
     @Override
     public void onDestroy() {
         handler.removeCallbacksAndMessages(null);
+        ShizukuForce.removeListener(shizukuListener);
         am.unregisterAudioDeviceCallback(deviceCallback);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && modeListener != null) {
             am.removeOnModeChangedListener((AudioManager.OnModeChangedListener) modeListener);
@@ -197,6 +201,8 @@ public class SpeakerService extends Service {
         List<AudioDeviceInfo> headphones =
                 AudioRouter.findHeadphones(am, Prefs.includeBluetooth(this));
         boolean force = !headphones.isEmpty() || Prefs.alwaysForce(this);
+        // Connects the Shizuku helper if Shizuku is running and permission was granted.
+        ShizukuForce.state(this);
         boolean ok;
         if (force) {
             ok = router.engage(Prefs.method(this));

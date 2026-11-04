@@ -27,6 +27,20 @@
     <string name="method_media">Medya yönlendirme</string>
     <string name="method_comm">İletişim modu</string>
 
+    <string name="method_shizuku">Shizuku ile medya</string>
+    <string name="method_shizuku_option">Shizuku ile medya yönlendirme (en iyi ses)</string>
+    <string name="method_shizuku_hint">Android 9 ve üzeri için. Medya sesi normal kalitesiyle hoparlöre gönderilir, arama sesi gibi bozulmaz. Ücretsiz Shizuku uygulaması gerekir (bilgisayar ya da root gerekmez). Shizuku kapalıyken geçici olarak iletişim moduna geçilir.</string>
+    <string name="shizuku_state_unsupported">Shizuku bu Android sürümünde kullanılamaz.</string>
+    <string name="shizuku_state_not_installed">Shizuku: yüklü değil</string>
+    <string name="shizuku_state_not_running">Shizuku: çalışmıyor. Shizuku uygulamasını açıp \"Başlat\" deyin (telefon yeniden başlayınca tekrar gerekir).</string>
+    <string name="shizuku_state_no_permission">Shizuku: bu uygulamaya izin verilmedi</string>
+    <string name="shizuku_state_connecting">Shizuku: bağlanıyor…</string>
+    <string name="shizuku_state_ready">Shizuku: hazır ✓</string>
+    <string name="shizuku_state_failed">Shizuku: telefon medya yönlendirmesine izin vermedi (kod %1$d). İletişim modu kullanılıyor.</string>
+    <string name="shizuku_btn_install">Shizuku\'yu indir</string>
+    <string name="shizuku_btn_open">Shizuku\'yu aç</string>
+    <string name="shizuku_btn_permission">Shizuku izni ver</string>
+
     <string name="out_speaker">Telefon hoparlörü</string>
     <string name="out_earpiece">Ahize</string>
     <string name="out_other">Diğer cihaz</string>
@@ -45,7 +59,7 @@
     <string name="settings_title">Ayarlar</string>
     <string name="method_title">Yönlendirme yöntemi</string>
     <string name="method_auto">Otomatik (önerilen)</string>
-    <string name="method_auto_hint">Cihaza en uygun yöntemi kendisi seçer.</string>
+    <string name="method_auto_hint">Cihaza en uygun yöntemi kendisi seçer. Android 9 ve üzerinde Shizuku hazırsa onu, değilse iletişim modunu kullanır.</string>
     <string name="method_media_option">Medya yönlendirme</string>
     <string name="method_media_hint">Android 6–8 için. En iyi ses kalitesi.</string>
     <string name="method_media_unsupported">Android 6–8 için. Bu cihazda desteklenmiyor.</string>
@@ -57,7 +71,7 @@
     <string name="battery_btn">Pil kısıtlamasını kaldır (arka planda kapanmasın)</string>
 
     <string name="info_title">Nasıl çalışır?</string>
-    <string name="info_body">Kulaklık girişi bozulduğunda, nem ya da toz kaçtığında telefon kulaklık takılı sanır ve hoparlörü susturur. Bu uygulama kulaklık çıkışını yazılımsal olarak devre dışı bırakır ve tüm sesleri telefonun kendi hoparlörüne yönlendirir. Root gerekmez.\n\n• Android 6–8: medya sesi doğrudan hoparlöre zorlanır.\n• Android 8 ve üzeri: telefon \"iletişim modu\"na alınır ve hoparlör seçilir. Bu modda ses düğmeleri arama sesini değiştirir; medya sesi arama sesiyle sınırlandığı için ses yükseltmek için de ses düğmelerini kullanabilirsiniz.\n• Bildirim panelindeki Hızlı Ayarlar\'a \"Kulaklık Kapat\" kutucuğunu ekleyerek tek dokunuşla açıp kapatabilirsiniz.\n• Uygulama çalışırken bildirimde görünür; \"Durdur\" ile normale döner.</string>
+    <string name="info_body">Kulaklık girişi bozulduğunda, nem ya da toz kaçtığında telefon kulaklık takılı sanır ve hoparlörü susturur. Bu uygulama kulaklık çıkışını yazılımsal olarak devre dışı bırakır ve tüm sesleri telefonun kendi hoparlörüne yönlendirir. Root gerekmez.\n\n• Android 6–8: medya sesi doğrudan hoparlöre zorlanır.\n• Android 9 ve üzeri + Shizuku: medya sesi normal kalitesiyle doğrudan hoparlöre zorlanır. Shizuku uygulamasını kurun, \"Kablosuz hata ayıklama\" ile başlatın ve bu uygulamaya izin verin.\n• Android 8 ve üzeri (Shizuku yoksa): telefon \"iletişim modu\"na alınır ve hoparlör seçilir. Bu modda ses düğmeleri arama sesini değiştirir; medya sesi arama sesiyle sınırlandığı için ses yükseltmek için de ses düğmelerini kullanabilirsiniz.\n• Bildirim panelindeki Hızlı Ayarlar\'a \"Kulaklık Kapat\" kutucuğunu ekleyerek tek dokunuşla açıp kapatabilirsiniz.\n• Uygulama çalışırken bildirimde görünür; \"Durdur\" ile normale döner.</string>
 
     <string name="notif_channel">Hoparlör yönlendirme</string>
     <string name="notif_forcing">Kulaklık devre dışı — ses hoparlörde</string>

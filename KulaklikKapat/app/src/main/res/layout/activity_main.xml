@@ -1,0 +1,305 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:clipToPadding="false"
+    android:fillViewport="true"
+    android:paddingStart="16dp"
+    android:paddingTop="16dp"
+    android:paddingEnd="16dp"
+    android:paddingBottom="24dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <!-- Header -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:paddingStart="4dp"
+            android:paddingEnd="4dp"
+            android:text="@string/app_name"
+            android:textColor="@color/text_primary"
+            android:textSize="28sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:paddingStart="4dp"
+            android:paddingEnd="4dp"
+            android:text="@string/tagline"
+            android:textColor="@color/text_secondary"
+            android:textSize="15sp" />
+
+        <!-- Main toggle -->
+        <LinearLayout
+            style="@style/Card"
+            android:layout_marginTop="20dp"
+            android:gravity="center_horizontal"
+            android:paddingTop="28dp"
+            android:paddingBottom="24dp">
+
+            <LinearLayout
+                android:id="@+id/toggle"
+                android:layout_width="176dp"
+                android:layout_height="176dp"
+                android:background="@drawable/bg_toggle"
+                android:clickable="true"
+                android:contentDescription="@string/toggle_desc"
+                android:focusable="true"
+                android:gravity="center"
+                android:orientation="vertical">
+
+                <ImageView
+                    android:id="@+id/toggle_icon"
+                    android:layout_width="64dp"
+                    android:layout_height="64dp"
+                    android:importantForAccessibility="no"
+                    android:src="@drawable/ic_headset"
+                    android:tint="@color/primary" />
+
+                <TextView
+                    android:id="@+id/toggle_label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:letterSpacing="0.08"
+                    android:text="@string/btn_start"
+                    android:textColor="@color/primary"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/state_text"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp"
+                android:gravity="center"
+                android:text="@string/state_off"
+                android:textColor="@color/text_secondary"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <!-- Status -->
+        <LinearLayout style="@style/Card">
+
+            <TextView
+                style="@style/CardTitle"
+                android:text="@string/status_title" />
+
+            <LinearLayout style="@style/Row">
+
+                <TextView
+                    style="@style/RowLabel"
+                    android:text="@string/status_headphone" />
+
+                <TextView
+                    android:id="@+id/value_headphone"
+                    style="@style/RowValue"
+                    android:text="@string/status_none" />
+            </LinearLayout>
+
+            <LinearLayout style="@style/Row">
+
+                <TextView
+                    style="@style/RowLabel"
+                    android:text="@string/status_output" />
+
+                <TextView
+                    android:id="@+id/value_output"
+                    style="@style/RowValue"
+                    android:text="@string/out_speaker" />
+            </LinearLayout>
+
+            <LinearLayout style="@style/Row">
+
+                <TextView
+                    style="@style/RowLabel"
+                    android:text="@string/status_method" />
+
+                <TextView
+                    android:id="@+id/value_method"
+                    style="@style/RowValue"
+                    android:text="@string/method_none" />
+            </LinearLayout>
+
+            <LinearLayout style="@style/Row">
+
+                <TextView
+                    style="@style/RowLabel"
+                    android:text="@string/status_android" />
+
+                <TextView
+                    android:id="@+id/value_android"
+                    style="@style/RowValue" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Sound test & volume -->
+        <LinearLayout style="@style/Card">
+
+            <TextView
+                style="@style/CardTitle"
+                android:text="@string/test_title" />
+
+            <TextView
+                android:id="@+id/btn_test"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:background="@drawable/bg_button"
+                android:clickable="true"
+                android:focusable="true"
+                android:gravity="center"
+                android:paddingStart="20dp"
+                android:paddingEnd="20dp"
+                android:text="@string/test_sound"
+                android:textColor="@color/on_primary"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+
+            <TextView
+                style="@style/Label"
+                android:text="@string/media_volume" />
+
+            <SeekBar
+                android:id="@+id/seek_media"
+                android:layout_width="match_parent"
+                android:layout_height="40dp" />
+
+            <TextView
+                style="@style/Label"
+                android:layout_marginTop="8dp"
+                android:text="@string/call_volume" />
+
+            <SeekBar
+                android:id="@+id/seek_call"
+                android:layout_width="match_parent"
+                android:layout_height="40dp" />
+        </LinearLayout>
+
+        <!-- Settings -->
+        <LinearLayout style="@style/Card">
+
+            <TextView
+                style="@style/CardTitle"
+                android:text="@string/settings_title" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/method_title"
+                android:textColor="@color/text_secondary"
+                android:textSize="14sp" />
+
+            <RadioGroup
+                android:id="@+id/method_group"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp">
+
+                <RadioButton
+                    android:id="@+id/method_auto"
+                    style="@style/Option"
+                    android:text="@string/method_auto" />
+
+                <TextView
+                    style="@style/OptionHint"
+                    android:text="@string/method_auto_hint" />
+
+                <RadioButton
+                    android:id="@+id/method_media"
+                    style="@style/Option"
+                    android:text="@string/method_media_option" />
+
+                <TextView
+                    android:id="@+id/method_media_hint"
+                    style="@style/OptionHint"
+                    android:text="@string/method_media_hint" />
+
+                <RadioButton
+                    android:id="@+id/method_comm"
+                    style="@style/Option"
+                    android:text="@string/method_comm_option" />
+
+                <TextView
+                    style="@style/OptionHint"
+                    android:text="@string/method_comm_hint" />
+            </RadioGroup>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginTop="8dp"
+                android:layout_marginBottom="4dp"
+                android:background="@color/stroke" />
+
+            <Switch
+                android:id="@+id/opt_always"
+                style="@style/Option"
+                android:text="@string/opt_always" />
+
+            <Switch
+                android:id="@+id/opt_bluetooth"
+                style="@style/Option"
+                android:text="@string/opt_bluetooth" />
+
+            <Switch
+                android:id="@+id/opt_boot"
+                style="@style/Option"
+                android:text="@string/opt_boot" />
+
+            <TextView
+                android:id="@+id/btn_battery"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:background="@drawable/bg_outline_button"
+                android:clickable="true"
+                android:focusable="true"
+                android:gravity="center"
+                android:minHeight="48dp"
+                android:paddingStart="16dp"
+                android:paddingTop="10dp"
+                android:paddingEnd="16dp"
+                android:paddingBottom="10dp"
+                android:text="@string/battery_btn"
+                android:textColor="@color/primary"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:visibility="gone" />
+        </LinearLayout>
+
+        <!-- Info -->
+        <LinearLayout style="@style/Card">
+
+            <TextView
+                style="@style/CardTitle"
+                android:text="@string/info_title" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:lineSpacingMultiplier="1.2"
+                android:text="@string/info_body"
+                android:textColor="@color/text_secondary"
+                android:textSize="14sp" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/version"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:gravity="center"
+            android:textColor="@color/text_secondary"
+            android:textSize="12sp" />
+    </LinearLayout>
+</ScrollView>

@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Kulaklık Kapat</string>
+    <string name="tagline">Telefon kulaklık takılı sansa bile ses kendi hoparlöründen çıksın.</string>
+
+    <string name="btn_start">BAŞLAT</string>
+    <string name="btn_stop">DURDUR</string>
+    <string name="toggle_desc">Kulaklığı devre dışı bırak</string>
+
+    <string name="state_off">Kapalı — dokunarak kulaklığı devre dışı bırakın</string>
+    <string name="state_forcing">Etkin — ses telefon hoparlöründen çıkıyor</string>
+    <string name="state_waiting">Etkin — kulaklık algılanınca devreye girecek</string>
+    <string name="state_failed">Yönlendirme uygulanamadı. Ayarlardan diğer yöntemi deneyin.</string>
+    <string name="state_off_short">Kapalı</string>
+    <string name="state_forcing_short">Hoparlörde</string>
+    <string name="state_waiting_short">Bekliyor</string>
+
+    <string name="status_title">Durum</string>
+    <string name="status_headphone">Algılanan kulaklık</string>
+    <string name="status_output">Medya sesi çıkışı</string>
+    <string name="status_method">Kullanılan yöntem</string>
+    <string name="status_android">Android sürümü</string>
+    <string name="status_none">Yok</string>
+    <string name="status_android_value">Android %1$s (API %2$d)</string>
+
+    <string name="method_none">—</string>
+    <string name="method_media">Medya yönlendirme</string>
+    <string name="method_comm">İletişim modu</string>
+
+    <string name="out_speaker">Telefon hoparlörü</string>
+    <string name="out_earpiece">Ahize</string>
+    <string name="out_other">Diğer cihaz</string>
+    <string name="dev_wired_headset">Kablolu kulaklık (mikrofonlu)</string>
+    <string name="dev_wired_headphones">Kablolu kulaklık</string>
+    <string name="dev_line">Hat çıkışı (AUX)</string>
+    <string name="dev_usb">USB kulaklık</string>
+    <string name="dev_bt">Bluetooth kulaklık</string>
+    <string name="dev_ble">Bluetooth LE kulaklık</string>
+
+    <string name="test_title">Ses testi</string>
+    <string name="test_sound">Test sesi çal</string>
+    <string name="media_volume">Medya ses seviyesi</string>
+    <string name="call_volume">Arama ses seviyesi (iletişim modunda medya sesini sınırlar)</string>
+
+    <string name="settings_title">Ayarlar</string>
+    <string name="method_title">Yönlendirme yöntemi</string>
+    <string name="method_auto">Otomatik (önerilen)</string>
+    <string name="method_auto_hint">Cihaza en uygun yöntemi kendisi seçer.</string>
+    <string name="method_media_option">Medya yönlendirme</string>
+    <string name="method_media_hint">Android 6–8 için. En iyi ses kalitesi.</string>
+    <string name="method_media_unsupported">Android 6–8 için. Bu cihazda desteklenmiyor.</string>
+    <string name="method_comm_option">İletişim modu</string>
+    <string name="method_comm_hint">Android 8 ve üzeri tüm telefonlarda çalışır. Ses düğmeleri arama sesini ayarlar.</string>
+    <string name="opt_always">Kulaklık algılanmasa da hoparlöre zorla</string>
+    <string name="opt_bluetooth">Bluetooth kulaklıkları da devre dışı bırak</string>
+    <string name="opt_boot">Telefon açılınca otomatik başlat</string>
+    <string name="battery_btn">Pil kısıtlamasını kaldır (arka planda kapanmasın)</string>
+
+    <string name="info_title">Nasıl çalışır?</string>
+    <string name="info_body">Kulaklık girişi bozulduğunda, nem ya da toz kaçtığında telefon kulaklık takılı sanır ve hoparlörü susturur. Bu uygulama kulaklık çıkışını yazılımsal olarak devre dışı bırakır ve tüm sesleri telefonun kendi hoparlörüne yönlendirir. Root gerekmez.\n\n• Android 6–8: medya sesi doğrudan hoparlöre zorlanır.\n• Android 8 ve üzeri: telefon \"iletişim modu\"na alınır ve hoparlör seçilir. Bu modda ses düğmeleri arama sesini değiştirir; medya sesi arama sesiyle sınırlandığı için ses yükseltmek için de ses düğmelerini kullanabilirsiniz.\n• Bildirim panelindeki Hızlı Ayarlar\'a \"Kulaklık Kapat\" kutucuğunu ekleyerek tek dokunuşla açıp kapatabilirsiniz.\n• Uygulama çalışırken bildirimde görünür; \"Durdur\" ile normale döner.</string>
+
+    <string name="notif_channel">Hoparlör yönlendirme</string>
+    <string name="notif_forcing">Kulaklık devre dışı — ses hoparlörde</string>
+    <string name="notif_failed">Hoparlöre yönlendirilemedi</string>
+    <string name="notif_waiting">Hazır — kulaklık bekleniyor</string>
+    <string name="notif_waiting_text">Kulaklık algılandığında ses otomatik olarak hoparlöre aktarılır.</string>
+    <string name="notif_method">Yöntem: %1$s</string>
+    <string name="notif_stop">Durdur</string>
+
+    <string name="tile_label">Kulaklık Kapat</string>
+    <string name="start_failed">Hizmet başlatılamadı. Lütfen tekrar deneyin.</string>
+    <string name="version_label">Sürüm %1$s</string>
+</resources>

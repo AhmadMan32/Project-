@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Su Giderici</string>
+    <string name="title">Hoparlör Su Giderici</string>
+    <string name="tagline">Ses dalgalarıyla hoparlöre kaçan suyu dışarı atın.</string>
+
+    <string name="btn_start">BAŞLAT</string>
+    <string name="btn_stop">DURDUR</string>
+    <string name="toggle_desc">Su gidermeyi başlat veya durdur</string>
+
+    <string name="freq_value">%1$d Hz</string>
+    <string name="phase_steady">Sabit ton</string>
+    <string name="phase_pulse">Darbeli ton</string>
+    <string name="phase_sweep">Frekans taraması</string>
+    <string name="phase_manual">Manuel ton</string>
+    <string name="phase_with_time">%1$s · %2$s kaldı</string>
+    <string name="phase_manual_running">Manuel ton · %1$s</string>
+    <string name="ready_auto">Hazır · %1$s sürecek</string>
+    <string name="done_auto">Tamamlandı ✓ Su kaldıysa tekrarlayın (%1$s)</string>
+    <string name="ready_manual">Hazır · manuel mod</string>
+    <string name="hold_hint">Telefonu hoparlör aşağı bakacak şekilde tutun ve kılıfı çıkarın.</string>
+
+    <string name="output_value">Çıkış: %1$s</string>
+    <string name="output_forced">Çıkış: %1$s (hoparlöre zorlandı)</string>
+    <string name="out_speaker">Alt hoparlör</string>
+    <string name="out_earpiece">Üst hoparlör (ahize)</string>
+    <string name="out_wired">Kablolu kulaklık</string>
+    <string name="out_usb">USB kulaklık</string>
+    <string name="out_bt">Bluetooth kulaklık</string>
+    <string name="out_other">Diğer cihaz</string>
+    <string name="warn_headphone_forced">Kulaklık algılandı. Ses yine de telefon hoparlörüne zorlanacak.</string>
+    <string name="warn_headphone_not_forced">Kulaklık algılandı. Ses kulaklığa gidebilir: aşağıdan \"Hoparlörü zorla\" seçeneğini açın.</string>
+
+    <string name="mode_title">Temizleme modu</string>
+    <string name="mode_auto">Otomatik</string>
+    <string name="mode_manual">Manuel</string>
+    <string name="duration_title">Süre</string>
+    <string name="dur_30">30 sn</string>
+    <string name="dur_60">60 sn</string>
+    <string name="dur_90">90 sn</string>
+    <string name="auto_hint">Program: 165 Hz sabit ton → darbeli ton (damlaları sarsar) → 120–350 Hz frekans taraması.</string>
+    <string name="manual_freq_label">Frekans: %1$d Hz</string>
+    <string name="wave_title">Dalga şekli</string>
+    <string name="wave_sine">Sinüs</string>
+    <string name="wave_square">Kare (daha güçlü)</string>
+    <string name="manual_hint">Ton siz durdurana kadar (en fazla 3 dakika) çalar. Çalarken frekansı değiştirebilirsiniz.</string>
+
+    <string name="target_title">Hangi hoparlör?</string>
+    <string name="target_speaker">Alt hoparlör</string>
+    <string name="target_earpiece">Üst (ahize)</string>
+    <string name="target_hint">Ahize, görüşmede kulağınıza dayadığınız üst hoparlördür.</string>
+    <string name="target_no_earpiece">Bu cihazda ahize bulunamadı.</string>
+
+    <string name="options_title">Seçenekler</string>
+    <string name="opt_max">Sesi otomatik en yükseğe çıkar (bitince eski haline döner)</string>
+    <string name="opt_vibrate">Titreşimle destekle</string>
+    <string name="opt_force">Kulaklık takılı görünse bile hoparlörü zorla</string>
+
+    <string name="info_title">İpuçları</string>
+    <string name="info_body">• Telefonu hoparlör aşağı bakacak şekilde tutun; su yerçekimiyle de akar.\n• Kılıfı çıkarın, ses sonuna kadar açık olsun.\n• Ses boğuk gelmeye devam ederse 2–3 kez tekrarlayın.\n• Islanan telefon kulaklık takılı sanıyorsa \"Hoparlörü zorla\" açık kalsın: ses yine de hoparlörden çıkar.\n• Bu uygulama yalnızca hoparlör ızgarasındaki suyu atar. Şarj girişini kurutmaz: tamamen kurumadan şarja takmayın.\n• Ses çok yüksek olabilir. Çalarken telefonu kulağınıza yaklaştırmayın.</string>
+
+    <string name="notif_channel">Su giderme</string>
+    <string name="notif_title">Hoparlördeki su gideriliyor</string>
+    <string name="notif_text">%1$d Hz · %2$s kaldı</string>
+    <string name="notif_stop">Durdur</string>
+    <string name="start_failed">Başlatılamadı. Lütfen tekrar deneyin.</string>
+    <string name="version_label">Sürüm %1$s</string>
+</resources>

@@ -1,0 +1,331 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:clipToPadding="false"
+    android:fillViewport="true"
+    android:paddingStart="16dp"
+    android:paddingTop="16dp"
+    android:paddingEnd="16dp"
+    android:paddingBottom="24dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <!-- Header -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:paddingStart="4dp"
+            android:paddingEnd="4dp"
+            android:text="@string/title"
+            android:textColor="@color/text_primary"
+            android:textSize="28sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:paddingStart="4dp"
+            android:paddingEnd="4dp"
+            android:text="@string/tagline"
+            android:textColor="@color/text_secondary"
+            android:textSize="15sp" />
+
+        <!-- Wave + start button -->
+        <LinearLayout
+            style="@style/Card"
+            android:layout_marginTop="20dp"
+            android:gravity="center_horizontal"
+            android:paddingTop="20dp">
+
+            <FrameLayout
+                android:layout_width="260dp"
+                android:layout_height="260dp">
+
+                <com.ahmadman.watereject.WaveView
+                    android:id="@+id/wave"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent" />
+
+                <LinearLayout
+                    android:id="@+id/toggle"
+                    android:layout_width="@dimen/toggle_size"
+                    android:layout_height="@dimen/toggle_size"
+                    android:layout_gravity="center"
+                    android:background="@drawable/bg_toggle"
+                    android:clickable="true"
+                    android:contentDescription="@string/toggle_desc"
+                    android:focusable="true"
+                    android:gravity="center"
+                    android:orientation="vertical">
+
+                    <ImageView
+                        android:id="@+id/toggle_icon"
+                        android:layout_width="52dp"
+                        android:layout_height="52dp"
+                        android:importantForAccessibility="no"
+                        android:src="@drawable/ic_drop"
+                        android:tint="@color/primary" />
+
+                    <TextView
+                        android:id="@+id/toggle_label"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:letterSpacing="0.08"
+                        android:text="@string/btn_start"
+                        android:textColor="@color/primary"
+                        android:textSize="17sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+            </FrameLayout>
+
+            <TextView
+                android:id="@+id/freq_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:fontFeatureSettings="tnum"
+                android:textColor="@color/text_primary"
+                android:textSize="34sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/phase_text"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:fontFeatureSettings="tnum"
+                android:gravity="center"
+                android:textColor="@color/text_secondary"
+                android:textSize="15sp" />
+
+            <TextView
+                android:id="@+id/output_text"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:gravity="center"
+                android:textColor="@color/primary"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/warn_text"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:gravity="center"
+                android:textColor="@color/warning"
+                android:textSize="13sp"
+                android:visibility="gone" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:gravity="center"
+                android:text="@string/hold_hint"
+                android:textColor="@color/text_secondary"
+                android:textSize="13sp" />
+        </LinearLayout>
+
+        <!-- Mode -->
+        <LinearLayout style="@style/Card">
+
+            <TextView
+                style="@style/CardTitle"
+                android:text="@string/mode_title" />
+
+            <LinearLayout style="@style/SegmentGroup">
+
+                <TextView
+                    android:id="@+id/seg_auto"
+                    style="@style/Segment"
+                    android:text="@string/mode_auto" />
+
+                <TextView
+                    android:id="@+id/seg_manual"
+                    style="@style/Segment"
+                    android:text="@string/mode_manual" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/auto_panel"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <TextView
+                    style="@style/Label"
+                    android:layout_marginBottom="8dp"
+                    android:text="@string/duration_title" />
+
+                <LinearLayout style="@style/SegmentGroup">
+
+                    <TextView
+                        android:id="@+id/dur_30"
+                        style="@style/Segment"
+                        android:text="@string/dur_30" />
+
+                    <TextView
+                        android:id="@+id/dur_60"
+                        style="@style/Segment"
+                        android:text="@string/dur_60" />
+
+                    <TextView
+                        android:id="@+id/dur_90"
+                        style="@style/Segment"
+                        android:text="@string/dur_90" />
+                </LinearLayout>
+
+                <TextView
+                    style="@style/Hint"
+                    android:text="@string/auto_hint" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/manual_panel"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <TextView
+                    android:id="@+id/manual_freq_label"
+                    style="@style/Label"
+                    android:textColor="@color/text_primary"
+                    android:textStyle="bold" />
+
+                <SeekBar
+                    android:id="@+id/manual_freq"
+                    android:layout_width="match_parent"
+                    android:layout_height="40dp" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:id="@+id/preset_1"
+                        style="@style/Chip" />
+
+                    <TextView
+                        android:id="@+id/preset_2"
+                        style="@style/Chip" />
+
+                    <TextView
+                        android:id="@+id/preset_3"
+                        style="@style/Chip" />
+
+                    <TextView
+                        android:id="@+id/preset_4"
+                        style="@style/Chip"
+                        android:layout_marginEnd="0dp" />
+                </LinearLayout>
+
+                <TextView
+                    style="@style/Label"
+                    android:layout_marginBottom="8dp"
+                    android:text="@string/wave_title" />
+
+                <LinearLayout style="@style/SegmentGroup">
+
+                    <TextView
+                        android:id="@+id/wave_sine"
+                        style="@style/Segment"
+                        android:text="@string/wave_sine" />
+
+                    <TextView
+                        android:id="@+id/wave_square"
+                        style="@style/Segment"
+                        android:text="@string/wave_square" />
+                </LinearLayout>
+
+                <TextView
+                    style="@style/Hint"
+                    android:text="@string/manual_hint" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Target -->
+        <LinearLayout style="@style/Card">
+
+            <TextView
+                style="@style/CardTitle"
+                android:text="@string/target_title" />
+
+            <LinearLayout style="@style/SegmentGroup">
+
+                <TextView
+                    android:id="@+id/target_speaker"
+                    style="@style/Segment"
+                    android:text="@string/target_speaker" />
+
+                <TextView
+                    android:id="@+id/target_earpiece"
+                    style="@style/Segment"
+                    android:text="@string/target_earpiece" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/target_hint"
+                style="@style/Hint"
+                android:text="@string/target_hint" />
+        </LinearLayout>
+
+        <!-- Options -->
+        <LinearLayout style="@style/Card">
+
+            <TextView
+                style="@style/CardTitle"
+                android:text="@string/options_title" />
+
+            <Switch
+                android:id="@+id/opt_max"
+                style="@style/Option"
+                android:text="@string/opt_max" />
+
+            <Switch
+                android:id="@+id/opt_vibrate"
+                style="@style/Option"
+                android:text="@string/opt_vibrate" />
+
+            <Switch
+                android:id="@+id/opt_force"
+                style="@style/Option"
+                android:text="@string/opt_force" />
+        </LinearLayout>
+
+        <!-- Tips -->
+        <LinearLayout style="@style/Card">
+
+            <TextView
+                style="@style/CardTitle"
+                android:text="@string/info_title" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:lineSpacingMultiplier="1.2"
+                android:text="@string/info_body"
+                android:textColor="@color/text_secondary"
+                android:textSize="14sp" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/version"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:gravity="center"
+            android:textColor="@color/text_secondary"
+            android:textSize="12sp" />
+    </LinearLayout>
+</ScrollView>

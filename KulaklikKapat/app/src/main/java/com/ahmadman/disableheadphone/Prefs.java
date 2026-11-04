@@ -12,6 +12,7 @@ final class Prefs {
     private static final String KEY_ALWAYS = "always_force";
     private static final String KEY_BLUETOOTH = "include_bluetooth";
     private static final String KEY_BOOT = "start_on_boot";
+    private static final String KEY_VOLUME_KEYS_OFF = "volume_keys_off";
 
     private Prefs() {
     }
@@ -59,6 +60,15 @@ final class Prefs {
 
     static void setIncludeBluetooth(Context c, boolean v) {
         sp(c).edit().putBoolean(KEY_BLUETOOTH, v).apply();
+    }
+
+    /** The user switched the volume key helper off (so it is not switched on automatically). */
+    static boolean volumeKeysOff(Context c) {
+        return sp(c).getBoolean(KEY_VOLUME_KEYS_OFF, false);
+    }
+
+    static void setVolumeKeysOff(Context c, boolean v) {
+        sp(c).edit().putBoolean(KEY_VOLUME_KEYS_OFF, v).apply();
     }
 
     static boolean startOnBoot(Context c) {

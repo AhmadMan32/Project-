@@ -71,7 +71,7 @@
     <string name="test_title">Ses testi</string>
     <string name="test_sound">Test sesi çal</string>
     <string name="media_volume">Medya ses seviyesi</string>
-    <string name="call_volume">Arama ses seviyesi (iletişim modunda medya sesini sınırlar)</string>
+    <string name="call_volume">Arama ses seviyesi (iletişim modunda medya sesini sınırlar; gerekirse uygulama kendisi yükseltir)</string>
 
     <string name="settings_title">Ayarlar</string>
     <string name="method_title">Yönlendirme yöntemi</string>
@@ -81,7 +81,13 @@
     <string name="method_media_hint">Android 6–8 için. En iyi ses kalitesi.</string>
     <string name="method_media_unsupported">Android 6–8 için. Bu cihazda desteklenmiyor.</string>
     <string name="method_comm_option">İletişim modu</string>
-    <string name="method_comm_hint">Android 8 ve üzeri tüm telefonlarda çalışır. Ses düğmeleri arama sesini ayarlar.</string>
+    <string name="method_comm_hint">Android 8 ve üzeri tüm telefonlarda çalışır. Ses arama sesi gibi çıkabilir. Ses tuşlarının medya sesini değiştirmesi için aşağıdaki \"Ses tuşları medya sesini ayarlasın\" seçeneğini açın.</string>
+    <string name="opt_volume_keys">Ses tuşları medya sesini ayarlasın</string>
+    <string name="opt_volume_keys_hint">İletişim modunda arama yokken ses tuşları medya sesini değiştirir. Telefon ya da WhatsApp gibi bir arama sırasında arama sesini değiştirir. Kablosuz hata ayıklama yönteminde buna gerek yoktur, tuşlar zaten normal çalışır.</string>
+    <string name="volume_service_label">Kulaklık Kapat: ses tuşları</string>
+    <string name="volume_service_desc">Kulaklık Kapat iletişim modundayken ve arama yokken ses tuşlarının arama sesi yerine medya sesini değiştirmesini sağlar. Yalnızca ses tuşlarına basıldığını görür, ekrandaki hiçbir içeriği okumaz.</string>
+    <string name="volume_keys_enabled">Ses tuşları artık medya sesini ayarlıyor.</string>
+    <string name="volume_keys_open_settings">Erişilebilirlik ayarlarında \"Kulaklık Kapat: ses tuşları\"nı açın. Xiaomi\'de: Ek ayarlar → Erişilebilirlik → İndirilen uygulamalar. \"Kısıtlanmış ayar\" uyarısı çıkarsa: Uygulama bilgisi → ⋮ → Kısıtlanmış ayarlara izin ver. Eşleştirme yapıldıysa uygulama bunu kendisi açabilir.</string>
     <string name="opt_always">Kulaklık algılanmasa da hoparlöre zorla</string>
     <string name="opt_bluetooth">Bluetooth kulaklıkları da devre dışı bırak</string>
     <string name="opt_boot">Telefon açılınca otomatik başlat</string>

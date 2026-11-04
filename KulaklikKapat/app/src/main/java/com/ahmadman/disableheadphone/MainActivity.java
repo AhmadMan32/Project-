@@ -50,6 +50,7 @@ public class MainActivity extends Activity implements SpeakerService.Listener {
     private SeekBar seekMedia;
     private SeekBar seekCall;
     private TextView batteryButton;
+    private Switch volumeKeysSwitch;
     private TextView adbStatus;
     private TextView adbButton;
     private TextView adbPairButton;
@@ -131,6 +132,7 @@ public class MainActivity extends Activity implements SpeakerService.Listener {
         super.onResume();
         refreshVolumes();
         refreshBatteryButton();
+        refreshVolumeKeysSwitch();
         refreshUi();
     }
 
@@ -383,6 +385,32 @@ public class MainActivity extends Activity implements SpeakerService.Listener {
             SpeakerService.refresh(this);
         });
         bindSwitch(R.id.opt_boot, Prefs.startOnBoot(this), (b, v) -> Prefs.setStartOnBoot(this, v));
+        volumeKeysSwitch = findViewById(R.id.opt_volume_keys);
+        volumeKeysSwitch.setOnCheckedChangeListener((b, v) -> onVolumeKeysChanged(v));
+    }
+
+    private void refreshVolumeKeysSwitch() {
+        volumeKeysSwitch.setOnCheckedChangeListener(null);
+        volumeKeysSwitch.setChecked(VolumeKeyService.isEnabled(this));
+        volumeKeysSwitch.setOnCheckedChangeListener((b, v) -> onVolumeKeysChanged(v));
+    }
+
+    private void onVolumeKeysChanged(boolean on) {
+        Prefs.setVolumeKeysOff(this, !on);
+        if (VolumeKeyService.setEnabled(this, on)) {
+            if (on) {
+                Toast.makeText(this, R.string.volume_keys_enabled, Toast.LENGTH_SHORT).show();
+            }
+            return;
+        }
+        // No WRITE_SECURE_SETTINGS yet: the user switches it in system settings.
+        Toast.makeText(this, R.string.volume_keys_open_settings, Toast.LENGTH_LONG).show();
+        try {
+            startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS));
+        } catch (RuntimeException ignored) {
+            // no settings screen
+        }
+        refreshVolumeKeysSwitch();
     }
 
     private void bindSwitch(int id, boolean checked, CompoundButton.OnCheckedChangeListener l) {

@@ -8,8 +8,8 @@ Kulaklık girişi bozulunca ya da içine nem veya toz kaçınca telefon kulaklı
 
 ## Kurulum (APK)
 
-1. [`apk/KulaklikKapat-1.2.apk`](apk/KulaklikKapat-1.2.apk) dosyasını telefona indirin.
-   - **1.0 sürümü yüklüyse önce onu kaldırın.** Yeni sürüm farklı bir anahtarla imzalandığı için 1.0'ın üzerine kurulamaz. 1.1'in üzerine doğrudan kurulur.
+1. [`apk/KulaklikKapat-1.3.apk`](apk/KulaklikKapat-1.3.apk) dosyasını telefona indirin.
+   - **1.0 sürümü yüklüyse önce onu kaldırın.** Yeni sürüm farklı bir anahtarla imzalandığı için 1.0'ın üzerine kurulamaz. 1.1 ve sonrasının üzerine doğrudan kurulur.
 2. Dosyayı açın. Android "bilinmeyen kaynaklardan yükleme" izni isterse verin.
 3. **Yükle**'ye dokunun.
 
@@ -42,11 +42,19 @@ Notlar:
 - Bağlantı yokken (Wi-Fi kapalı vb.) uygulama, ses kesilmesin diye geçici olarak iletişim moduna geçer. Bağlantı gelince kendiliğinden geri döner.
 - Bazı üretici yazılımları bu çağrıyı ADB yetkisiyle de reddedebilir. O durumda durum satırında hata kodu yazar ve iletişim modu kullanılmaya devam eder.
 
+### Ses tuşları
+
+- **Kablosuz hata ayıklama yönteminde** telefon normal modda kalır. Ses tuşları Android'in kendi davranışıyla çalışır: arama yokken medya sesini, arama sırasında arama sesini değiştirir.
+- **İletişim modunda** Android telefonu görüşmede sandığı için tuşlar arama sesini değiştirir. **Ses tuşları medya sesini ayarlasın** seçeneği küçük bir erişilebilirlik servisi açar (`VolumeKeyService`). Servis yalnızca ses tuşu basışlarını görür. Uygulama iletişim modundayken ve gerçek bir arama yokken tuşu medya sesine yönlendirir. Gerçek arama şöyle anlaşılır: telefon araması (çalıyor ya da görüşmede) ya da başka bir uygulamanın görüşme mikrofonunu kullanması (WhatsApp, Telegram vb.). Arama sırasında tuşa dokunmaz, tuş arama sesini değiştirir.
+- Android iletişim modunda medya sesini arama sesiyle sınırlar. Bu yüzden uygulama gerekirse arama sesini medya sesine kadar yükseltir ve mod kapanınca eski değerine döndürür.
+- Eşleştirme yapıldıysa uygulama erişilebilirlik servisini kendisi açar. Yapılmadıysa Erişilebilirlik ayarlarından açılır. *Kısıtlanmış ayar* uyarısı çıkarsa: *Uygulama bilgisi → ⋮ → Kısıtlanmış ayarlara izin ver*.
+
 ### Ayarlar
 
 | Ayar | Açıklama |
 |---|---|
 | Yönlendirme yöntemi | *Otomatik* cihaza uygun yöntemi seçer. Ses çıkmazsa diğer yöntemi deneyin. |
+| Ses tuşları medya sesini ayarlasın | İletişim modunda, arama yokken ses tuşları medya sesini değiştirir. Arama sırasında arama sesini değiştirir. |
 | Kulaklık algılanmasa da hoparlöre zorla | Kulaklık listede görünmese bile hoparlörü zorlar. |
 | Bluetooth kulaklıkları da devre dışı bırak | Bluetooth kulaklıkları da kulaklık sayar. |
 | Telefon açılınca otomatik başlat | Telefon yeniden başlayınca uygulama kendiliğinden açılır. |
@@ -66,7 +74,7 @@ Arka plandaki servis kulaklık takma/çıkarma ve ses modu değişikliklerini di
 
 ### Bilinen sınırlamalar
 
-- **İletişim modunda ses düğmeleri arama sesini değiştirir.** Android, görüşme sırasında medya sesini arama sesiyle sınırlar. Ses kısık gelirse ses düğmeleriyle veya uygulamadaki *Arama ses seviyesi* kaydırıcısıyla sesi açın.
+- **İletişim modunda ses düğmeleri arama sesini değiştirir** (*Ses tuşları medya sesini ayarlasın* açık değilse). Android, görüşme sırasında medya sesini arama sesiyle sınırlar. Uygulama bu sınırı gerekirse kendisi yükseltir.
 - İletişim modunda medya sesi görüşme yolundan geçtiği için bazı telefonlarda mono veya biraz daha düşük kalitede olabilir.
 - Gerçek bir telefon görüşmesi sırasında uygulama ses modunu değiştirmez. Görüşme sesi için arama ekranındaki hoparlör düğmesini kullanın.
 - APK bu derleme ortamının hata ayıklama (debug) anahtarıyla imzalıdır. Başka bir ortamda derlenmiş yeni bir sürüm, eskisinin üzerine kurulmayabilir. Bu durumda önce eski sürümü kaldırın.

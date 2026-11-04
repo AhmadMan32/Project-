@@ -71,7 +71,7 @@
     <string name="test_title">Sound test</string>
     <string name="test_sound">Play test sound</string>
     <string name="media_volume">Media volume</string>
-    <string name="call_volume">Call volume (limits media volume in communication mode)</string>
+    <string name="call_volume">Call volume (limits media volume in communication mode; the app raises it if needed)</string>
 
     <string name="settings_title">Settings</string>
     <string name="method_title">Routing method</string>
@@ -81,7 +81,13 @@
     <string name="method_media_hint">For Android 6–8. Best sound quality.</string>
     <string name="method_media_unsupported">For Android 6–8. Not supported on this device.</string>
     <string name="method_comm_option">Communication mode</string>
-    <string name="method_comm_hint">Works on all phones with Android 8 or newer. Volume keys control call volume.</string>
+    <string name="method_comm_hint">Works on all phones with Android 8 or newer. Sound may be call-like. Turn on \"Volume keys change media volume\" below so the keys change media volume.</string>
+    <string name="opt_volume_keys">Volume keys change media volume</string>
+    <string name="opt_volume_keys_hint">In communication mode, with no call going on, the volume keys change media volume. During a phone or WhatsApp-style call they change call volume. Not needed with the wireless debugging method, where the keys already work normally.</string>
+    <string name="volume_service_label">Kulaklık Kapat: volume keys</string>
+    <string name="volume_service_desc">Lets the volume keys change media volume instead of call volume while Kulaklık Kapat uses communication mode and no call is going on. It only sees volume key presses and reads nothing on the screen.</string>
+    <string name="volume_keys_enabled">Volume keys now change media volume.</string>
+    <string name="volume_keys_open_settings">Turn on \"Kulaklık Kapat: volume keys\" in Accessibility settings. If you see \"Restricted setting\": App info → ⋮ → Allow restricted settings. Once paired with wireless debugging the app can switch it on by itself.</string>
     <string name="opt_always">Force speaker even when no headphone is detected</string>
     <string name="opt_bluetooth">Also disable Bluetooth headphones</string>
     <string name="opt_boot">Start automatically when the phone boots</string>

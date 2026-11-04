@@ -338,9 +338,16 @@ final class AdbForce {
 
     private static void grantSecureSettings(AdbManager m) {
         if (sApp.checkSelfPermission(android.Manifest.permission.WRITE_SECURE_SETTINGS)
-                == PackageManager.PERMISSION_GRANTED) {
-            return;
+                != PackageManager.PERMISSION_GRANTED) {
+            runGrant(m);
         }
+        // Volume keys -> media volume while communication mode is used, unless switched off.
+        if (!Prefs.volumeKeysOff(sApp) && !VolumeKeyService.isEnabled(sApp)) {
+            VolumeKeyService.setEnabled(sApp, true);
+        }
+    }
+
+    private static void runGrant(AdbManager m) {
         try (AdbStream s = m.openStream("exec:pm grant " + sApp.getPackageName()
                 + " android.permission.WRITE_SECURE_SETTINGS 2>&1")) {
             BufferedReader in = new BufferedReader(

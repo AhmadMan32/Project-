@@ -55,6 +55,8 @@ final class AudioRouter {
     private static Method sSetForceUse;
     private static boolean sReflectionTried;
     private static boolean sAutoMediaFailed;
+    /** Call volume before we raised it in communication mode, or -1. */
+    private static int sCallVolumeBefore = -1;
 
     private final AudioManager am;
     private int active = METHOD_NONE;
@@ -210,6 +212,10 @@ final class AudioRouter {
             }
         }
 
+        if (!phoneCall) {
+            liftCallCapForMedia(am);
+        }
+
         boolean routed = routeCommunicationToSpeaker();
         int newMode = am.getMode();
         return routed && (newMode == AudioManager.MODE_IN_COMMUNICATION || isTelephonyMode(newMode));
@@ -238,8 +244,47 @@ final class AudioRouter {
         }
     }
 
+    /**
+     * In communication mode Android caps media volume at the call volume. Raises the call volume
+     * (only up, never down) so it does not limit the current media volume. The original value is
+     * restored when communication mode is released.
+     */
+    static void liftCallCapForMedia(AudioManager am) {
+        try {
+            int musicMax = am.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
+            int callMax = am.getStreamMaxVolume(AudioManager.STREAM_VOICE_CALL);
+            if (musicMax <= 0 || callMax <= 0) {
+                return;
+            }
+            int music = am.getStreamVolume(AudioManager.STREAM_MUSIC);
+            int call = am.getStreamVolume(AudioManager.STREAM_VOICE_CALL);
+            int needed = (int) Math.ceil(music * (double) callMax / musicMax);
+            if (needed > call) {
+                if (sCallVolumeBefore < 0) {
+                    sCallVolumeBefore = call;
+                }
+                am.setStreamVolume(AudioManager.STREAM_VOICE_CALL, needed, 0);
+            }
+        } catch (RuntimeException ignored) {
+            // e.g. Do Not Disturb restrictions
+        }
+    }
+
+    private void restoreCallVolume() {
+        if (sCallVolumeBefore < 0 || isTelephonyMode(am.getMode())) {
+            return; // nothing saved, or a real call is on: leave its volume alone
+        }
+        try {
+            am.setStreamVolume(AudioManager.STREAM_VOICE_CALL, sCallVolumeBefore, 0);
+        } catch (RuntimeException ignored) {
+            // keep the current value
+        }
+        sCallVolumeBefore = -1;
+    }
+
     private void releaseCommunication() {
         stopKeepAlive();
+        restoreCallVolume();
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 am.clearCommunicationDevice();

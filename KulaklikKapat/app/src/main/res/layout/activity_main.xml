@@ -297,6 +297,17 @@
                 android:background="@color/stroke" />
 
             <Switch
+                android:id="@+id/opt_volume_keys"
+                style="@style/Option"
+                android:text="@string/opt_volume_keys" />
+
+            <TextView
+                style="@style/OptionHint"
+                android:layout_marginTop="-4dp"
+                android:paddingStart="0dp"
+                android:text="@string/opt_volume_keys_hint" />
+
+            <Switch
                 android:id="@+id/opt_always"
                 style="@style/Option"
                 android:text="@string/opt_always" />

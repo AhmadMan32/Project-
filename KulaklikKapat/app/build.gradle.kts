@@ -10,8 +10,8 @@ android {
         applicationId = "com.ahmadman.disableheadphone"
         minSdk = 23
         targetSdk = 35
-        versionCode = 3
-        versionName = "1.2"
+        versionCode = 4
+        versionName = "1.3"
 
         // Conscrypt ships native code; phones only need the ARM builds.
         ndk {

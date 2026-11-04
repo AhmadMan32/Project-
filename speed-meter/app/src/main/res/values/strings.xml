@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Hız Göstergesi</string>
+    <string name="tagline">İnternet indirme ve yükleme hızını her ekranın üzerinde, anlık olarak gösterir.</string>
+    <string name="tile_label">Hız göstergesi</string>
+
+    <string name="state_on">Gösterge açık</string>
+    <string name="state_on_text">İnternet hızı şu an diğer uygulamaların üzerinde gösteriliyor.</string>
+    <string name="state_on_no_overlay">Hız bildirimde gösteriliyor. Ekranda görünmesi için \"Diğer uygulamaların üzerinde göster\" iznini verin.</string>
+    <string name="state_off">Gösterge kapalı</string>
+    <string name="state_off_text">Başlat\'a dokunun; hız ekranın üst köşesinde görünsün.</string>
+    <string name="start">Başlat</string>
+    <string name="stop">Durdur</string>
+    <string name="download_label">↓ İNDİRME</string>
+    <string name="upload_label">↑ YÜKLEME</string>
+    <string name="not_supported">desteklenmiyor</string>
+    <string name="session">Bu oturum: ↓ %1$s · ↑ %2$s · en yüksek ↓ %3$s</string>
+    <string name="start_failed">Gösterge başlatılamadı. Lütfen tekrar deneyin.</string>
+
+    <string name="perm_title">İzin durumu</string>
+    <string name="perm_required">Gerekli</string>
+    <string name="perm_optional">İsteğe bağlı (kesintisiz çalışma için önerilir)</string>
+    <string name="perm_overlay">Diğer uygulamaların üzerinde göster</string>
+    <string name="perm_overlay_desc">Göstergenin ana ekranda ve uygulamalarda görünmesi için</string>
+    <string name="perm_notifications">Bildirimler</string>
+    <string name="perm_notifications_desc">Durum çubuğundaki hız simgesi ve Durdur düğmesi için</string>
+    <string name="perm_battery">Pil optimizasyonu kapalı</string>
+    <string name="perm_battery_desc">Telefon göstergeyi arka planda kapatmasın</string>
+    <string name="perm_hibernation">\"Kullanılmıyorsa uygulamayı duraklat\" kapalı</string>
+    <string name="perm_hibernation_desc">Uzun süre açılmazsa izinler geri alınmasın</string>
+    <string name="perm_xiaomi">Xiaomi / Redmi / POCO ek izinleri</string>
+    <string name="perm_xiaomi_desc">\"Arka planda açılır pencere göster\" ve \"Otomatik başlatma\" iznini açın (telefon bu durumu uygulamalara bildirmiyor)</string>
+    <string name="perm_ok">Verildi</string>
+    <string name="perm_missing">Verilmedi</string>
+    <string name="perm_info">Bilgi</string>
+    <string name="overlay_explain">Hızın diğer uygulamaların üzerinde görünmesi için bu izin gerekiyor. Açılan ekranda Hız Göstergesi\'nin anahtarını açıp geri dönün.</string>
+    <string name="allow">İzin ver</string>
+    <string name="cancel">Vazgeç</string>
+
+    <string name="appearance_title">Görünüm</string>
+    <string name="preview_label">önizleme</string>
+    <string name="opt_content">Gösterilecek</string>
+    <string name="content_both">İkisi</string>
+    <string name="content_down">İndirme</string>
+    <string name="content_up">Yükleme</string>
+    <string name="content_total">Toplam</string>
+    <string name="opt_layout">Düzen</string>
+    <string name="layout_row">Yan yana</string>
+    <string name="layout_column">Alt alta</string>
+    <string name="opt_units">Birim</string>
+    <string name="units_bits">Mbps (bit)</string>
+    <string name="units_bytes">MB/s (bayt)</string>
+    <string name="opt_size">Yazı boyutu</string>
+    <string name="size_s">Küçük</string>
+    <string name="size_m">Orta</string>
+    <string name="size_l">Büyük</string>
+    <string name="size_xl">Çok büyük</string>
+    <string name="opt_background">Arka plan</string>
+    <string name="bg_none">Yok</string>
+    <string name="bg_dark">Koyu</string>
+    <string name="bg_light">Açık</string>
+    <string name="opt_color">Yazı rengi</string>
+    <string name="color_white">Beyaz</string>
+    <string name="color_black">Siyah</string>
+    <string name="opt_interval">Yenileme</string>
+    <string name="interval_half">0,5 sn</string>
+    <string name="interval_1">1 sn</string>
+    <string name="interval_2">2 sn</string>
+    <string name="opacity_value">Görünürlük: %1$d%%</string>
+    <string name="opt_bars">Hız çubukları (mavi indirme, kırmızı yükleme)</string>
+
+    <string name="position_title">Konum ve davranış</string>
+    <string name="opt_locked">Konumu kilitle</string>
+    <string name="locked_hint">Kilitliyken dokunuşlar göstergenin arkasındaki uygulamaya geçer. Kilidi kapatıp göstergeyi parmağınızla istediğiniz yere sürükleyin, sonra tekrar kilitleyin.</string>
+    <string name="drag_hint">Göstergeyi sürükleyerek taşıyın, sonra konumu kilitleyin.</string>
+    <string name="reset_position">Konumu sıfırla (sol üst)</string>
+    <string name="position_reset">Gösterge sol üst köşeye alındı</string>
+    <string name="opt_status_icon">Durum çubuğunda hız simgesi</string>
+    <string name="opt_boot">Telefon açılınca otomatik başlat</string>
+
+    <string name="channel">Hız göstergesi</string>
+    <string name="notif_totals">Bu oturum: ↓ %1$s · ↑ %2$s</string>
+    <string name="footer">Hız, telefonun tüm Wi-Fi ve mobil veri trafiğinden ölçülür. Ekran kapalıyken ölçüm durur, pil harcamaz.</string>
+</resources>

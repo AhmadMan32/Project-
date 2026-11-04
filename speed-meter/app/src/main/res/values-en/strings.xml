@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Speed Meter</string>
+    <string name="tagline">Shows your live download and upload speed on top of every screen.</string>
+    <string name="tile_label">Speed meter</string>
+
+    <string name="state_on">Meter is on</string>
+    <string name="state_on_text">Internet speed is currently shown over other apps.</string>
+    <string name="state_on_no_overlay">The speed is shown in the notification. Allow \"Display over other apps\" to see it on screen.</string>
+    <string name="state_off">Meter is off</string>
+    <string name="state_off_text">Tap Start to show the speed in the top corner of the screen.</string>
+    <string name="start">Start</string>
+    <string name="stop">Stop</string>
+    <string name="download_label">↓ DOWNLOAD</string>
+    <string name="upload_label">↑ UPLOAD</string>
+    <string name="not_supported">not supported</string>
+    <string name="session">This session: ↓ %1$s · ↑ %2$s · peak ↓ %3$s</string>
+    <string name="start_failed">Could not start the meter. Please try again.</string>
+
+    <string name="perm_title">Permission status</string>
+    <string name="perm_required">Required</string>
+    <string name="perm_optional">Optional (recommended for uninterrupted use)</string>
+    <string name="perm_overlay">Display over other apps</string>
+    <string name="perm_overlay_desc">So the meter shows on the home screen and in apps</string>
+    <string name="perm_notifications">Notifications</string>
+    <string name="perm_notifications_desc">For the speed icon in the status bar and the Stop button</string>
+    <string name="perm_battery">Battery optimization off</string>
+    <string name="perm_battery_desc">So the phone does not close the meter in the background</string>
+    <string name="perm_hibernation">\"Pause app activity if unused\" off</string>
+    <string name="perm_hibernation_desc">So permissions are not removed if you do not open the app for a while</string>
+    <string name="perm_xiaomi">Xiaomi / Redmi / POCO extra permissions</string>
+    <string name="perm_xiaomi_desc">Turn on \"Display pop-up windows while running in the background\" and \"Autostart\" (the phone does not report this to apps)</string>
+    <string name="perm_ok">Granted</string>
+    <string name="perm_missing">Not granted</string>
+    <string name="perm_info">Info</string>
+    <string name="overlay_explain">This permission lets the speed appear over other apps. Turn on the switch for Speed Meter on the next screen and come back.</string>
+    <string name="allow">Allow</string>
+    <string name="cancel">Cancel</string>
+
+    <string name="appearance_title">Appearance</string>
+    <string name="preview_label">preview</string>
+    <string name="opt_content">Show</string>
+    <string name="content_both">Both</string>
+    <string name="content_down">Download</string>
+    <string name="content_up">Upload</string>
+    <string name="content_total">Total</string>
+    <string name="opt_layout">Layout</string>
+    <string name="layout_row">Side by side</string>
+    <string name="layout_column">Stacked</string>
+    <string name="opt_units">Units</string>
+    <string name="units_bits">Mbps (bits)</string>
+    <string name="units_bytes">MB/s (bytes)</string>
+    <string name="opt_size">Text size</string>
+    <string name="size_s">Small</string>
+    <string name="size_m">Medium</string>
+    <string name="size_l">Large</string>
+    <string name="size_xl">Extra large</string>
+    <string name="opt_background">Background</string>
+    <string name="bg_none">None</string>
+    <string name="bg_dark">Dark</string>
+    <string name="bg_light">Light</string>
+    <string name="opt_color">Text color</string>
+    <string name="color_white">White</string>
+    <string name="color_black">Black</string>
+    <string name="opt_interval">Refresh</string>
+    <string name="interval_half">0.5 s</string>
+    <string name="interval_1">1 s</string>
+    <string name="interval_2">2 s</string>
+    <string name="opacity_value">Visibility: %1$d%%</string>
+    <string name="opt_bars">Speed bars (blue download, red upload)</string>
+
+    <string name="position_title">Position and behaviour</string>
+    <string name="opt_locked">Lock position</string>
+    <string name="locked_hint">When locked, taps go through to the app behind the meter. Unlock it, drag the meter wherever you like, then lock it again.</string>
+    <string name="drag_hint">Drag the meter to move it, then lock the position.</string>
+    <string name="reset_position">Reset position (top left)</string>
+    <string name="position_reset">Meter moved to the top left</string>
+    <string name="opt_status_icon">Speed icon in the status bar</string>
+    <string name="opt_boot">Start automatically when the phone boots</string>
+
+    <string name="channel">Speed meter</string>
+    <string name="notif_totals">This session: ↓ %1$s · ↑ %2$s</string>
+    <string name="footer">The speed is measured from all Wi-Fi and mobile data traffic of the phone. Measuring stops while the screen is off, so it does not use battery.</string>
+</resources>

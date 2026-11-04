@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <include layout="@layout/view_topbar" />
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:clipToPadding="false"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:paddingBottom="24dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <!-- Recording -->
+            <LinearLayout
+                style="@style/Card"
+                android:layout_marginTop="4dp">
+
+                <TextView
+                    style="@style/CardTitle"
+                    android:text="@string/recording_title" />
+
+                <LinearLayout
+                    android:id="@+id/choose_apps"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="?android:attr/selectableItemBackground"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:gravity="center_vertical"
+                    android:minHeight="56dp"
+                    android:orientation="horizontal">
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/choose_apps"
+                            android:textColor="@color/text_primary"
+                            android:textSize="16sp" />
+
+                        <TextView
+                            android:id="@+id/choose_apps_desc"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="13sp" />
+                    </LinearLayout>
+
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:importantForAccessibility="no"
+                        android:src="@drawable/ic_chevron"
+                        android:tint="@color/text_secondary" />
+                </LinearLayout>
+
+                <Switch
+                    android:id="@+id/opt_keep_alive"
+                    style="@style/Option"
+                    android:layout_marginTop="6dp"
+                    android:text="@string/opt_keep_alive" />
+
+                <TextView
+                    style="@style/OptionDesc"
+                    android:text="@string/opt_keep_alive_desc" />
+
+                <Switch
+                    android:id="@+id/opt_ongoing"
+                    style="@style/Option"
+                    android:layout_marginTop="6dp"
+                    android:text="@string/opt_ongoing" />
+
+                <TextView
+                    style="@style/OptionDesc"
+                    android:text="@string/opt_ongoing_desc" />
+            </LinearLayout>
+
+            <!-- Privacy & storage -->
+            <LinearLayout style="@style/Card">
+
+                <TextView
+                    style="@style/CardTitle"
+                    android:text="@string/privacy_title" />
+
+                <Switch
+                    android:id="@+id/opt_lock"
+                    style="@style/Option"
+                    android:text="@string/opt_lock" />
+
+                <TextView
+                    style="@style/OptionDesc"
+                    android:text="@string/opt_lock_desc" />
+
+                <TextView
+                    style="@style/Label"
+                    android:text="@string/retention_title" />
+
+                <LinearLayout
+                    android:id="@+id/seg_retention"
+                    style="@style/SegmentGroup" />
+
+                <TextView
+                    style="@style/OptionDesc"
+                    android:layout_marginTop="8dp"
+                    android:text="@string/retention_desc" />
+            </LinearLayout>
+
+            <!-- Permissions -->
+            <LinearLayout style="@style/Card">
+
+                <TextView
+                    style="@style/CardTitle"
+                    android:layout_marginBottom="0dp"
+                    android:text="@string/perm_title" />
+
+                <LinearLayout
+                    android:id="@+id/permissions"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical" />
+            </LinearLayout>
+
+            <!-- Data -->
+            <LinearLayout style="@style/Card">
+
+                <TextView
+                    style="@style/CardTitle"
+                    android:text="@string/data_title" />
+
+                <TextView
+                    android:id="@+id/stats"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:fontFeatureSettings="tnum"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="14sp" />
+
+                <TextView
+                    android:id="@+id/export"
+                    style="@style/OutlineButton"
+                    android:layout_marginTop="14dp"
+                    android:text="@string/export_csv" />
+
+                <TextView
+                    android:id="@+id/delete_all"
+                    style="@style/OutlineButton"
+                    android:layout_marginTop="10dp"
+                    android:background="@drawable/bg_outline_button_warn"
+                    android:text="@string/delete_all"
+                    android:textColor="@color/warn" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/footer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp"
+                android:gravity="center"
+                android:paddingStart="8dp"
+                android:paddingEnd="8dp"
+                android:textColor="@color/text_secondary"
+                android:textSize="12sp" />
+        </LinearLayout>
+    </ScrollView>
+</LinearLayout>

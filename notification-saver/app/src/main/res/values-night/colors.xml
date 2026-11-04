@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="bg">#0D1110</color>
+    <color name="surface">#161C1A</color>
+    <color name="surface_alt">#1F2724</color>
+    <color name="stroke">#29322F</color>
+    <color name="text_primary">#E9EFEC</color>
+    <color name="text_secondary">#9AA6A2</color>
+    <color name="primary">#5FD4B4</color>
+    <color name="on_primary">#00261D</color>
+    <color name="primary_soft">#173A31</color>
+    <color name="ripple">#335FD4B4</color>
+    <color name="bubble_in">#1F2724</color>
+    <color name="bubble_out">#173A31</color>
+    <color name="ok">#5FD4B4</color>
+    <color name="warn">#FF8A80</color>
+    <color name="warn_soft">#3A1E1E</color>
+    <color name="pill">#232C29</color>
+</resources>

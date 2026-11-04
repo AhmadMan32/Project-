@@ -18,3 +18,7 @@ YouTube, Instagram, TikTok ve 1000+ siteden linki yapıştırın veya paylaşın
 ## Hız Göstergesi (Android)
 
 İnternet indirme/yükleme hızını tüm uygulamaların üzerinde ve durum çubuğunda anlık gösterir; sürüklenebilir, stil ayarlı: [`speed-meter/`](speed-meter/). Hazır APK: [`speed-meter/apk/HizGostergesi-1.0.apk`](speed-meter/apk/HizGostergesi-1.0.apk)
+
+## Bildirim Kaydedici (Android)
+
+Gelen her bildirimi saniyesinde, 7/24 kaydeder. Kaydedilecek uygulamaları siz seçersiniz. Sohbet görünümü, silinen mesajların asıl metni, Türkçe arama, uygulama kilidi ve CSV dışa aktarma içerir; internet izni yoktur: [`notification-saver/`](notification-saver/). Hazır APK: [`notification-saver/apk/BildirimKaydedici-1.0.apk`](notification-saver/apk/BildirimKaydedici-1.0.apk)

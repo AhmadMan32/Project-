@@ -6,3 +6,7 @@ Bozuk kulaklık girişi olan telefonlarda sesi hoparlöre zorlayan uygulama: [`d
 ## Su Giderici (Android)
 
 Ses dalgalarıyla hoparlördeki suyu atan uygulama. Kulaklık takılı görünse bile hoparlörü zorlar: [`water-eject/`](water-eject/). Hazır APK: [`water-eject/apk/SuGiderici-1.0.apk`](water-eject/apk/SuGiderici-1.0.apk)
+
+## PDF Dönüştürücü (Android)
+
+32 araçlı, internetsiz PDF uygulaması: PDF ↔ Word, Excel, PowerPoint, görüntü, metin, HTML, EPUB, CSV ve diğerleri; ayrıca birleştirme, bölme, sıkıştırma, şifre ve filigran: [`pdf-converter/`](pdf-converter/). Hazır APK: [`pdf-converter/apk/PdfDonusturucu-1.0.apk`](pdf-converter/apk/PdfDonusturucu-1.0.apk)

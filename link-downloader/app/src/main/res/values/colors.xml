@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="bg">#F5F4FA</color>
+    <color name="surface">#FFFFFF</color>
+    <color name="surface_alt">#F1EFF8</color>
+    <color name="stroke">#E4E1EE</color>
+    <color name="text_primary">#15131C</color>
+    <color name="text_secondary">#5F5A70</color>
+    <color name="primary">#6D28D9</color>
+    <color name="primary_soft">#EDE5FD</color>
+    <color name="on_primary">#FFFFFF</color>
+    <color name="audio">#15803D</color>
+    <color name="success">#15803D</color>
+    <color name="error">#B91C1C</color>
+    <color name="launcher_bg">#6D28D9</color>
+</resources>

@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Link Downloader</string>
+    <string name="tagline">Paste a link from YouTube, Instagram, TikTok or 1000+ sites: 1080p MP4 video or 320 kbps MP3.</string>
+
+    <string name="link_field_hint">Paste the video link here</string>
+    <string name="paste">Paste from clipboard</string>
+    <string name="clear">Clear</string>
+    <string name="link_hint">You can also pick Link Downloader from the app\'s \"Share\" menu.</string>
+    <string name="link_invalid">No link found in this text.</string>
+    <string name="link_detected">Site detected automatically.</string>
+    <string name="link_detected_instagram">Some reels need you to log in to Instagram below.</string>
+    <string name="platform_other">Other site</string>
+    <string name="clipboard_empty">The clipboard is empty.</string>
+    <string name="clipboard_no_link">No link in the clipboard.</string>
+
+    <string name="preview_loading">Checking the link…</string>
+    <string name="preview_failed">Could not load a preview</string>
+    <string name="preview_failed_note">You can still try to download it.</string>
+    <string name="untitled">(untitled)</string>
+    <string name="max_quality">up to %1$s</string>
+    <string name="lower_quality">This video is not %1$s, at most %2$s. The best available quality will be downloaded.</string>
+    <string name="audio_only">This link has no video; only audio can be downloaded.</string>
+
+    <string name="download_title">Download</string>
+    <string name="video_quality">Video quality (MP4)</string>
+    <string name="q_4k">4K</string>
+    <string name="q_1440">1440p</string>
+    <string name="q_1080">1080p</string>
+    <string name="q_720">720p</string>
+    <string name="q_480">480p</string>
+    <string name="q_360">360p</string>
+    <string name="audio_format">Audio format</string>
+    <string name="fmt_mp3">MP3 · 320 kbps</string>
+    <string name="fmt_m4a">M4A · original</string>
+    <string name="download_mp4">DOWNLOAD MP4 · %1$s</string>
+    <string name="download_mp3">DOWNLOAD MP3 · 320 kbps</string>
+    <string name="download_m4a">DOWNLOAD M4A · original audio</string>
+    <string name="download_both">Download both (MP4 + audio)</string>
+    <string name="queued">Added to downloads</string>
+    <string name="storage_needed">Storage permission is needed to save files.</string>
+
+    <string name="downloads_title">Downloads</string>
+    <string name="downloads_empty">No downloads yet.</string>
+    <string name="clear_finished">Clear</string>
+    <string name="status_queued">Waiting…</string>
+    <string name="status_cancelled">Cancelled</string>
+    <string name="saved_movies">Movies/Link İndirici</string>
+    <string name="saved_music">Music/Link İndirici</string>
+    <string name="retry">Retry</string>
+    <string name="share">Share</string>
+    <string name="cancel">Cancel</string>
+    <string name="close">Close</string>
+    <string name="remove_from_list">Remove from list</string>
+    <string name="no_player">No app can open this file.</string>
+    <string name="error_title">Download failed</string>
+
+    <string name="step_starting">Starting…</string>
+    <string name="step_video">Video</string>
+    <string name="step_audio_part">Audio</string>
+    <string name="step_merging">Merging video and audio…</string>
+    <string name="step_converting">Converting to MP3…</string>
+    <string name="step_finishing">Adding cover and tags…</string>
+    <string name="step_saving">Saving…</string>
+    <string name="eta">%1$s left</string>
+
+    <string name="err_bot">YouTube thinks this request is a bot. Try again later, switch between Wi-Fi and mobile data, or update the download engine in Settings.</string>
+    <string name="err_login_instagram">This content needs an Instagram login. Log in to Instagram in Settings and try again.</string>
+    <string name="err_login">This content requires a login (it may be private or restricted).</string>
+    <string name="err_private">This content is private; only approved accounts can see it.</string>
+    <string name="err_unavailable">Content not found: it may be deleted, hidden, or the link is wrong.</string>
+    <string name="err_geo">This content is not available in your country.</string>
+    <string name="err_age">Age-restricted content cannot be downloaded without a login.</string>
+    <string name="err_unsupported">This site is not supported.</string>
+    <string name="err_rate">Too many requests. Wait a few minutes and try again.</string>
+    <string name="err_network">No internet connection, or the site is not responding.</string>
+    <string name="err_no_formats">No downloadable video or audio was found at this link.</string>
+    <string name="err_live">Live streams cannot be downloaded before they end.</string>
+    <string name="err_storage">Not enough free space on the phone.</string>
+    <string name="err_unknown">The download failed. Update the download engine in Settings and try again.</string>
+    <string name="err_interrupted">The download was interrupted (the app was closed).</string>
+    <string name="err_no_file">The downloaded file was not found.</string>
+
+    <string name="settings_title">Settings</string>
+    <string name="opt_h264">Prefer H.264 video (plays in WhatsApp and on every phone)</string>
+    <string name="opt_auto_update">Update the download engine automatically</string>
+    <string name="instagram_title">Instagram account</string>
+    <string name="instagram_logged_in">Logged in. The session is kept only on this phone.</string>
+    <string name="instagram_logged_out">Not logged in. Some reels require a login.</string>
+    <string name="login">Log in</string>
+    <string name="logout">Log out</string>
+    <string name="logout_confirm">Remove the Instagram session from this app?</string>
+    <string name="login_hint">Log in with your Instagram account. This screen closes by itself when you are logged in.</string>
+    <string name="login_saved">Instagram login saved ✓</string>
+    <string name="login_save_failed">Could not save the session: %1$s</string>
+    <string name="engine_title">Download engine (yt-dlp)</string>
+    <string name="engine_preparing">Preparing… (takes a few seconds the first time)</string>
+    <string name="engine_updating">Updating…</string>
+    <string name="engine_version">Version %1$s</string>
+    <string name="engine_error">Could not start: %1$s</string>
+    <string name="update">Update</string>
+    <string name="update_done">Download engine is up to date: %1$s</string>
+    <string name="update_failed">Update failed: %1$s</string>
+    <string name="update_wait">Update after the downloads finish.</string>
+    <string name="save_location">Videos are saved to Movies/Link İndirici and audio to Music/Link İndirici; they show up in your gallery and music apps.</string>
+    <string name="legal">Only download content you own or have permission to download. Respecting copyright and the sites\' rules is your responsibility.</string>
+
+    <string name="channel_progress">Download progress</string>
+    <string name="channel_done">Finished downloads</string>
+    <string name="notif_preparing">Preparing download…</string>
+    <string name="notif_done">Downloaded ✓</string>
+    <string name="notif_failed">Download failed</string>
+    <string name="back">Back</string>
+</resources>

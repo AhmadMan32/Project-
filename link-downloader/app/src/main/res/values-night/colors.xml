@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="bg">#0F0E14</color>
+    <color name="surface">#18161F</color>
+    <color name="surface_alt">#211E2A</color>
+    <color name="stroke">#2C2837</color>
+    <color name="text_primary">#EEECF4</color>
+    <color name="text_secondary">#A29DB3</color>
+    <color name="primary">#A78BFA</color>
+    <color name="primary_soft">#2A2142</color>
+    <color name="on_primary">#160D2B</color>
+    <color name="audio">#4ADE80</color>
+    <color name="success">#4ADE80</color>
+    <color name="error">#F87171</color>
+</resources>

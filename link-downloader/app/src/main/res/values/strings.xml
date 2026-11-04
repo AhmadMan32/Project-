@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Link İndirici</string>
+    <string name="tagline">YouTube, Instagram, TikTok ve 1000+ siteden linki yapıştırın: 1080p MP4 video veya 320 kbps MP3.</string>
+
+    <!-- Link -->
+    <string name="link_field_hint">Video linkini buraya yapıştırın</string>
+    <string name="paste">Panodan yapıştır</string>
+    <string name="clear">Temizle</string>
+    <string name="link_hint">Uygulamadaki \"Paylaş\" menüsünden de Link İndirici\'yi seçebilirsiniz.</string>
+    <string name="link_invalid">Bu metinde bir link bulunamadı.</string>
+    <string name="link_detected">Site otomatik algılandı.</string>
+    <string name="link_detected_instagram">Bazı reels videoları için aşağıdan Instagram\'a giriş yapmanız gerekebilir.</string>
+    <string name="platform_other">Diğer site</string>
+    <string name="clipboard_empty">Pano boş.</string>
+    <string name="clipboard_no_link">Panoda link yok.</string>
+
+    <!-- Preview -->
+    <string name="preview_loading">Link inceleniyor…</string>
+    <string name="preview_failed">Önizleme alınamadı</string>
+    <string name="preview_failed_note">Yine de indirmeyi deneyebilirsiniz.</string>
+    <string name="untitled">(başlıksız)</string>
+    <string name="max_quality">en yüksek %1$s</string>
+    <string name="lower_quality">Bu video %1$s değil, en fazla %2$s. Mevcut en iyi kalite indirilecek.</string>
+    <string name="audio_only">Bu bağlantıda video yok; yalnızca ses indirilebilir.</string>
+
+    <!-- Download options -->
+    <string name="download_title">İndir</string>
+    <string name="video_quality">Video kalitesi (MP4)</string>
+    <string name="q_4k">4K</string>
+    <string name="q_1440">1440p</string>
+    <string name="q_1080">1080p</string>
+    <string name="q_720">720p</string>
+    <string name="q_480">480p</string>
+    <string name="q_360">360p</string>
+    <string name="audio_format">Ses biçimi</string>
+    <string name="fmt_mp3">MP3 · 320 kbps</string>
+    <string name="fmt_m4a">M4A · orijinal</string>
+    <string name="download_mp4">MP4 İNDİR · %1$s</string>
+    <string name="download_mp3">MP3 İNDİR · 320 kbps</string>
+    <string name="download_m4a">M4A İNDİR · orijinal ses</string>
+    <string name="download_both">İkisini de indir (MP4 + ses)</string>
+    <string name="queued">İndirme listesine eklendi</string>
+    <string name="storage_needed">Dosyaları kaydetmek için depolama izni gerekli.</string>
+
+    <!-- List -->
+    <string name="downloads_title">İndirilenler</string>
+    <string name="downloads_empty">Henüz indirme yok.</string>
+    <string name="clear_finished">Temizle</string>
+    <string name="status_queued">Sırada…</string>
+    <string name="status_cancelled">İptal edildi</string>
+    <string name="saved_movies">Filmler/Link İndirici</string>
+    <string name="saved_music">Müzik/Link İndirici</string>
+    <string name="retry">Tekrar dene</string>
+    <string name="share">Paylaş</string>
+    <string name="cancel">İptal</string>
+    <string name="close">Kapat</string>
+    <string name="remove_from_list">Listeden kaldır</string>
+    <string name="no_player">Bu dosyayı açacak uygulama bulunamadı.</string>
+    <string name="error_title">İndirilemedi</string>
+
+    <!-- Steps -->
+    <string name="step_starting">Başlatılıyor…</string>
+    <string name="step_video">Görüntü</string>
+    <string name="step_audio_part">Ses</string>
+    <string name="step_merging">Görüntü ve ses birleştiriliyor…</string>
+    <string name="step_converting">MP3\'e dönüştürülüyor…</string>
+    <string name="step_finishing">Kapak ve bilgiler ekleniyor…</string>
+    <string name="step_saving">Kaydediliyor…</string>
+    <string name="eta">%1$s kaldı</string>
+
+    <!-- Errors -->
+    <string name="err_bot">YouTube bu isteği robot sandı. Biraz sonra tekrar deneyin, Wi-Fi ile mobil veri arasında geçiş yapın veya Ayarlar\'dan indirme motorunu güncelleyin.</string>
+    <string name="err_login_instagram">Bu içerik için Instagram girişi gerekiyor. Ayarlar\'dan Instagram\'a giriş yapıp tekrar deneyin.</string>
+    <string name="err_login">Bu içerik giriş gerektiriyor (gizli veya kısıtlı olabilir).</string>
+    <string name="err_private">Bu içerik gizli; yalnızca izin verilen hesaplar görebilir.</string>
+    <string name="err_unavailable">İçerik bulunamadı: silinmiş, gizlenmiş veya link hatalı olabilir.</string>
+    <string name="err_geo">Bu içerik bulunduğunuz ülkede kullanılamıyor.</string>
+    <string name="err_age">Yaş sınırlı içerik; giriş yapmadan indirilemiyor.</string>
+    <string name="err_unsupported">Bu site desteklenmiyor.</string>
+    <string name="err_rate">Çok fazla istek gönderildi. Birkaç dakika bekleyip tekrar deneyin.</string>
+    <string name="err_network">İnternet bağlantısı yok veya site yanıt vermiyor.</string>
+    <string name="err_no_formats">Bu linkte indirilebilir video veya ses bulunamadı.</string>
+    <string name="err_live">Canlı yayınlar bitmeden indirilemez.</string>
+    <string name="err_storage">Telefonda yeterli boş alan yok.</string>
+    <string name="err_unknown">İndirme başarısız oldu. Ayarlar\'dan indirme motorunu güncelleyip tekrar deneyin.</string>
+    <string name="err_interrupted">İndirme yarıda kesildi (uygulama kapatıldı).</string>
+    <string name="err_no_file">İndirilen dosya bulunamadı.</string>
+
+    <!-- Settings -->
+    <string name="settings_title">Ayarlar</string>
+    <string name="opt_h264">Videoda H.264 tercih et (WhatsApp ve tüm telefonlarda oynar)</string>
+    <string name="opt_auto_update">İndirme motorunu otomatik güncelle</string>
+    <string name="instagram_title">Instagram hesabı</string>
+    <string name="instagram_logged_in">Giriş yapıldı. Oturum yalnızca bu telefonda saklanır.</string>
+    <string name="instagram_logged_out">Giriş yapılmadı. Bazı reels videoları giriş ister.</string>
+    <string name="login">Giriş yap</string>
+    <string name="logout">Çıkış yap</string>
+    <string name="logout_confirm">Instagram oturumu bu uygulamadan silinsin mi?</string>
+    <string name="login_hint">Instagram hesabınızla giriş yapın. Giriş tamamlanınca bu ekran kendiliğinden kapanır.</string>
+    <string name="login_saved">Instagram girişi kaydedildi ✓</string>
+    <string name="login_save_failed">Oturum kaydedilemedi: %1$s</string>
+    <string name="engine_title">İndirme motoru (yt-dlp)</string>
+    <string name="engine_preparing">Hazırlanıyor… (ilk açılışta birkaç saniye sürer)</string>
+    <string name="engine_updating">Güncelleniyor…</string>
+    <string name="engine_version">Sürüm %1$s</string>
+    <string name="engine_error">Başlatılamadı: %1$s</string>
+    <string name="update">Güncelle</string>
+    <string name="update_done">İndirme motoru güncel: %1$s</string>
+    <string name="update_failed">Güncellenemedi: %1$s</string>
+    <string name="update_wait">İndirmeler bitince güncelleyin.</string>
+    <string name="save_location">Videolar Filmler/Link İndirici, sesler Müzik/Link İndirici klasörüne kaydedilir; galeri ve müzik uygulamalarında görünür.</string>
+    <string name="legal">Yalnızca kendinize ait veya indirme izniniz olan içerikleri indirin. Telif haklarına ve sitelerin kurallarına uymak kullanıcının sorumluluğundadır.</string>
+
+    <!-- Notifications -->
+    <string name="channel_progress">İndirme ilerlemesi</string>
+    <string name="channel_done">Tamamlanan indirmeler</string>
+    <string name="notif_preparing">İndirme hazırlanıyor…</string>
+    <string name="notif_done">İndirildi ✓</string>
+    <string name="notif_failed">İndirilemedi</string>
+    <string name="back">Geri</string>
+</resources>

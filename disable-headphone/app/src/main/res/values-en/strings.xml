@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Disable Headphone</string>
+    <string name="tagline">Play sound through the phone\'s own speaker even when it thinks headphones are plugged in.</string>
+
+    <string name="btn_start">START</string>
+    <string name="btn_stop">STOP</string>
+    <string name="toggle_desc">Disable headphone output</string>
+
+    <string name="state_off">Off — tap to disable the headphone output</string>
+    <string name="state_forcing">On — sound is playing from the phone speaker</string>
+    <string name="state_waiting">On — will kick in when a headphone is detected</string>
+    <string name="state_failed">Routing could not be applied. Try the other method in Settings.</string>
+    <string name="state_off_short">Off</string>
+    <string name="state_forcing_short">On speaker</string>
+    <string name="state_waiting_short">Waiting</string>
+
+    <string name="status_title">Status</string>
+    <string name="status_headphone">Detected headphone</string>
+    <string name="status_output">Media output</string>
+    <string name="status_method">Active method</string>
+    <string name="status_android">Android version</string>
+    <string name="status_none">None</string>
+    <string name="status_android_value">Android %1$s (API %2$d)</string>
+
+    <string name="method_none">—</string>
+    <string name="method_media">Media routing</string>
+    <string name="method_comm">Communication mode</string>
+
+    <string name="out_speaker">Phone speaker</string>
+    <string name="out_earpiece">Earpiece</string>
+    <string name="out_other">Other device</string>
+    <string name="dev_wired_headset">Wired headset (with mic)</string>
+    <string name="dev_wired_headphones">Wired headphones</string>
+    <string name="dev_line">Line out (AUX)</string>
+    <string name="dev_usb">USB headset</string>
+    <string name="dev_bt">Bluetooth headphones</string>
+    <string name="dev_ble">Bluetooth LE headphones</string>
+
+    <string name="test_title">Sound test</string>
+    <string name="test_sound">Play test sound</string>
+    <string name="media_volume">Media volume</string>
+    <string name="call_volume">Call volume (limits media volume in communication mode)</string>
+
+    <string name="settings_title">Settings</string>
+    <string name="method_title">Routing method</string>
+    <string name="method_auto">Automatic (recommended)</string>
+    <string name="method_auto_hint">Picks the best method for this device.</string>
+    <string name="method_media_option">Media routing</string>
+    <string name="method_media_hint">For Android 6–8. Best sound quality.</string>
+    <string name="method_media_unsupported">For Android 6–8. Not supported on this device.</string>
+    <string name="method_comm_option">Communication mode</string>
+    <string name="method_comm_hint">Works on all phones with Android 8 or newer. Volume keys control call volume.</string>
+    <string name="opt_always">Force speaker even when no headphone is detected</string>
+    <string name="opt_bluetooth">Also disable Bluetooth headphones</string>
+    <string name="opt_boot">Start automatically when the phone boots</string>
+    <string name="battery_btn">Remove battery restriction (keep running in background)</string>
+
+    <string name="info_title">How does it work?</string>
+    <string name="info_body">A broken, wet or dusty headphone jack can make the phone believe headphones are plugged in, which mutes the speaker. This app disables the headphone output in software and sends all sound to the phone\'s own speaker. No root needed.\n\n• Android 6–8: media audio is forced straight to the speaker.\n• Android 8 and newer: the phone is put into \"communication mode\" with the speaker selected. In this mode the volume keys change the call volume; media volume is capped by it, so the volume keys still make things louder.\n• Add the \"Disable Headphone\" tile to Quick Settings to toggle it with one tap.\n• While running, a notification is shown; tap \"Stop\" to go back to normal.</string>
+
+    <string name="notif_channel">Speaker routing</string>
+    <string name="notif_forcing">Headphone disabled — sound on speaker</string>
+    <string name="notif_failed">Could not route to speaker</string>
+    <string name="notif_waiting">Ready — waiting for a headphone</string>
+    <string name="notif_waiting_text">When a headphone is detected, sound is moved to the speaker automatically.</string>
+    <string name="notif_method">Method: %1$s</string>
+    <string name="notif_stop">Stop</string>
+
+    <string name="tile_label">Disable Headphone</string>
+    <string name="start_failed">Could not start the service. Please try again.</string>
+    <string name="version_label">Version %1$s</string>
+</resources>

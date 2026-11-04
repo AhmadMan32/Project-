@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="bg">#0E1116</color>
+    <color name="surface">#171B22</color>
+    <color name="stroke">#262C36</color>
+    <color name="text_primary">#EDF0F5</color>
+    <color name="text_secondary">#9AA3B2</color>
+    <color name="primary">#5B8DFF</color>
+    <color name="primary_soft">#22304D</color>
+    <color name="toggle_off">#1D232D</color>
+    <color name="on_primary">#FFFFFF</color>
+    <color name="success">#34D399</color>
+    <color name="warning">#FBBF24</color>
+</resources>

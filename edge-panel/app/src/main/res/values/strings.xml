@@ -95,8 +95,7 @@
     <string name="pair_connecting">%1$s ile bağlantı kuruluyor…</string>
     <string name="pair_done">✓ %1$s eşleşti. Artık panelden kendiliğinden bağlanır.</string>
     <string name="pair_enter_code">%1$s ekranında görünen 6 karakterli kodu yazın.</string>
-    <string name="pair_failed">%1$s ile bağlanılamadı. TV açık ve aynı Wi-Fi\'da mı?</string>
-    <string name="pair_footer">Eşleştirme bir kez yapılır. Telefonun anahtarı telefonun güvenli donanımında kalır; yalnızca evdeki TV ile konuşulur.</string>
+    <string name="pair_footer">Eşleştirme bir kez yapılır. Telefonun anahtarı yalnızca bu uygulamanın içinde saklanır, yedeklenmez; yalnızca evdeki TV ile konuşulur.</string>
     <string name="pair_manual_connect">Bağlan</string>
     <string name="pair_manual_hint">TV bulunamazsa: TV\'de Ayarlar → Ağ ve İnternet → Wi-Fi ağınız: IP adresini buraya yazın.</string>
     <string name="pair_manual_ip_hint" translatable="false">192.168.1.20</string>
@@ -111,4 +110,12 @@
     <string name="atv_refused_panel">TV bu telefonu tanımıyor.</string>
     <string name="remote_show">Kumandayı aç</string>
     <string name="remote_hide">Kumandayı küçült</string>
+    <string name="pair_fail_unreachable">%1$s yanıt vermiyor. TV açık mı, telefonla aynı Wi-Fi\'da mı? TV\'nin adresi değişmiş olabilir: listeden yeniden seçin ya da IP\'yi yeniden yazın.</string>
+    <string name="pair_fail_closed">%1$s bağlantıyı kabul etmedi. TV\'deki \"Android TV Remote Service\" kapalı ya da eski olabilir: TV\'de Play Store → \"Android TV Remote Service\" → Güncelle.</string>
+    <string name="pair_fail_old_service">%1$s üzerindeki \"Android TV Remote Service\" eski. TV\'de Play Store\'u açın, \"Android TV Remote Service\" aratın ve Güncelle\'ye basın (Mi Box 4 gibi eski cihazlar bunu kendiliğinden güncellemez). Sonra Tekrar dene\'ye dokunun.</string>
+    <string name="pair_fail_tls">%1$s ile güvenli bağlantı kurulamadı. TV\'yi yeniden başlatıp tekrar deneyin.</string>
+    <string name="pair_fail_refused">%1$s eşleştirmeyi reddetti. TV\'de Ayarlar → Uygulamalar → Sistem uygulamaları → Android TV Remote Service → Verileri temizle; sonra tekrar deneyin.</string>
+    <string name="pair_fail_other">%1$s ile bağlanılamadı.</string>
+    <string name="pair_detail">Ayrıntı: %1$s</string>
+    <string name="pair_retry">Tekrar dene</string>
 </resources>

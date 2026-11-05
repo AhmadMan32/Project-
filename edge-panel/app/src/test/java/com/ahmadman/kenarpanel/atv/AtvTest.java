@@ -12,6 +12,9 @@ import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.net.ServerSocket;
+import java.net.SocketTimeoutException;
 import java.security.interfaces.RSAPublicKey;
 import java.util.ArrayList;
 import java.util.List;
@@ -194,5 +197,107 @@ public class AtvTest {
             assertTrue(closed.await(5, TimeUnit.SECONDS));
             assertTrue(needsPairing.get());
         }
+    }
+
+    @Test
+    public void selfSignedIdentityIsAValidCertificateAndSurvivesStoring() throws Exception {
+        long now = 1_780_000_000_000L; // 2026
+        SelfSigned id = SelfSigned.generate("kenarpanel", now);
+        java.security.cert.X509Certificate c = id.certificate();
+        c.verify(c.getPublicKey()); // self-signed, SHA256withRSA
+        c.checkValidity(new java.util.Date(now));
+        c.checkValidity(new java.util.Date(now + 9L * 365 * 86_400_000L));
+        assertEquals(3, c.getVersion());
+        assertEquals("CN=kenarpanel", c.getSubjectX500Principal().getName());
+        assertEquals(2048, id.publicKey().getModulus().bitLength());
+        assertEquals(0, c.getBasicConstraints()); // CA, path length 0, like androidtvremote2's certificate
+        SelfSigned back = SelfSigned.decode(id.encode());
+        assertArrayEquals(c.getEncoded(), back.certificate().getEncoded());
+        assertEquals(id.publicKey(), back.publicKey());
+        // dates after 2049 are written as GeneralizedTime
+        assertEquals(0x18, SelfSigned.time(2_600_000_000_000L)[0]);
+        assertEquals(0x17, SelfSigned.time(now)[0]);
+        try {
+            SelfSigned.decode(new byte[]{0, 0, 0, 9});
+            fail("garbage must not load");
+        } catch (IOException expected) {
+            // a new identity is made then
+        }
+    }
+
+    @Test
+    public void theAppsOwnIdentityPairsAndControls() throws Exception {
+        try (FakeTv tv = new FakeTv("TLSv1.2")) { // Android 9 TVs such as the Mi Box 4 stop at TLS 1.2
+            SelfSigned phone = SelfSigned.decode(SelfSigned.generate("kenarpanel", System.currentTimeMillis()).encode());
+            Pairing p = new Pairing(phone);
+            p.start("127.0.0.1", tv.pairingServer.getLocalPort(), "Redmi Note", 5000);
+            String pin = p.finish(tv.shownCode);
+            assertEquals(Tls.fingerprint(phone.certificate()), tv.pairedClient);
+            CountDownLatch ready = new CountDownLatch(1);
+            Session s = new Session(phone, "127.0.0.1", tv.remoteServer.getLocalPort(), pin, "Redmi", "Xiaomi",
+                    new Session.Listener() {
+                        @Override
+                        public void onReady(Session x) {
+                            ready.countDown();
+                        }
+
+                        @Override
+                        public void onClosed(Session x, boolean needsPairing) {
+                        }
+                    });
+            s.start();
+            assertTrue(ready.await(5, TimeUnit.SECONDS));
+            assertTrue(s.key(Messages.KEY_DPAD_LEFT));
+            assertEquals(Integer.valueOf(21), tv.keys.poll(3, TimeUnit.SECONDS));
+            s.close();
+        }
+    }
+
+    @Test
+    public void failuresAreToldApart() throws Exception {
+        Tls.Identity phone = FakeTv.identity("phone");
+        try (FakeTv tv = new FakeTv()) {
+            // a Mi Box 4 whose "Android TV Remote Service" was never updated
+            tv.mode = FakeTv.Mode.OLD_SERVICE;
+            Pairing p = new Pairing(phone);
+            try {
+                p.start("127.0.0.1", tv.pairingServer.getLocalPort(), "K", 3000);
+                fail("an old remote service cannot pair");
+            } catch (IOException e) {
+                assertTrue(e instanceof Pairing.OldServiceException);
+                assertEquals(Failure.Kind.OLD_SERVICE, Failure.of(e));
+            } finally {
+                p.close();
+            }
+
+            tv.mode = FakeTv.Mode.REFUSES;
+            p = new Pairing(phone);
+            try {
+                p.start("127.0.0.1", tv.pairingServer.getLocalPort(), "K", 3000);
+                fail("refused");
+            } catch (IOException e) {
+                assertEquals(Failure.Kind.TV_SAID_NO, Failure.of(e));
+                assertEquals("status 400", e.getMessage());
+            } finally {
+                p.close();
+            }
+        }
+
+        int closedPort;
+        try (ServerSocket free = new ServerSocket(0)) {
+            closedPort = free.getLocalPort();
+        }
+        Pairing p = new Pairing(phone);
+        try {
+            p.start("127.0.0.1", closedPort, "K", 3000);
+            fail("nothing listens there");
+        } catch (IOException e) {
+            assertEquals(Failure.Kind.CLOSED_PORT, Failure.of(e));
+            assertTrue(Failure.detail(e).startsWith("ConnectException"));
+        }
+        assertEquals(Failure.Kind.UNREACHABLE, Failure.of(new SocketTimeoutException("connect timed out")));
+        assertEquals(Failure.Kind.UNREACHABLE, Failure.of(new java.net.ConnectException("connect failed: EHOSTUNREACH")));
+        assertEquals("SSLHandshakeException: Read error",
+                Failure.detail(new Tls.HandshakeException(new javax.net.ssl.SSLHandshakeException("Read error"))));
     }
 }

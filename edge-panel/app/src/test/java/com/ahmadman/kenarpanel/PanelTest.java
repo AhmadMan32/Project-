@@ -507,7 +507,7 @@ public class PanelTest {
     @Test
     public void pairOnceThenTheRemoteConnectsByItself() throws Exception {
         try (com.ahmadman.kenarpanel.atv.FakeTv tv = new com.ahmadman.kenarpanel.atv.FakeTv()) {
-            AtvIdentity.testIdentity = com.ahmadman.kenarpanel.atv.FakeTv.identity("phone");
+            AtvIdentity.testIdentity = null; // the app's own identity, made and stored as on a phone
             PairActivity.pairPortForTests = tv.pairingServer.getLocalPort();
             PairActivity p = Robolectric.buildActivity(PairActivity.class).setup().get();
             p.found("Salon TV", "127.0.0.1", tv.remoteServer.getLocalPort());
@@ -537,6 +537,38 @@ public class PanelTest {
             assertTrue(atv.key(com.ahmadman.kenarpanel.atv.Messages.KEY_DPAD_DOWN));
             assertEquals(Integer.valueOf(20), tv.keys.poll(5, java.util.concurrent.TimeUnit.SECONDS));
             atv.close();
+        }
+    }
+
+    @Test
+    public void anOutdatedTvServiceIsExplainedWithTheFix() throws Exception {
+        try (com.ahmadman.kenarpanel.atv.FakeTv tv = new com.ahmadman.kenarpanel.atv.FakeTv()) {
+            tv.mode = com.ahmadman.kenarpanel.atv.FakeTv.Mode.OLD_SERVICE; // like an un-updated Mi Box 4
+            AtvIdentity.testIdentity = com.ahmadman.kenarpanel.atv.FakeTv.identity("phone");
+            PairActivity.pairPortForTests = tv.pairingServer.getLocalPort();
+            PairActivity p = Robolectric.buildActivity(PairActivity.class).setup().get();
+            p.pair("Mi Box", "127.0.0.1", 6466);
+            TextView status = p.findViewById(R.id.pair_status);
+            waitFor(() -> {
+                idle(50);
+                assertEquals(View.VISIBLE, p.findViewById(R.id.pair_retry).getVisibility());
+            });
+            String text = status.getText().toString();
+            assertTrue(text, text.contains("Android TV Remote Service") && text.contains("Güncelle"));
+            assertTrue(text.startsWith("Mi Box"));
+            TextView detail = p.findViewById(R.id.pair_detail);
+            assertEquals(View.VISIBLE, detail.getVisibility());
+            assertTrue(detail.getText().toString().startsWith("Ayrıntı: "));
+            assertEquals(View.GONE, p.findViewById(R.id.code_box).getVisibility());
+
+            // updated on the TV: "Try again" pairs
+            tv.mode = com.ahmadman.kenarpanel.atv.FakeTv.Mode.CURRENT;
+            p.findViewById(R.id.pair_retry).performClick();
+            assertEquals(View.GONE, detail.getVisibility());
+            waitFor(() -> {
+                idle(50);
+                assertEquals(View.VISIBLE, p.findViewById(R.id.code_box).getVisibility());
+            });
         }
     }
 

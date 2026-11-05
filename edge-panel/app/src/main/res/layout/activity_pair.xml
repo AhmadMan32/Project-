@@ -54,6 +54,24 @@
                 android:textColor="@color/text_primary"
                 android:textSize="16sp" />
 
+            <TextView
+                android:id="@+id/pair_detail"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:fontFamily="monospace"
+                android:textColor="@color/text_secondary"
+                android:textIsSelectable="true"
+                android:textSize="11.5sp"
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/pair_retry"
+                style="@style/PrimaryButton"
+                android:layout_marginTop="12dp"
+                android:text="@string/pair_retry"
+                android:visibility="gone" />
+
             <LinearLayout
                 android:id="@+id/tv_list"
                 android:layout_width="match_parent"

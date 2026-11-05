@@ -121,7 +121,7 @@ final class AtvRemote implements Session.Listener {
         worker.execute(() -> {
             Tls.Identity id;
             try {
-                id = AtvIdentity.get();
+                id = AtvIdentity.get(app);
             } catch (Exception e) {
                 main.post(() -> set(State.OFFLINE));
                 return;

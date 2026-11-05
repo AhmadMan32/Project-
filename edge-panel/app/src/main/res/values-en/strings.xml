@@ -90,8 +90,7 @@
     <string name="pair_connecting">Connecting to %1$s…</string>
     <string name="pair_done">✓ Paired with %1$s. The panel now connects by itself.</string>
     <string name="pair_enter_code">Type the 6-character code shown on %1$s.</string>
-    <string name="pair_failed">Could not connect to %1$s. Is the TV on and on the same Wi-Fi?</string>
-    <string name="pair_footer">Pairing is done once. The phone\'s key stays in its secure hardware; only the TV at home is contacted.</string>
+    <string name="pair_footer">Pairing is done once. The phone\'s key is kept only inside this app and is never backed up; only the TV at home is contacted.</string>
     <string name="pair_manual_connect">Connect</string>
     <string name="pair_manual_hint">If the TV is not found: on the TV, Settings → Network &amp; Internet → your Wi-Fi: type its IP address here.</string>
     <string name="pair_manual_title">Add by IP address</string>
@@ -103,4 +102,12 @@
     <string name="atv_refused_panel">The TV does not know this phone.</string>
     <string name="remote_show">Open the remote</string>
     <string name="remote_hide">Fold the remote away</string>
+    <string name="pair_fail_unreachable">%1$s does not answer. Is the TV on and on the same Wi-Fi as the phone? Its address may have changed: pick it from the list again or type the IP again.</string>
+    <string name="pair_fail_closed">%1$s refused the connection. The TV\'s \"Android TV Remote Service\" may be off or outdated: on the TV, Play Store → \"Android TV Remote Service\" → Update.</string>
+    <string name="pair_fail_old_service">The \"Android TV Remote Service\" on %1$s is outdated. On the TV, open the Play Store, search for \"Android TV Remote Service\" and press Update (older devices such as the Mi Box 4 do not update it by themselves). Then tap Try again.</string>
+    <string name="pair_fail_tls">Could not set up a secure connection with %1$s. Restart the TV and try again.</string>
+    <string name="pair_fail_refused">%1$s refused pairing. On the TV: Settings → Apps → System apps → Android TV Remote Service → Clear data, then try again.</string>
+    <string name="pair_fail_other">Could not connect to %1$s.</string>
+    <string name="pair_detail">Details: %1$s</string>
+    <string name="pair_retry">Try again</string>
 </resources>

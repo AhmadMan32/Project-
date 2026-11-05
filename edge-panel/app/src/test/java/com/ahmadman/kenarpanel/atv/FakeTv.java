@@ -35,6 +35,11 @@ public final class FakeTv implements AutoCloseable {
     public final BlockingQueue<Integer> keys = new LinkedBlockingQueue<>();
     final BlockingQueue<Long> pongs = new LinkedBlockingQueue<>();
     volatile long clientFeatures = -1;
+    /** How the pairing port behaves: a current TV, an old remote service, or one that says no. */
+    public enum Mode { CURRENT, OLD_SERVICE, REFUSES }
+    public volatile Mode mode = Mode.CURRENT;
+    private final String[] protocols;
+    private final String[] schemes;
     private volatile boolean closed;
 
     static KeyStore store(String name) throws Exception {
@@ -90,7 +95,18 @@ public final class FakeTv implements AutoCloseable {
         }
     }
 
-    public FakeTv() throws Exception {
+    /** @param protocols TLS versions to offer (none: the JDK's default, TLS 1.3) */
+    public FakeTv(String... protocols) throws Exception {
+        this(protocols, null);
+    }
+
+    /**
+     * @param schemes signature schemes the TV accepts from the phone (null: all, PSS first); when
+     *                set, the TV uses the JDK's TLS even if Conscrypt is installed
+     */
+    public FakeTv(String[] protocols, String[] schemes) throws Exception {
+        this.protocols = protocols;
+        this.schemes = schemes;
         KeyStore ks = store("tv");
         tvKey = (RSAPublicKey) ks.getCertificate("tv").getPublicKey();
         KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
@@ -102,10 +118,19 @@ public final class FakeTv implements AutoCloseable {
     }
 
     private SSLServerSocket server(KeyManagerFactory kmf, boolean remote) throws Exception {
-        SSLContext ctx = SSLContext.getInstance("TLS");
+        // only the JDK's TLS can limit the signature schemes it asks the phone for
+        SSLContext ctx = schemes != null ? SSLContext.getInstance("TLS", "SunJSSE") : SSLContext.getInstance("TLS");
         ctx.init(kmf.getKeyManagers(), new TrustManager[]{new ClientTrust(remote)}, null);
         SSLServerSocket s = (SSLServerSocket) ctx.getServerSocketFactory().createServerSocket(0);
         s.setNeedClientAuth(true);
+        if (protocols.length > 0) {
+            s.setEnabledProtocols(protocols);
+        }
+        if (schemes != null) {
+            javax.net.ssl.SSLParameters p = s.getSSLParameters();
+            p.getClass().getMethod("setSignatureSchemes", String[].class).invoke(p, (Object) schemes); // JDK 19+
+            s.setSSLParameters(p);
+        }
         return s;
     }
 
@@ -127,6 +152,18 @@ public final class FakeTv implements AutoCloseable {
                 InputStream in = s.getInputStream();
                 OutputStream out = s.getOutputStream();
                 expect(in, 10);
+                if (mode == Mode.OLD_SERVICE) {
+                    // what a Mi Box 4 with an outdated remote service sends: no v2 messages, then it hangs up
+                    for (int i = 0; i < 3; i++) {
+                        Proto.writeDelimited(out, new Proto.Writer().varint(7, i).toByteArray());
+                    }
+                    continue;
+                }
+                if (mode == Mode.REFUSES) {
+                    Proto.writeDelimited(out, new Proto.Writer().varint(1, 2).varint(2, 400).toByteArray());
+                    in.read();
+                    continue;
+                }
                 Proto.writeDelimited(out, ok().message(11, new Proto.Writer().string(1, "Salon TV")).toByteArray());
                 expect(in, 20);
                 Proto.writeDelimited(out, ok().message(20, new Proto.Writer().varint(3, 1)).toByteArray());

@@ -14,7 +14,7 @@ Panelde uygulama kısayolları ve TV kumandası bulunur. Kumandanın üstündeki
 
 ## Kurulum (APK)
 
-1. [`apk/KenarPanel-1.5.apk`](apk/KenarPanel-1.5.apk) dosyasını telefona indirin (124 KB). Dosyayı açın; Android "bilinmeyen kaynaklardan yükleme" izni isterse verin. Eski sürüm kuruluysa üzerine kurulur.
+1. [`apk/KenarPanel-1.6.apk`](apk/KenarPanel-1.6.apk) dosyasını telefona indirin (128 KB). Dosyayı açın; Android "bilinmeyen kaynaklardan yükleme" izni isterse verin. Eski sürüm kuruluysa üzerine kurulur.
 2. Uygulamayı açıp **Başlat**'a dokunun. **Diğer uygulamaların üzerinde göster** iznini açıp geri dönün.
 3. **Xiaomi / Redmi / POCO:** İzinler bölümündeki Xiaomi satırına dokunun. **Arka planda çalışırken açılır pencereleri göster** ve **Otomatik başlatma** seçeneklerini açın. Bunlar kapalıysa panelden uygulama açılamaz.
 
@@ -61,10 +61,22 @@ Android 6.0 ve üzeri sürümlerde çalışır. Başka bir uygulama gerekmez.
   - Altta geri, ana ekran, sessiz ve ses −/+ var. Ses tuşları basılı tutulunca tekrarlar.
 - **Nasıl çalışır:** Google TV uygulamasının kullandığı Android TV Remote v2 protokolü kullanılır:
   - Eşleştirme 6467 numaralı porttan, kumanda 6466 numaralı porttan, istemci sertifikalı TLS ile yapılır.
-  - TV Wi-Fi'da `_androidtvremote2._tcp` olarak bulunur.
-  - Telefonun anahtarı Android'in güvenli anahtar deposunda üretilir ve oradan çıkmaz.
+  - TV Wi-Fi'da `_androidtvremote2._tcp` olarak bulunur. Servisi eski TV'ler `_androidtvremote._tcp` ile bulunur ve listelenir; böylece güncelleme uyarısı gösterilebilir. TV'nin IPv4 adresi tercih edilir.
+  - Telefonun anahtarı (RSA 2048) ve sertifikası ilk eşleştirmede üretilir. Yalnızca uygulamanın kendi klasöründe saklanır ve yedeklenmez.
   - TV'nin sertifikası eşleştirmede kaydedilir; sonra yalnızca o TV kabul edilir.
   - Telefon yalnızca evdeki TV ile konuşur.
+- **Bağlanmıyorsa:**
+
+  <img src="docs/eslestirme-hata.png" width="230" alt="Eski TV servisi: ne yapılacağı ve ayrıntı">
+
+  Eşleştirme ekranı sebebi ve ne yapılacağını yazar. Altında küçük bir "Ayrıntı" satırı vardır; sorun sürerse o satırın ekran görüntüsü yeterlidir. **Tekrar dene** düğmesiyle baştan denenir.
+  - **"Android TV Remote Service eski":** Mi Box 4 gibi eski cihazlar bu sistem uygulamasını kendiliğinden güncellemez. TV'de Play Store'u açın, "Android TV Remote Service" aratın ve **Güncelle**'ye basın.
+  - **"TV eşleştirmeyi reddetti":** TV'de Ayarlar → Uygulamalar → Sistem uygulamaları → Android TV Remote Service → Verileri temizle.
+  - **"Yanıt vermiyor":** TV kapalı, başka bir Wi-Fi'da ya da adresi değişmiş olabilir.
+- **1.6'da düzeltilen hata:**
+  - 1.2–1.5 sürümleri telefonun anahtarını Android'in anahtar deposunda eksik bir izinle üretiyordu.
+  - Android TV'ler güvenli bağlantıda RSA-PSS imzası ister. Bu anahtar bu imzayı atamadığı için bağlantı, eşleştirme başlamadan kopuyordu. Hata, Android'in TLS kütüphanesi Conscrypt'te bilinen bir sorundur ([issue 1201](https://github.com/google/conscrypt/issues/1201)).
+  - 1.6 bu anahtarı kullanmıyor. Önceki sürümle eşleştirme hiç tamamlanmadığı için yalnızca bir kez eşleştirmek yeterli.
 
 ## Animasyonlar
 
@@ -92,11 +104,11 @@ LG sinyalleri uygulamanın içinde NEC protokolüyle üretilir (LG adresi 0x04, 
 
 ## Nasıl test edildi?
 
-`./gradlew testReleaseUnitTest` 29 test çalıştırır:
+`./gradlew testReleaseUnitTest` 34 test çalıştırır:
 
 - **`IrTest` (3 test):** LG sinyalleri geri çözülüp bilinen kodlarla birebir karşılaştırıldı; NEC çerçevesi ve taşıyıcı frekansı doğru.
 - **`MotionTest` (5 test):** Yay eğrisi, sıralı geliş, çekme sonunda açma/kapama kararı, lastik etkisi ve 90/120 Hz seçimi.
-- **`AtvTest` (7 test):**
+- **`AtvTest` (10 test):**
   - Eşleştirme ve kumanda mesajları bayt bayt doğru.
   - Eşleştirme sırrı, Python'daki açık kaynak referans uygulamanın (androidtvremote2) formülüyle aynı sonucu veriyor.
   - Dokunmatik alanda kaydırma ve dokunma doğru algılanıyor.
@@ -104,8 +116,12 @@ LG sinyalleri uygulamanın içinde NEC protokolüyle üretilir (LG adresi 0x04, 
     - Eşleştirme tamamlanıyor; kumanda kanalı açılıyor ve TV'nin ping'lerine cevap veriliyor.
     - Güç, yön ve sessiz tuşları TV'ye ulaşıyor.
     - Yanlış kod reddediliyor; TV'nin tanımadığı telefon "yeniden eşleştir" durumuna düşüyor.
-- **`ConscryptTest` (1 test):** Aynı eşleştirme ve tuş akışı, Android telefonların kullandığı TLS kütüphanesi Conscrypt ile iki tarafta da çalışıyor.
-- **`PanelTest` (13 test, Robolectric, gerçek servis, 90 Hz kare aralığıyla):**
+    - Uygulamanın kendi ürettiği anahtar ve sertifika geçerli; kaydedilip geri okunabiliyor. Bu kimlikle Android 9 TV'ler gibi TLS 1.2'de eşleşiliyor ve tuş gönderiliyor.
+    - Hatalar ayırt ediliyor: eski TV servisi (Mi Box 4 gibi), TV'nin reddi, kapalı port, ulaşılamayan TV.
+- **`ConscryptTest` (2 test):**
+  - Aynı eşleştirme ve tuş akışı, Android telefonların kullandığı TLS kütüphanesi Conscrypt ile iki tarafta da çalışıyor.
+  - **Mi Box hatası yeniden üretildi:** 1.5'in anahtar deposu anahtarını taklit eden bir anahtar, TLS 1.2'de de 1.3'te de Android'deki hatanın aynısıyla düşüyor ("RSA/ECB/NoPadding" bulunamadı). Yeni kimlik aynı TV'lerle eşleşiyor. TV yalnızca eski imza türünü isteyince eski anahtar da geçiyor; bu da sebebin RSA-PSS olduğunu gösteriyor.
+- **`PanelTest` (14 test, Robolectric, gerçek servis, 90 Hz kare aralığıyla):**
   - **‹ ok:**
     - Kumandayı sola kaydırarak gizliyor. Kayarken tuşların boyutu değişmiyor, kart yalnızca sola kayıyor. Sonunda yalnızca ok, uygulama sütununun hemen yanında kalıyor ve **›** oluyor.
     - Okun sekmesi dönmüyor, yalnızca ok dönüyor.
@@ -121,6 +137,8 @@ LG sinyalleri uygulamanın içinde NEC protokolüyle üretilir (LG adresi 0x04, 
     1. Eşleştirme ekranı tek TV'yi görünce kendiliğinden başlıyor.
     2. TV'nin gösterdiği kod yazılınca eşleşme kaydediliyor.
     3. Kumanda sormadan bağlanıyor ve basılan tuş sahte TV'ye ulaşıyor.
+    - Bu akış uygulamanın gerçek kimlik koduyla çalışıyor (anahtar üretilip kaydediliyor).
+  - **Eski TV servisi:** Eşleştirme ekranı "Android TV Remote Service eski" diyor, güncelleme adımlarını ve ayrıntıyı gösteriyor. Servis güncellenince **Tekrar dene** ile eşleşiyor.
 
 Android Lint 0 hata verdi. Paneller, çekme anındaki kareler, Android TV sayfası, eşleştirme ve ayarlar ekranı çizdirilip kontrol edildi.
 

@@ -15,6 +15,7 @@ import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import com.ahmadman.kenarpanel.atv.Failure;
 import com.ahmadman.kenarpanel.atv.Messages;
 import com.ahmadman.kenarpanel.atv.Pairing;
 
@@ -43,6 +44,8 @@ public class PairActivity extends Activity {
     private int pairingPort;
     private boolean busy;
     private TextView status;
+    private TextView detail;
+    private View retry;
     private LinearLayout list;
     private View codeBox;
     private EditText code;
@@ -61,6 +64,9 @@ public class PairActivity extends Activity {
         MainActivity.applyInsets(findViewById(R.id.root));
         prefs = new Prefs(this);
         status = findViewById(R.id.pair_status);
+        detail = findViewById(R.id.pair_detail);
+        retry = findViewById(R.id.pair_retry);
+        retry.setOnClickListener(v -> pair(pairingName, pairingHost, pairingPort));
         list = findViewById(R.id.tv_list);
         codeBox = findViewById(R.id.code_box);
         code = findViewById(R.id.code);
@@ -137,11 +143,13 @@ public class PairActivity extends Activity {
         pairingName = name;
         pairingHost = host;
         pairingPort = port;
+        detail.setVisibility(View.GONE);
+        retry.setVisibility(View.GONE);
         status.setText(getString(R.string.pair_connecting, name));
         worker.execute(() -> {
             Pairing p = null;
             try {
-                p = new Pairing(AtvIdentity.get());
+                p = new Pairing(AtvIdentity.get(this));
                 p.start(host, pairPortForTests, Build.MODEL, 8000);
                 Pairing started = p;
                 main.post(() -> {
@@ -164,10 +172,7 @@ public class PairActivity extends Activity {
                 if (p != null) {
                     p.close();
                 }
-                main.post(() -> {
-                    busy = false;
-                    status.setText(getString(R.string.pair_failed, name));
-                });
+                main.post(() -> failed(name, e));
             }
         });
     }
@@ -204,10 +209,37 @@ public class PairActivity extends Activity {
                 });
             } catch (Exception e) {
                 main.post(() -> {
-                    busy = false;
-                    status.setText(getString(R.string.pair_failed, pairingName));
+                    codeBox.setVisibility(View.GONE);
+                    list.setVisibility(View.VISIBLE);
+                    failed(pairingName, e);
                 });
             }
         });
+    }
+
+    /** Says what went wrong and what to do about it, with the technical cause underneath. */
+    void failed(String name, Exception e) {
+        busy = false;
+        status.setText(getString(reason(Failure.of(e)), name));
+        detail.setText(getString(R.string.pair_detail, Failure.detail(e)));
+        detail.setVisibility(View.VISIBLE);
+        retry.setVisibility(View.VISIBLE);
+    }
+
+    static int reason(Failure.Kind kind) {
+        switch (kind) {
+            case UNREACHABLE:
+                return R.string.pair_fail_unreachable;
+            case CLOSED_PORT:
+                return R.string.pair_fail_closed;
+            case OLD_SERVICE:
+                return R.string.pair_fail_old_service;
+            case TLS:
+                return R.string.pair_fail_tls;
+            case TV_SAID_NO:
+                return R.string.pair_fail_refused;
+            default:
+                return R.string.pair_fail_other;
+        }
     }
 }

@@ -100,6 +100,15 @@ final class Prefs {
         p.edit().putString("speed", s.name()).apply();
     }
 
+    /** The TV remote next to the app column is open (it can be folded away to save space). */
+    boolean remoteOpen() {
+        return p.getBoolean("remoteOpen", true);
+    }
+
+    void remoteOpen(boolean open) {
+        p.edit().putBoolean("remoteOpen", open).apply();
+    }
+
     /** Which remote the panel shows: "lg" (infrared) or "atv" (Android TV over Wi-Fi). */
     String tvMode() {
         return p.getString("tvMode", "lg");

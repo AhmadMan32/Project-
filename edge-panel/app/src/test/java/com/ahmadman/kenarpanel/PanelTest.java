@@ -539,4 +539,63 @@ public class PanelTest {
             atv.close();
         }
     }
+
+    @Test
+    public void remoteFoldsAwayAndTheChoiceIsRemembered() {
+        OverlayService s = service();
+        s.openPanel();
+        idle(600);
+        View card = s.panel.root.findViewById(R.id.remote_card);
+        View toggle = s.panel.root.findViewById(R.id.tv_toggle);
+        assertEquals(View.VISIBLE, card.getVisibility());
+        assertTrue(toggle.isSelected()); // blue while open
+        int wide = s.panel.travel();
+
+        toggle.performClick();
+        idle(40);
+        assertEquals(View.VISIBLE, card.getVisibility()); // folding away, not just vanishing
+        assertTrue(card.getAlpha() < 1f);
+        idle(600);
+        assertEquals(View.GONE, card.getVisibility());
+        assertFalse(toggle.isSelected());
+        assertFalse(new Prefs(app).remoteOpen());
+        int narrow = s.panel.travel();
+        assertTrue("travel " + narrow + " < " + wide, narrow < wide / 2); // only the app column now
+        assertTrue(s.panelOpen()); // the panel itself stays open
+
+        // the panel opens narrow next time too (built again from the saved setting)
+        s.requestClose();
+        idle(600);
+        s.onDestroy();
+        OverlayService s2 = service();
+        assertEquals(View.GONE, s2.panel.root.findViewById(R.id.remote_card).getVisibility());
+        s2.openPanel();
+        idle(600);
+
+        // open it again: it unfolds with a small spring back to full size
+        View toggle2 = s2.panel.root.findViewById(R.id.tv_toggle);
+        View card2 = s2.panel.root.findViewById(R.id.remote_card);
+        toggle2.performClick();
+        idle(40);
+        assertEquals(View.VISIBLE, card2.getVisibility());
+        assertTrue(card2.getScaleX() < 1.05f);
+        idle(700);
+        assertEquals(1f, card2.getAlpha(), 0.001f);
+        assertEquals(1f, card2.getScaleX(), 0.001f);
+        assertEquals(0f, card2.getTranslationX(), 0.5f);
+        assertTrue(new Prefs(app).remoteOpen());
+        assertEquals(wide, s2.panel.travel());
+    }
+
+    @Test
+    public void backgroundIsNeverBlurred() {
+        OverlayService s = service();
+        s.openPanel();
+        idle(600);
+        WindowManager.LayoutParams lp = s.panelParams();
+        assertEquals(0, lp.flags & WindowManager.LayoutParams.FLAG_BLUR_BEHIND);
+        assertEquals(0, lp.getBlurBehindRadius());
+        // only a light dim remains
+        assertTrue(s.panel.root.getBackground().getAlpha() > 0);
+    }
 }

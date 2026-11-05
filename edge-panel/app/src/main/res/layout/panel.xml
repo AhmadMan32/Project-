@@ -29,6 +29,29 @@
             android:paddingTop="10dp"
             android:paddingBottom="10dp">
 
+            <!-- opens / closes the TV remote next to this column -->
+            <ImageView
+                android:id="@+id/tv_toggle"
+                android:layout_width="52dp"
+                android:layout_height="52dp"
+                android:layout_gravity="center_horizontal"
+                android:background="@drawable/bg_toggle"
+                android:clickable="true"
+                android:contentDescription="@string/remote_hide"
+                android:focusable="true"
+                android:padding="14dp"
+                android:src="@drawable/ic_tv"
+                android:tint="@color/panel_text" />
+
+            <View
+                android:id="@+id/tv_toggle_line"
+                android:layout_width="28dp"
+                android:layout_height="1dp"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="8dp"
+                android:layout_marginBottom="3dp"
+                android:background="@color/panel_stroke" />
+
             <ScrollView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"

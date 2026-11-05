@@ -38,9 +38,6 @@ final class Panel {
         /** Back key or a tap on the dimmed area. */
         void requestClose();
 
-        /** Background blur, 0..1 of the full radius. */
-        void blur(float fraction);
-
         /** The edge handle fades out while the panel comes in. */
         void handleAlpha(float alpha);
 
@@ -72,6 +69,8 @@ final class Panel {
     private final View tabAtv;
     private final AtvRemote atv;
     private Tween pageTween;
+    private final View remoteToggle;
+    private Tween remoteTween;
     private final android.os.Handler main = new android.os.Handler(android.os.Looper.getMainLooper());
 
     @SuppressLint("InflateParams") // window root
@@ -91,6 +90,15 @@ final class Panel {
         key(R.id.k_hdmi1, Remotes.Key.HDMI1);
         key(R.id.k_hdmi2, Remotes.Key.HDMI2);
         root.findViewById(R.id.settings).setOnClickListener(v -> host.openSettings(false));
+        remoteToggle = root.findViewById(R.id.tv_toggle);
+        remoteToggle.setOnClickListener(v -> {
+            boolean open = !prefs.remoteOpen();
+            prefs.remoteOpen(open);
+            if (prefs.haptics()) {
+                v.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY);
+            }
+            showRemote(open, prefs.speed() != Motion.Speed.OFF);
+        });
 
         // Android TV page
         pageLg = root.findViewById(R.id.page_lg);
@@ -159,6 +167,7 @@ final class Panel {
         lp.gravity = (right ? Gravity.END : Gravity.START) | Gravity.CENTER_VERTICAL;
         content.setLayoutParams(lp);
         loadApps();
+        showRemote(prefs.remoteOpen(), false);
         String mode = prefs.tvMode();
         tabLg.setSelected(!"atv".equals(mode));
         tabAtv.setSelected("atv".equals(mode));
@@ -191,6 +200,7 @@ final class Panel {
         remoteRows.add(root.findViewById(R.id.atv_row1));
         remoteRows.add(root.findViewById(R.id.atv_row2));
         List<View> icons = new ArrayList<>();
+        icons.add(remoteToggle);
         for (int i = 0; i < apps.getChildCount(); i++) {
             icons.add(apps.getChildAt(i));
         }
@@ -230,7 +240,6 @@ final class Panel {
         float off = (1f - p) * travel;
         content.setTranslationX(right ? off : -off);
         dim.setAlpha(Math.round(255 * c));
-        host.blur(c);
         host.handleAlpha(1f - Motion.clamp(c * 3f));
         float slide = 18 * dp * (right ? 1 : -1);
         int n = cascade.size();
@@ -268,6 +277,64 @@ final class Panel {
         // the spring's motion is mostly in its first half: it feels as fast as the setting
         long millis = Math.round(speed.millis * distance * (opening ? 2.0f : 0.9f));
         tween = Tween.run(progress, target, millis, opening ? Motion::spring : f -> f * f, this::setProgress, end);
+    }
+
+    boolean remoteShown() {
+        return remoteCard.getVisibility() == View.VISIBLE;
+    }
+
+    /**
+     * Opens the TV remote next to the app column (it unfolds from the column with a small
+     * spring) or folds it away, so the panel takes only a thin strip of the screen.
+     */
+    void showRemote(boolean open, boolean animate) {
+        if (remoteTween != null) {
+            remoteTween.cancel();
+            remoteTween = null;
+        }
+        remoteToggle.setSelected(open);
+        remoteToggle.setContentDescription(context.getString(open ? R.string.remote_hide : R.string.remote_show));
+        float start = 28 * dp * (right ? 1 : -1); // tucked against the app column
+        if (!animate) {
+            remoteCard.setVisibility(open ? View.VISIBLE : View.GONE);
+            remoteCard.setAlpha(1f);
+            remoteCard.setScaleX(1f);
+            remoteCard.setScaleY(1f);
+            remoteCard.setTranslationX(0);
+            fit();
+            return;
+        }
+        if (open) {
+            remoteCard.setVisibility(View.VISIBLE);
+            fit();
+            remoteCard.setPivotX(right ? remoteCard.getMeasuredWidth() : 0);
+            remoteCard.setPivotY(remoteCard.getMeasuredHeight() / 2f);
+            if ("atv".equals(prefs.tvMode())) {
+                atv.ensure();
+            }
+            remoteTween = Tween.run(0f, 1f, Math.round(prefs.speed().millis * 1.8f), Motion::spring, f -> {
+                remoteCard.setAlpha(Motion.clamp(f * 1.6f));
+                remoteCard.setScaleX(0.88f + 0.12f * f);
+                remoteCard.setScaleY(0.88f + 0.12f * f);
+                remoteCard.setTranslationX(start * (1f - f));
+            }, null);
+        } else {
+            remoteCard.setPivotX(right ? remoteCard.getWidth() : 0);
+            remoteCard.setPivotY(remoteCard.getHeight() / 2f);
+            remoteTween = Tween.run(1f, 0f, Math.round(prefs.speed().millis * 0.9f), x -> x * x, f -> {
+                remoteCard.setAlpha(f);
+                remoteCard.setScaleX(0.88f + 0.12f * f);
+                remoteCard.setScaleY(0.88f + 0.12f * f);
+                remoteCard.setTranslationX(start * (1f - f));
+            }, () -> {
+                remoteCard.setVisibility(View.GONE);
+                remoteCard.setAlpha(1f);
+                remoteCard.setScaleX(1f);
+                remoteCard.setScaleY(1f);
+                remoteCard.setTranslationX(0);
+                fit();
+            });
+        }
     }
 
     /** Switches between the LG and the Android TV page; the card keeps its size. */

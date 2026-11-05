@@ -15,7 +15,6 @@ import android.graphics.Rect;
 import android.hardware.display.DisplayManager;
 import android.os.Build;
 import android.os.IBinder;
-import android.os.SystemClock;
 import android.provider.Settings;
 import android.util.DisplayMetrics;
 import android.view.Display;
@@ -91,8 +90,6 @@ public class OverlayService extends Service implements Panel.Host {
     private boolean attached;
     private boolean closing;
     private float fastRate;
-    private int lastBlur = -1;
-    private long lastBlurAt;
 
     @Override
     public void onCreate() {
@@ -373,7 +370,6 @@ public class OverlayService extends Service implements Panel.Host {
     }
 
     /** Puts the panel window on screen at progress 0 (hidden at the edge). */
-    @SuppressWarnings("deprecation") // FLAG_BLUR_BEHIND is the blur flag again from Android 12
     private void attachPanel() {
         closing = false;
         panel.cancelAnimation();
@@ -389,12 +385,7 @@ public class OverlayService extends Service implements Panel.Host {
         if (fastRate > 0) {
             panelLp.preferredRefreshRate = fastRate; // 90 Hz only while the panel is on screen
         }
-        if (blurSupported()) {
-            panelLp.flags |= WindowManager.LayoutParams.FLAG_BLUR_BEHIND;
-            panelLp.setBlurBehindRadius(0);
-        }
-        lastBlur = 0;
-        if ("atv".equals(prefs.tvMode())) {
+        if ("atv".equals(prefs.tvMode()) && prefs.remoteOpen()) {
             AtvRemote.get(this).ensure(); // connects while the panel comes out: ready when it is open
         }
         panel.fit(); // screen size may have changed (rotation)
@@ -444,31 +435,6 @@ public class OverlayService extends Service implements Panel.Host {
         if (handle != null) {
             handle.setVisibility(View.VISIBLE);
             handle.setAlpha(1f);
-        }
-    }
-
-    private boolean blurSupported() {
-        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && wm.isCrossWindowBlurEnabled();
-    }
-
-    /** Blurs the screen behind the panel; updates are rate-limited to keep frames smooth. */
-    @Override
-    public void blur(float fraction) {
-        if (!attached || panelLp == null || !blurSupported()) {
-            return;
-        }
-        int max = Math.round(dp(26));
-        int r = Math.round(fraction * max);
-        long now = SystemClock.uptimeMillis();
-        boolean edge = r == 0 || r == max;
-        if (r == lastBlur || (!edge && (Math.abs(r - lastBlur) < 2 || now - lastBlurAt < 22))) {
-            return;
-        }
-        lastBlur = r;
-        lastBlurAt = now;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            panelLp.setBlurBehindRadius(r);
-            wm.updateViewLayout(panel.root, panelLp);
         }
     }
 

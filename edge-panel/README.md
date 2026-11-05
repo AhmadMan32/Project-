@@ -8,13 +8,13 @@ Panelde uygulama kısayolları ve TV kumandası bulunur. Kumandanın üstündeki
 
 <img src="docs/tutamak.png" width="190" alt="Kenardaki çubuk"> <img src="docs/cekme-1.png" width="190" alt="Çekerken: panel parmağı takip ediyor"> <img src="docs/cekme-2.png" width="190" alt="Çekerken: içerik sırayla geliyor"> <img src="docs/panel.png" width="190" alt="Panel açık">
 
-<img src="docs/android-tv.png" width="190" alt="Android TV sayfası"> <img src="docs/android-tv-eslestirilmedi.png" width="190" alt="Android TV, eşleştirilmemiş"> <img src="docs/eslestirme.png" width="190" alt="Tek seferlik eşleştirme"> <img src="docs/panel-sag.png" width="190" alt="Sağ kenar">
+<img src="docs/panel-kapali.png" width="190" alt="Kumanda kapalı: yalnızca uygulamalar"> <img src="docs/android-tv.png" width="190" alt="Android TV sayfası"> <img src="docs/android-tv-eslestirilmedi.png" width="190" alt="Android TV, eşleştirilmemiş"> <img src="docs/eslestirme.png" width="190" alt="Tek seferlik eşleştirme"> <img src="docs/panel-sag.png" width="190" alt="Sağ kenar">
 
 <img src="docs/ayarlar.png" width="190" alt="Ayarlar"> <img src="docs/ayarlar-koyu.png" width="190" alt="Ayarlar, koyu tema">
 
 ## Kurulum (APK)
 
-1. [`apk/KenarPanel-1.2.apk`](apk/KenarPanel-1.2.apk) dosyasını telefona indirin (122 KB). Dosyayı açın; Android "bilinmeyen kaynaklardan yükleme" izni isterse verin. Eski sürüm kuruluysa üzerine kurulur.
+1. [`apk/KenarPanel-1.3.apk`](apk/KenarPanel-1.3.apk) dosyasını telefona indirin (123 KB). Dosyayı açın; Android "bilinmeyen kaynaklardan yükleme" izni isterse verin. Eski sürüm kuruluysa üzerine kurulur.
 2. Uygulamayı açıp **Başlat**'a dokunun. **Diğer uygulamaların üzerinde göster** iznini açıp geri dönün.
 3. **Xiaomi / Redmi / POCO:** İzinler bölümündeki Xiaomi satırına dokunun. **Arka planda çalışırken açılır pencereleri göster** ve **Otomatik başlatma** seçeneklerini açın. Bunlar kapalıysa panelden uygulama açılamaz.
 
@@ -27,6 +27,7 @@ Android 6.0 ve üzeri sürümlerde çalışır. Başka bir uygulama gerekmez.
   - Yarıdan fazla çekip bırakırsanız açılır. Hızlıca fiskelemek de yeter.
   - Az çeker veya geri çekerseniz kapanır.
   - Çubuğa dokunmak da paneli açar.
+- **Kumandayı açıp kapatmak:** Uygulama sütununun en üstündeki **TV düğmesi** kumandayı açar ve kapatır; kumanda açıkken düğme mavidir. Kapalıyken panel yalnızca ince uygulama sütunu kadar yer kaplar. Seçim hatırlanır.
 - **Paneli kapatmak:** Boş alana dokunun veya geri tuşuna basın; panel kenara kayarak kapanır.
 - **Çubuğu taşımak:** Çubuğu yukarı veya aşağı sürükleyin; yeri kaydedilir. Ayarlardan sol veya sağ kenar, uzunluk, kalınlık ve görünürlük seçilebilir. **Konumu kilitle** ile yanlışlıkla kayması önlenir.
 - **Uygulamalar:** Simgeye dokununca uygulama açılır. **+** veya ayarlardaki **Uygulamaları seç** ile en fazla 12 uygulama seçilir; işaretleme sırası paneldeki sıradır.
@@ -66,7 +67,7 @@ Android 6.0 ve üzeri sürümlerde çalışır. Başka bir uygulama gerekmez.
 - **İçerik sırayla gelir:** Önce kumandanın satırları, sonra uygulama simgeleri; ekrana giriş sırasına göre kayarak ve belirerek gelir. Çubuk, panel geldikçe solar.
 - **Tuşlar:** Basınca hafifçe küçülür, bırakınca esneyerek geri döner. Dalga efekti parmağın dokunduğu noktadan yayılır. Kod, parmak dokunduğu anda gönderilir; animasyonu beklemez.
 - **Çubuk:** Tutulunca kalınlaşır ve parlaklaşır; bırakınca yaylanarak eski haline döner.
-- **Arka plan:** Panel geldikçe kararır. Android 12 ve üzerinde arka plan ayrıca bulanıklaşır (telefon pencere bulanıklığını destekliyorsa).
+- **Arka plan:** Bulanıklaşmaz; panel geldikçe yalnızca hafifçe kararır.
 - **Hız:** Ayarlardan **Hızlı** (varsayılan), **Orta**, **Yavaş** veya **Kapalı** seçilir. Telefonun geliştirici seçeneklerindeki animasyon ölçeği de dikkate alınır.
 - **90 FPS:**
   - Animasyonlar her ekran yenilemesinde bir adım ilerler; 90 Hz ekranda saniyede 90 kare oynar.
@@ -86,7 +87,7 @@ LG sinyalleri uygulamanın içinde NEC protokolüyle üretilir (LG adresi 0x04, 
 
 ## Nasıl test edildi?
 
-`./gradlew testReleaseUnitTest` 27 test çalıştırır:
+`./gradlew testReleaseUnitTest` 29 test çalıştırır:
 
 - **`IrTest` (3 test):** LG sinyalleri geri çözülüp bilinen kodlarla birebir karşılaştırıldı; NEC çerçevesi ve taşıyıcı frekansı doğru.
 - **`MotionTest` (5 test):** Yay eğrisi, sıralı geliş, çekme sonunda açma/kapama kararı, lastik etkisi ve 90/120 Hz seçimi.
@@ -99,7 +100,9 @@ LG sinyalleri uygulamanın içinde NEC protokolüyle üretilir (LG adresi 0x04, 
     - Güç, yön ve sessiz tuşları TV'ye ulaşıyor.
     - Yanlış kod reddediliyor; TV'nin tanımadığı telefon "yeniden eşleştir" durumuna düşüyor.
 - **`ConscryptTest` (1 test):** Aynı eşleştirme ve tuş akışı, Android telefonların kullandığı TLS kütüphanesi Conscrypt ile iki tarafta da çalışıyor.
-- **`PanelTest` (11 test, Robolectric, gerçek servis, 90 Hz kare aralığıyla):**
+- **`PanelTest` (13 test, Robolectric, gerçek servis, 90 Hz kare aralığıyla):**
+  - TV düğmesi kumandayı kayarak kapatıyor. Panel açık kalıyor ve yalnızca uygulama sütunu kadar yer kaplıyor. Seçim kaydediliyor; panel bir dahaki sefere de kapalı açılıyor. Tekrar dokununca kumanda yaylanarak tam boyuta dönüyor.
+  - Arka plan pencere ayarlarında bulanıklık yok; yalnızca hafif karartma var.
   - Çekme, fiske, yay, lastik etkisi, çubuk büyümesi ve sürükleme çalışıyor; LG tuşları kızılötesi gönderiyor.
   - **Android TV sayfası:**
     - LG ↔ Android TV geçişinde kumanda kartının genişliği ve yüksekliği değişmiyor; eşleştirilmemiş durumda da değişmiyor.
@@ -115,7 +118,7 @@ Android Lint 0 hata verdi. Paneller, çekme anındaki kareler, Android TV sayfas
 **Test edilemeyenler:**
 - Bu ortamda gerçek telefon, LG TV ve Android TV olmadığı için gerçek cihazlarla denenemedi.
 - Android TV protokolü, yaygın kullanılan açık kaynak uygulamayla ve sahte TV ile doğrulandı.
-- Animasyonların akıcılığı ve arka plan bulanıklığı gerçek ekranda görülemedi.
+- Animasyonların akıcılığı gerçek ekranda görülemedi.
 
 ## Bilinen sınırlamalar
 
@@ -127,7 +130,6 @@ Android Lint 0 hata verdi. Paneller, çekme anındaki kareler, Android TV sayfas
   - Mikrofonla sesli arama şimdilik yok.
   - TV sıfırlanırsa panel "Yeniden eşleştir" der.
 - **90 Hz:** Ekranın 90 Hz veya üzerini desteklemesi gerekir. Bazı telefonlar (ör. Xiaomi'nin "akıllı yenileme hızı" ayarı) uygulama isteğine rağmen ekran hızını kendi belirler.
-- **Bulanıklık:** Android 12 öncesinde, pil tasarrufu modunda veya pencere bulanıklığını desteklemeyen telefonlarda arka plan yalnızca kararır.
 - **İmza:** APK debug anahtarıyla imzalıdır. Farklı bir ortamda derlenen sürüm üzerine kurulmazsa önce eskisini kaldırın.
 
 ## Kaynaktan derleme
@@ -144,7 +146,7 @@ export ANDROID_HOME=/android/sdk/yolu
 | `core/Ir.java`, `core/Remotes.java` | NEC sinyal üretimi, LG güç/HDMI kodları (saf Java) |
 | `core/Motion.java` | Yay eğrisi, sıralı geliş, lastik etkisi, açma kararı, 90 Hz seçimi (saf Java) |
 | `Tween.java` | Ekran yenilemesine bağlı animasyon adımları |
-| `OverlayService.java`, `HandleView.java` | Çubuk, parmağı takip eden çekme, fiske, bulanıklık, 90 Hz isteği |
+| `OverlayService.java`, `HandleView.java` | Çubuk, parmağı takip eden çekme, fiske, 90 Hz isteği |
 | `Panel.java`, `PanelRoot.java`, `Remote.java` | Hazır bekleyen panel, ilerleme tabanlı animasyon, tuşlar |
 | `atv/Proto.java`, `atv/Messages.java` | Android TV Remote v2 mesajları ve eşleştirme sırrı (saf Java) |
 | `atv/Tls.java`, `atv/Pairing.java`, `atv/Session.java` | İstemci sertifikalı TLS, tek seferlik eşleştirme, kumanda kanalı (saf Java) |

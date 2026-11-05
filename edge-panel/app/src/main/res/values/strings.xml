@@ -58,7 +58,7 @@
     <string name="remote_title" translatable="false">LG TV</string>
     <string name="key_power">Güç</string>
     <string name="footer">Kenar Panel · Yalnızca evdeki TV ile konuşur, başka hiçbir yere bağlanmaz.</string>
-    <string name="anim_hint">Panel çekerken parmağınızı takip eder, bırakınca yaylanarak açılır. İçindekiler sırayla gelir, tuşlar basınca esner ve dalgalanır, arka plan bulanıklaşır.</string>
+    <string name="anim_hint">Panel çekerken parmağınızı takip eder, bırakınca yaylanarak açılır. İçindekiler sırayla gelir, tuşlar basınca esner ve dalgalanır. Arka plan bulanıklaşmaz, yalnızca hafifçe kararır.</string>
     <string name="anim_speed">Animasyon hızı</string>
     <string name="anim_title">Animasyonlar</string>
     <string name="key_hdmi1" translatable="false">HDMI 1</string>
@@ -109,4 +109,6 @@
     <string name="tab_atv" translatable="false">Android TV</string>
     <string name="atv_not_paired_panel">Bir kez eşleştirin, sonra kendiliğinden bağlanır.</string>
     <string name="atv_refused_panel">TV bu telefonu tanımıyor.</string>
+    <string name="remote_show">TV kumandasını aç</string>
+    <string name="remote_hide">TV kumandasını kapat</string>
 </resources>

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="0dp"
+    android:layout_height="40dp"
+    android:layout_weight="1"
+    android:background="@drawable/bg_segment"
+    android:clickable="true"
+    android:focusable="true"
+    android:gravity="center"
+    android:maxLines="1"
+    android:ellipsize="end"
+    android:paddingStart="4dp"
+    android:paddingEnd="4dp"
+    android:textColor="@color/segment_text"
+    android:textSize="13sp"
+    android:textStyle="bold" />

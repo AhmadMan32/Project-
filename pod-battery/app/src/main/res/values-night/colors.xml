@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="bg">#0B0B0F</color>
+    <color name="surface">#1C1C1E</color>
+    <color name="surface_alt">#2C2C2E</color>
+    <color name="stroke">#2C2C30</color>
+    <color name="text_primary">#F2F2F7</color>
+    <color name="text_secondary">#9A9AA2</color>
+    <color name="primary">#4C8DFF</color>
+    <color name="on_primary">#00163D</color>
+    <color name="ripple">#334C8DFF</color>
+    <color name="battery_ok">#30D158</color>
+    <color name="battery_mid">#FF9F0A</color>
+    <color name="battery_low">#FF453A</color>
+    <color name="ring_track">#2C2C2E</color>
+    <color name="pod_body">#F2F2F7</color>
+    <color name="pod_edge">#8E8E93</color>
+    <color name="pod_detail">#3A3A3C</color>
+</resources>

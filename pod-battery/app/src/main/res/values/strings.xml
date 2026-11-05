@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">PodPil</string>
+    <string name="tagline">AirPods ve Beats pil göstergesi</string>
+    <string name="percent">%%%1$d</string>
+    <string name="dur_m">%1$d dk</string>
+    <string name="dur_h">%1$d sa</string>
+    <string name="dur_hm">%1$d sa %2$d dk</string>
+    <string name="approx">≈ %1$s</string>
+    <string name="left">Sol</string>
+    <string name="right">Sağ</string>
+    <string name="case_label">Kutu</string>
+    <string name="headphones">Kulaklık</string>
+    <string name="in_ear">kulakta</string>
+    <string name="in_case">Kutuda</string>
+    <string name="full">Dolu</string>
+    <string name="levels_dual">Sol %1$s · Sağ %2$s · Kutu %3$s</string>
+    <string name="levels_single">Pil %1$s</string>
+    <string name="est_left">≈ %1$s kaldı</string>
+    <string name="est_total">kutuyla ≈ %1$s</string>
+    <string name="est_charging">Şarj oluyor · tam dolum ≈ %1$s</string>
+    <string name="est_full">Kutuda, dolu</string>
+    <string name="est_case_only">Kutuda ≈ %1$s dinleme süresi var</string>
+    <string name="channel_status">Pil durumu</string>
+    <string name="channel_alert">Düşük pil uyarısı</string>
+    <string name="notif_idle_title">AirPods bağlı değil</string>
+    <string name="notif_idle_text">Bağlandığında pil durumu burada görünür</string>
+    <string name="notif_reading">Pil bilgisi alınıyor…</string>
+    <string name="alert_title">%1$s pili azaldı</string>
+    <string name="alert_text">%1$s · yaklaşık %2$s kaldı</string>
+    <string name="source_exact_short">kesin değer</string>
+    <string name="source_steps_short" formatted="false">%10\'luk adımlar</string>
+    <string name="source_aap" formatted="false">Kesin değerler (%1 hassasiyet) · AirPods\'tan doğrudan</string>
+    <string name="source_decrypted" formatted="false">Kesin değerler (%1 hassasiyet) · şifreli yayından</string>
+    <string name="source_steps" formatted="false">AirPods bu telefona pili %10\'luk adımlarla bildiriyor</string>
+    <string name="why">Neden?</string>
+    <string name="source_dialog_title">Pil değerleri nereden geliyor?</string>
+    <string name="source_dialog_text" formatted="false">AirPods çevredeki her cihaza pil durumunu Bluetooth ile yayınlar. Bu yayının herkese açık kısmında değerler %10\'luk adımlarla (%80, %90…) bulunur. Gösterilen değer AirPods\'un gönderdiği değerdir, tahmin değildir.\n\nTam yüzde (ör. %87) iki yolla alınır:\n• Telefon izin veriyorsa PodPil AirPods\'a doğrudan bağlanır (Apple\'ın aksesuar kanalı). Bu, güncel Android sürümlerinde (ör. Pixel, Android 16+) çalışır; birçok telefonda Android\'in Bluetooth hatası yüzünden henüz çalışmaz.\n• Bağlantı bir kez kurulduğunda AirPods kendi anahtarlarını verir; sonra yayının şifreli kısmından da tam yüzde okunur. Bu anahtarlar bir Mac\'ten de alınıp elle girilebilir.</string>
+    <string name="no_device">Kulaklık bulunamadı</string>
+    <string name="waiting">AirPods\'u bağlayın veya kutusunu telefonun yanında açın. Pil durumu birkaç saniye içinde görünür.</string>
+    <string name="need_perm">AirPods\'un pil yayınını okumak için “Yakındaki cihazlar” iznine ihtiyaç var. Konumunuz kullanılmaz.</string>
+    <string name="grant">İzin ver</string>
+    <string name="bt_off">Bluetooth kapalı.</string>
+    <string name="bt_enable">Bluetooth\'u aç</string>
+    <string name="chip_live">Bağlı · canlı</string>
+    <string name="chip_connected">Bağlı</string>
+    <string name="chip_nearby">Yakında</string>
+    <string name="chip_last">Son: %1$s</string>
+    <string name="chip_off">Bağlı değil</string>
+    <string name="seconds_ago">%1$d sn önce</string>
+    <string name="minutes_ago">%1$d dk önce</string>
+    <string name="est_label_left">Tahmini kalan dinleme süresi</string>
+    <string name="est_label_charging">Şarj oluyor · tam dolum</string>
+    <string name="est_basis_apple">Apple\'ın tek şarjla %1$s değerine göre; kullandıkça sizin kulaklığınıza göre ayarlanır</string>
+    <string name="est_basis_learned">Sizin kulaklığınızın gerçek tüketimine göre</string>
+    <string name="est_basis_charging" formatted="false">Kutuda şarj oluyor; ilk %80 hızlı dolar</string>
+    <string name="est_basis_none">Kulaklık takılınca hesaplanır</string>
+    <string name="row_case_extra">Kutudaki ek şarj</string>
+    <string name="case_extra_value">%1$s (%2$s tam şarj)</string>
+    <string name="row_total">Kutuyla toplam</string>
+    <string name="row_case_full">Kutunun dolmasına</string>
+    <string name="details_title">Ayrıntılar</string>
+    <string name="row_model">Model</string>
+    <string name="model_unknown">Apple kulaklık (model 0x%1$s)</string>
+    <string name="row_ears">Kulakta</string>
+    <string name="ears_value">Sol %1$s · Sağ %2$s</string>
+    <string name="yes">evet</string>
+    <string name="no">hayır</string>
+    <string name="row_lid">Kutu kapağı</string>
+    <string name="lid_open">Açık</string>
+    <string name="lid_closed">Kapalı</string>
+    <string name="row_signal">Sinyal</string>
+    <string name="signal_value">%1$d dBm</string>
+    <string name="row_updated">Son güncelleme</string>
+    <string name="exact_title">Kesin yüzde</string>
+    <string name="exact_aap_live" formatted="false">✓ AirPods\'a doğrudan bağlı: değerler %1 hassasiyetle, anlık.</string>
+    <string name="exact_keys" formatted="false">✓ AirPods anahtarları kayıtlı: yayından %1 hassasiyetle okunuyor.</string>
+    <string name="exact_aap_ok">Bu telefon AirPods\'a doğrudan bağlanabiliyor. Kulaklık bağlanınca kesin değerler gelir.</string>
+    <string name="exact_unsupported" formatted="false">Bu telefonun Bluetooth sistemi AirPods\'a doğrudan bağlanmaya izin vermiyor (Android hatası). Değerler %10\'luk adımlarla gösteriliyor.</string>
+    <string name="exact_untried">AirPods bağlanınca PodPil kesin değerler için doğrudan bağlanmayı dener.</string>
+    <string name="exact_explain">Doğrudan bağlantı Android 16 ve üzeri güncel sürümlerde (ör. Pixel) çalışır; telefon güncellemesi gelince kendiliğinden açılır. Mac\'iniz varsa AirPods anahtarlarını elle de girebilirsiniz.</string>
+    <string name="keys_enter">Anahtarları elle gir</string>
+    <string name="keys_clear">Anahtarları sil</string>
+    <string name="keys_title">AirPods anahtarları</string>
+    <string name="keys_help">Mac\'te Anahtar Zinciri Erişimi → “MobileBluetooth” kaydı → “Parolayı göster”: MagicAccEncKey ve MagicAccIRK değerleri (32 onaltılık karakter).</string>
+    <string name="keys_enc_hint">MagicAccEncKey (gerekli)</string>
+    <string name="keys_irk_hint">MagicAccIRK (isteğe bağlı)</string>
+    <string name="keys_invalid">Anahtar 32 onaltılık karakter olmalı</string>
+    <string name="keys_saved">Anahtarlar kaydedildi</string>
+    <string name="save">Kaydet</string>
+    <string name="cancel">Vazgeç</string>
+    <string name="settings_title">Ayarlar</string>
+    <string name="opt_popup">Bağlanınca açılır pencere</string>
+    <string name="opt_popup_desc">AirPods bağlandığında ekranın altında pil durumunu gösterir.</string>
+    <string name="test_popup">Şimdi göster</string>
+    <string name="popup_no_data">Henüz pil bilgisi yok</string>
+    <string name="opt_alert">Düşük pil uyarısı</string>
+    <string name="off">Kapalı</string>
+    <string name="opt_boot">Telefon açılınca başlat</string>
+    <string name="close">Kapat</string>
+    <string name="perm_title">İzinler</string>
+    <string name="perm_required">Gerekli</string>
+    <string name="perm_optional">İsteğe bağlı</string>
+    <string name="perm_bluetooth">Yakındaki cihazlar (Bluetooth)</string>
+    <string name="perm_bluetooth_desc">AirPods\'un pil yayınını okumak ve bağlanmak için</string>
+    <string name="perm_location">Konum</string>
+    <string name="perm_location_desc">Android 11 ve öncesinde Bluetooth taraması için açık olmalı</string>
+    <string name="perm_notifications">Bildirimler</string>
+    <string name="perm_notifications_desc">Pil durumu ve düşük pil uyarısı için</string>
+    <string name="perm_overlay">Diğer uygulamaların üzerinde göster</string>
+    <string name="perm_overlay_desc">Bağlanınca açılan pencere için</string>
+    <string name="perm_battery">Pil optimizasyonu kapalı</string>
+    <string name="perm_battery_desc">Arka planda kapanmaması için</string>
+    <string name="perm_ok">Tamam</string>
+    <string name="perm_missing">Eksik</string>
+    <string name="perm_info">Bilgi</string>
+    <string name="footer">PodPil · İnternet izni yok; veriler telefonda kalır. Apple ile bağlantısı yoktur.</string>
+</resources>

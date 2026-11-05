@@ -22,3 +22,7 @@ YouTube, Instagram, TikTok ve 1000+ siteden linki yapıştırın veya paylaşın
 ## Bildirim Kaydedici (Android)
 
 Gelen her bildirimi saniyesinde, 7/24 kaydeder. Kaydedilecek uygulamaları siz seçersiniz. Sohbet görünümü, silinen mesajların asıl metni, Türkçe arama, uygulama kilidi ve CSV dışa aktarma içerir; internet izni yoktur: [`notification-saver/`](notification-saver/). Hazır APK: [`notification-saver/apk/BildirimKaydedici-1.0.apk`](notification-saver/apk/BildirimKaydedici-1.0.apk)
+
+## PodPil (Android)
+
+AirPods ve Beats bağlanınca sol kulaklığın, sağ kulaklığın ve kutunun pilini, tahmini kalan süreyle birlikte gösterir. Bağlanınca açılan pencere, bildirim ve düşük pil uyarısı içerir. Telefon izin veriyorsa %1 hassasiyetle, vermiyorsa %10'luk adımlarla çalışır: [`pod-battery/`](pod-battery/). Hazır APK: [`pod-battery/apk/PodPil-1.0.apk`](pod-battery/apk/PodPil-1.0.apk)

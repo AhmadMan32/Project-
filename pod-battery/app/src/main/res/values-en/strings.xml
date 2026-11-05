@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">PodPil</string>
+    <string name="tagline">AirPods and Beats battery levels</string>
+    <string name="percent">%1$d%%</string>
+    <string name="dur_m">%1$d min</string>
+    <string name="dur_h">%1$d h</string>
+    <string name="dur_hm">%1$d h %2$d min</string>
+    <string name="approx">≈ %1$s</string>
+    <string name="left">Left</string>
+    <string name="right">Right</string>
+    <string name="case_label">Case</string>
+    <string name="headphones">Headphones</string>
+    <string name="in_ear">in ear</string>
+    <string name="in_case">In the case</string>
+    <string name="full">Full</string>
+    <string name="levels_dual">Left %1$s · Right %2$s · Case %3$s</string>
+    <string name="levels_single">Battery %1$s</string>
+    <string name="est_left">≈ %1$s left</string>
+    <string name="est_total">with case ≈ %1$s</string>
+    <string name="est_charging">Charging · full in ≈ %1$s</string>
+    <string name="est_full">In the case, full</string>
+    <string name="est_case_only">The case holds ≈ %1$s of listening</string>
+    <string name="channel_status">Battery status</string>
+    <string name="channel_alert">Low battery warning</string>
+    <string name="notif_idle_title">AirPods not connected</string>
+    <string name="notif_idle_text">Battery levels show up here when they connect</string>
+    <string name="notif_reading">Reading battery…</string>
+    <string name="alert_title">%1$s battery low</string>
+    <string name="alert_text">%1$s · about %2$s left</string>
+    <string name="source_exact_short">exact value</string>
+    <string name="source_steps_short" formatted="false">10% steps</string>
+    <string name="source_aap" formatted="false">Exact values (1% precision) · straight from the AirPods</string>
+    <string name="source_decrypted" formatted="false">Exact values (1% precision) · from the encrypted broadcast</string>
+    <string name="source_steps" formatted="false">The AirPods report battery to this phone in 10% steps</string>
+    <string name="why">Why?</string>
+    <string name="source_dialog_title">Where do the numbers come from?</string>
+    <string name="source_dialog_text" formatted="false">AirPods broadcast their battery over Bluetooth to every device nearby. The public part of this broadcast has 10% steps (80%, 90%…). The value shown is what the AirPods send, not a guess.\n\nThe exact percentage (e.g. 87%) comes two ways:\n• If the phone allows it, PodPil connects to the AirPods directly (Apple\'s accessory channel). This works on recent Android builds (e.g. Pixel, Android 16+); on many phones a bug in Android\'s Bluetooth stack still blocks it.\n• Once connected, the AirPods hand over their keys; then the encrypted part of the broadcast gives exact values too. The keys can also be taken from a Mac and entered by hand.</string>
+    <string name="no_device">No headphones yet</string>
+    <string name="waiting">Connect your AirPods or open the case next to the phone. The battery shows up within seconds.</string>
+    <string name="need_perm">PodPil needs the “Nearby devices” permission to read the AirPods\' battery broadcast. Your location is not used.</string>
+    <string name="grant">Allow</string>
+    <string name="bt_off">Bluetooth is off.</string>
+    <string name="bt_enable">Turn on Bluetooth</string>
+    <string name="chip_live">Connected · live</string>
+    <string name="chip_connected">Connected</string>
+    <string name="chip_nearby">Nearby</string>
+    <string name="chip_last">Last: %1$s</string>
+    <string name="chip_off">Not connected</string>
+    <string name="seconds_ago">%1$d s ago</string>
+    <string name="minutes_ago">%1$d min ago</string>
+    <string name="est_label_left">Estimated listening time left</string>
+    <string name="est_label_charging">Charging · full in</string>
+    <string name="est_basis_apple">Based on Apple\'s %1$s per charge; adjusts to your own AirPods as you use them</string>
+    <string name="est_basis_learned">Based on how fast your own AirPods drain</string>
+    <string name="est_basis_charging" formatted="false">Charging in the case; the first 80% is fast</string>
+    <string name="est_basis_none">Calculated once the pods are in use</string>
+    <string name="row_case_extra">Extra charge in the case</string>
+    <string name="case_extra_value">%1$s (%2$s full charges)</string>
+    <string name="row_total">Total with case</string>
+    <string name="row_case_full">Case full in</string>
+    <string name="details_title">Details</string>
+    <string name="row_model">Model</string>
+    <string name="model_unknown">Apple headphones (model 0x%1$s)</string>
+    <string name="row_ears">In ear</string>
+    <string name="ears_value">Left %1$s · Right %2$s</string>
+    <string name="yes">yes</string>
+    <string name="no">no</string>
+    <string name="row_lid">Case lid</string>
+    <string name="lid_open">Open</string>
+    <string name="lid_closed">Closed</string>
+    <string name="row_signal">Signal</string>
+    <string name="signal_value">%1$d dBm</string>
+    <string name="row_updated">Updated</string>
+    <string name="exact_title">Exact percentage</string>
+    <string name="exact_aap_live" formatted="false">✓ Connected straight to the AirPods: values to 1%, live.</string>
+    <string name="exact_keys" formatted="false">✓ AirPods keys saved: the broadcast is read to 1%.</string>
+    <string name="exact_aap_ok">This phone can connect straight to the AirPods. Exact values arrive once they connect.</string>
+    <string name="exact_unsupported" formatted="false">This phone\'s Bluetooth stack does not allow a direct connection to the AirPods (an Android bug). Values are shown in 10% steps.</string>
+    <string name="exact_untried">When the AirPods connect, PodPil tries a direct connection for exact values.</string>
+    <string name="exact_explain">The direct connection works on recent Android 16+ builds (e.g. Pixel) and switches on by itself after a phone update. If you have a Mac you can also enter the AirPods keys by hand.</string>
+    <string name="keys_enter">Enter keys by hand</string>
+    <string name="keys_clear">Delete keys</string>
+    <string name="keys_title">AirPods keys</string>
+    <string name="keys_help">On a Mac: Keychain Access → the “MobileBluetooth” item → “Show password”: the MagicAccEncKey and MagicAccIRK values (32 hex characters).</string>
+    <string name="keys_enc_hint">MagicAccEncKey (required)</string>
+    <string name="keys_irk_hint">MagicAccIRK (optional)</string>
+    <string name="keys_invalid">A key must be 32 hex characters</string>
+    <string name="keys_saved">Keys saved</string>
+    <string name="save">Save</string>
+    <string name="cancel">Cancel</string>
+    <string name="settings_title">Settings</string>
+    <string name="opt_popup">Pop-up when connected</string>
+    <string name="opt_popup_desc">Shows the batteries at the bottom of the screen when the AirPods connect.</string>
+    <string name="test_popup">Show now</string>
+    <string name="popup_no_data">No battery data yet</string>
+    <string name="opt_alert">Low battery warning</string>
+    <string name="off">Off</string>
+    <string name="opt_boot">Start when the phone starts</string>
+    <string name="close">Close</string>
+    <string name="perm_title">Permissions</string>
+    <string name="perm_required">Required</string>
+    <string name="perm_optional">Optional</string>
+    <string name="perm_bluetooth">Nearby devices (Bluetooth)</string>
+    <string name="perm_bluetooth_desc">To read the AirPods\' battery broadcast and connect</string>
+    <string name="perm_location">Location</string>
+    <string name="perm_location_desc">Must be on for Bluetooth scans on Android 11 and older</string>
+    <string name="perm_notifications">Notifications</string>
+    <string name="perm_notifications_desc">For the battery status and low battery warning</string>
+    <string name="perm_overlay">Display over other apps</string>
+    <string name="perm_overlay_desc">For the pop-up when connected</string>
+    <string name="perm_battery">Battery optimization off</string>
+    <string name="perm_battery_desc">So it keeps running in the background</string>
+    <string name="perm_ok">OK</string>
+    <string name="perm_missing">Missing</string>
+    <string name="perm_info">Info</string>
+    <string name="footer">PodPil · No internet permission; data stays on the phone. Not affiliated with Apple.</string>
+</resources>

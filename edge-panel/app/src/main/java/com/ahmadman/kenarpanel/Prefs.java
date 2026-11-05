@@ -1,0 +1,133 @@
+package com.ahmadman.kenarpanel;
+
+import android.content.Context;
+import android.content.SharedPreferences;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+/** Handle position and look, panel apps and the TV brand. */
+final class Prefs {
+
+    static final int MAX_APPS = 12;
+
+    private final SharedPreferences p;
+
+    Prefs(Context c) {
+        p = c.getApplicationContext().getSharedPreferences("settings", Context.MODE_PRIVATE);
+    }
+
+    boolean enabled() {
+        return p.getBoolean("enabled", false);
+    }
+
+    void enabled(boolean on) {
+        p.edit().putBoolean("enabled", on).apply();
+    }
+
+    boolean right() {
+        return p.getBoolean("right", false);
+    }
+
+    void right(boolean on) {
+        p.edit().putBoolean("right", on).apply();
+    }
+
+    /** Vertical position of the handle, 0 = top, 1 = bottom. */
+    float position() {
+        return p.getFloat("pos", 0.32f);
+    }
+
+    void position(float f) {
+        p.edit().putFloat("pos", Math.max(0f, Math.min(1f, f))).apply();
+    }
+
+    int lengthDp() {
+        return p.getInt("length", 96);
+    }
+
+    void lengthDp(int v) {
+        p.edit().putInt("length", v).apply();
+    }
+
+    int thicknessDp() {
+        return p.getInt("thickness", 5);
+    }
+
+    void thicknessDp(int v) {
+        p.edit().putInt("thickness", v).apply();
+    }
+
+    int opacity() {
+        return p.getInt("opacity", 70);
+    }
+
+    void opacity(int v) {
+        p.edit().putInt("opacity", v).apply();
+    }
+
+    boolean locked() {
+        return p.getBoolean("locked", false);
+    }
+
+    void locked(boolean on) {
+        p.edit().putBoolean("locked", on).apply();
+    }
+
+    boolean haptics() {
+        return p.getBoolean("haptics", true);
+    }
+
+    void haptics(boolean on) {
+        p.edit().putBoolean("haptics", on).apply();
+    }
+
+    boolean digits() {
+        return p.getBoolean("digits", false);
+    }
+
+    void digits(boolean on) {
+        p.edit().putBoolean("digits", on).apply();
+    }
+
+    boolean boot() {
+        return p.getBoolean("boot", true);
+    }
+
+    void boot(boolean on) {
+        p.edit().putBoolean("boot", on).apply();
+    }
+
+    String brand() {
+        return p.getString("brand", "samsung");
+    }
+
+    void brand(String id) {
+        p.edit().putString("brand", id).apply();
+    }
+
+    List<String> apps() {
+        String s = p.getString("apps", "");
+        List<String> out = new ArrayList<>();
+        if (!s.isEmpty()) {
+            out.addAll(Arrays.asList(s.split(",")));
+        }
+        return out;
+    }
+
+    void apps(List<String> pkgs) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < pkgs.size() && i < MAX_APPS; i++) {
+            if (sb.length() > 0) {
+                sb.append(',');
+            }
+            sb.append(pkgs.get(i));
+        }
+        p.edit().putString("apps", sb.toString()).apply();
+    }
+
+    boolean appsChosen() {
+        return p.contains("apps");
+    }
+}

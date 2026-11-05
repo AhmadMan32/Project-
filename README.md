@@ -26,3 +26,7 @@ Gelen her bildirimi saniyesinde, 7/24 kaydeder. Kaydedilecek uygulamaları siz s
 ## PodPil (Android)
 
 AirPods ve Beats bağlanınca sol kulaklığın, sağ kulaklığın ve kutunun pilini, tahmini kalan süreyle birlikte gösterir. Bağlanınca açılan pencere, bildirim ve düşük pil uyarısı içerir. Telefon izin veriyorsa %1 hassasiyetle, vermiyorsa %10'luk adımlarla çalışır: [`pod-battery/`](pod-battery/). Hazır APK: [`pod-battery/apk/PodPil-1.0.apk`](pod-battery/apk/PodPil-1.0.apk)
+
+## Kenar Panel (Android)
+
+Ekranın kenarında her zaman duran, yeri sürüklenerek ayarlanan ince bir çubuk. Dokununca anında bir panel açılır: uygulama kısayolları ve kızılötesi TV kumandası (Samsung, LG, Sony, Philips): [`edge-panel/`](edge-panel/). Hazır APK: [`edge-panel/apk/KenarPanel-1.0.apk`](edge-panel/apk/KenarPanel-1.0.apk)

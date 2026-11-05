@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="bg">#F3F4F8</color>
+    <color name="surface">#FFFFFF</color>
+    <color name="surface_alt">#EAECF2</color>
+    <color name="stroke">#E0E3EA</color>
+    <color name="text_primary">#121318</color>
+    <color name="text_secondary">#636874</color>
+    <color name="primary">#2F6BFF</color>
+    <color name="on_primary">#FFFFFF</color>
+    <color name="ripple">#332F6BFF</color>
+    <color name="ok">#1E9E48</color>
+    <color name="warn">#D6352C</color>
+    <color name="launcher_bg">#1B1D24</color>
+    <!-- the panel is always dark, like a game overlay -->
+    <color name="panel_bg">#F0141519</color>
+    <color name="panel_stroke">#26FFFFFF</color>
+    <color name="panel_key">#2A2C33</color>
+    <color name="panel_key_pressed">#4A4D57</color>
+    <color name="panel_text">#F2F3F7</color>
+    <color name="panel_text_dim">#9EA3AE</color>
+    <color name="panel_accent">#3D8BFF</color>
+    <color name="panel_power">#E5443A</color>
+    <color name="panel_power_pressed">#FF6B61</color>
+    <color name="panel_dim">#66000000</color>
+</resources>

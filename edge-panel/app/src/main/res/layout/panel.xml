@@ -1,0 +1,418 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.ahmadman.kenarpanel.PanelRoot xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/panel_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/panel_dim"
+    tools:ignore="ContentDescription">
+
+    <LinearLayout
+        android:id="@+id/content"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="start|center_vertical"
+        android:baselineAligned="false"
+        android:clickable="true"
+        android:focusable="true"
+        android:orientation="horizontal"
+        android:padding="12dp">
+
+        <!-- App shortcuts -->
+        <LinearLayout
+            android:id="@+id/apps_card"
+            android:layout_width="72dp"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical"
+            android:background="@drawable/bg_panel"
+            android:orientation="vertical"
+            android:paddingTop="10dp"
+            android:paddingBottom="10dp">
+
+            <ScrollView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:scrollbars="none">
+
+                <LinearLayout
+                    android:id="@+id/apps"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_horizontal"
+                    android:orientation="vertical" />
+            </ScrollView>
+        </LinearLayout>
+
+        <!-- TV remote -->
+        <ScrollView
+            android:id="@+id/remote_card"
+            android:layout_width="300dp"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical"
+            android:layout_marginStart="10dp"
+            android:background="@drawable/bg_panel"
+            android:scrollbars="none">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="14dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:letterSpacing="0.12"
+                        android:text="@string/remote_title"
+                        android:textColor="@color/panel_accent"
+                        android:textSize="15sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/brand"
+                        android:layout_width="wrap_content"
+                        android:layout_height="30dp"
+                        android:background="@drawable/bg_chip_dark"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:gravity="center"
+                        android:paddingStart="12dp"
+                        android:paddingEnd="12dp"
+                        android:textColor="@color/panel_text"
+                        android:textSize="13sp"
+                        android:textStyle="bold" />
+
+                    <ImageView
+                        android:id="@+id/settings"
+                        android:layout_width="36dp"
+                        android:layout_height="36dp"
+                        android:layout_marginStart="4dp"
+                        android:background="?android:attr/selectableItemBackgroundBorderless"
+                        android:contentDescription="@string/settings"
+                        android:padding="7dp"
+                        android:src="@drawable/ic_settings"
+                        android:tint="@color/panel_text_dim" />
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/ir_missing"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="@string/ir_missing_panel"
+                    android:textColor="@color/panel_power_pressed"
+                    android:textSize="13sp"
+                    android:visibility="gone" />
+
+                <!-- power, input, mute -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <ImageView
+                        android:id="@+id/k_power"
+                        android:layout_width="56dp"
+                        android:layout_height="56dp"
+                        android:background="@drawable/bg_power"
+                        android:clickable="true"
+                        android:contentDescription="@string/key_power"
+                        android:focusable="true"
+                        android:padding="14dp"
+                        android:src="@drawable/ic_power"
+                        android:tint="@color/panel_text" />
+
+                    <View
+                        android:layout_width="0dp"
+                        android:layout_height="1dp"
+                        android:layout_weight="1" />
+
+                    <ImageView
+                        android:id="@+id/k_input"
+                        style="@style/PanelArrow"
+                        android:layout_width="56dp"
+                        android:layout_height="56dp"
+                        android:layout_marginEnd="10dp"
+                        android:contentDescription="@string/key_input"
+                        android:padding="15dp"
+                        android:src="@drawable/ic_input" />
+
+                    <ImageView
+                        android:id="@+id/k_mute"
+                        style="@style/PanelArrow"
+                        android:layout_width="56dp"
+                        android:layout_height="56dp"
+                        android:contentDescription="@string/key_mute"
+                        android:padding="15dp"
+                        android:src="@drawable/ic_mute" />
+                </LinearLayout>
+
+                <!-- volume, arrows, channel -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="14dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <LinearLayout
+                        android:layout_width="54dp"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/bg_pill"
+                        android:orientation="vertical"
+                        android:paddingTop="4dp"
+                        android:paddingBottom="4dp">
+
+                        <ImageView
+                            android:id="@+id/k_vol_up"
+                            style="@style/PanelPillButton"
+                            android:contentDescription="@string/key_vol_up"
+                            android:src="@drawable/ic_add" />
+
+                        <TextView
+                            style="@style/PanelPillLabel"
+                            android:text="@string/label_vol" />
+
+                        <ImageView
+                            android:id="@+id/k_vol_down"
+                            style="@style/PanelPillButton"
+                            android:contentDescription="@string/key_vol_down"
+                            android:src="@drawable/ic_remove" />
+                    </LinearLayout>
+
+                    <FrameLayout
+                        android:layout_width="0dp"
+                        android:layout_height="150dp"
+                        android:layout_weight="1">
+
+                        <FrameLayout
+                            android:id="@+id/dpad"
+                            android:layout_width="150dp"
+                            android:layout_height="150dp"
+                            android:layout_gravity="center"
+                            android:background="@drawable/bg_dpad">
+
+                            <ImageView
+                                android:id="@+id/k_up"
+                                style="@style/PanelArrow"
+                                android:layout_gravity="top|center_horizontal"
+                                android:background="?android:attr/selectableItemBackgroundBorderless"
+                                android:contentDescription="@string/key_up"
+                                android:src="@drawable/ic_up" />
+
+                            <ImageView
+                                android:id="@+id/k_down"
+                                style="@style/PanelArrow"
+                                android:layout_gravity="bottom|center_horizontal"
+                                android:background="?android:attr/selectableItemBackgroundBorderless"
+                                android:contentDescription="@string/key_down"
+                                android:src="@drawable/ic_down" />
+
+                            <ImageView
+                                android:id="@+id/k_left"
+                                style="@style/PanelArrow"
+                                android:layout_gravity="start|center_vertical"
+                                android:background="?android:attr/selectableItemBackgroundBorderless"
+                                android:contentDescription="@string/key_left"
+                                android:src="@drawable/ic_left" />
+
+                            <ImageView
+                                android:id="@+id/k_right"
+                                style="@style/PanelArrow"
+                                android:layout_gravity="end|center_vertical"
+                                android:background="?android:attr/selectableItemBackgroundBorderless"
+                                android:contentDescription="@string/key_right"
+                                android:src="@drawable/ic_right" />
+
+                            <TextView
+                                android:id="@+id/k_ok"
+                                android:layout_width="58dp"
+                                android:layout_height="58dp"
+                                android:layout_gravity="center"
+                                android:background="@drawable/bg_dpad_center"
+                                android:clickable="true"
+                                android:focusable="true"
+                                android:gravity="center"
+                                android:text="@string/key_ok"
+                                android:textColor="@color/panel_text"
+                                android:textSize="15sp"
+                                android:textStyle="bold" />
+                        </FrameLayout>
+                    </FrameLayout>
+
+                    <LinearLayout
+                        android:layout_width="54dp"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/bg_pill"
+                        android:orientation="vertical"
+                        android:paddingTop="4dp"
+                        android:paddingBottom="4dp">
+
+                        <ImageView
+                            android:id="@+id/k_ch_up"
+                            style="@style/PanelPillButton"
+                            android:contentDescription="@string/key_ch_up"
+                            android:src="@drawable/ic_up" />
+
+                        <TextView
+                            style="@style/PanelPillLabel"
+                            android:text="@string/label_ch" />
+
+                        <ImageView
+                            android:id="@+id/k_ch_down"
+                            style="@style/PanelPillButton"
+                            android:contentDescription="@string/key_ch_down"
+                            android:src="@drawable/ic_down" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <!-- back, home, menu, exit -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="14dp"
+                    android:orientation="horizontal">
+
+                    <ImageView
+                        android:id="@+id/k_back"
+                        style="@style/PanelKey"
+                        android:layout_marginEnd="8dp"
+                        android:contentDescription="@string/key_back"
+                        android:src="@drawable/ic_back" />
+
+                    <ImageView
+                        android:id="@+id/k_home"
+                        style="@style/PanelKey"
+                        android:layout_marginEnd="8dp"
+                        android:contentDescription="@string/key_home"
+                        android:src="@drawable/ic_home" />
+
+                    <ImageView
+                        android:id="@+id/k_menu"
+                        style="@style/PanelKey"
+                        android:layout_marginEnd="8dp"
+                        android:contentDescription="@string/key_menu"
+                        android:src="@drawable/ic_menu" />
+
+                    <ImageView
+                        android:id="@+id/k_exit"
+                        style="@style/PanelKey"
+                        android:contentDescription="@string/key_exit"
+                        android:src="@drawable/ic_exit" />
+                </LinearLayout>
+
+                <!-- digits -->
+                <LinearLayout
+                    android:id="@+id/digits"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:orientation="vertical"
+                    android:visibility="gone">
+
+                    <LinearLayout style="@style/DigitRow">
+
+                        <TextView
+                            android:id="@+id/k_1"
+                            style="@style/PanelDigit"
+                            android:layout_marginEnd="8dp"
+                            android:text="@string/d1" />
+
+                        <TextView
+                            android:id="@+id/k_2"
+                            style="@style/PanelDigit"
+                            android:layout_marginEnd="8dp"
+                            android:text="@string/d2" />
+
+                        <TextView
+                            android:id="@+id/k_3"
+                            style="@style/PanelDigit"
+                            android:text="@string/d3" />
+                    </LinearLayout>
+
+                    <LinearLayout style="@style/DigitRow">
+
+                        <TextView
+                            android:id="@+id/k_4"
+                            style="@style/PanelDigit"
+                            android:layout_marginEnd="8dp"
+                            android:text="@string/d4" />
+
+                        <TextView
+                            android:id="@+id/k_5"
+                            style="@style/PanelDigit"
+                            android:layout_marginEnd="8dp"
+                            android:text="@string/d5" />
+
+                        <TextView
+                            android:id="@+id/k_6"
+                            style="@style/PanelDigit"
+                            android:text="@string/d6" />
+                    </LinearLayout>
+
+                    <LinearLayout style="@style/DigitRow">
+
+                        <TextView
+                            android:id="@+id/k_7"
+                            style="@style/PanelDigit"
+                            android:layout_marginEnd="8dp"
+                            android:text="@string/d7" />
+
+                        <TextView
+                            android:id="@+id/k_8"
+                            style="@style/PanelDigit"
+                            android:layout_marginEnd="8dp"
+                            android:text="@string/d8" />
+
+                        <TextView
+                            android:id="@+id/k_9"
+                            style="@style/PanelDigit"
+                            android:text="@string/d9" />
+                    </LinearLayout>
+
+                    <LinearLayout style="@style/DigitRow">
+
+                        <View
+                            android:layout_width="0dp"
+                            android:layout_height="1dp"
+                            android:layout_marginEnd="8dp"
+                            android:layout_weight="1" />
+
+                        <TextView
+                            android:id="@+id/k_0"
+                            style="@style/PanelDigit"
+                            android:layout_marginEnd="8dp"
+                            android:text="@string/d0" />
+
+                        <View
+                            android:layout_width="0dp"
+                            android:layout_height="1dp"
+                            android:layout_weight="1" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/digits_toggle"
+                    android:layout_width="match_parent"
+                    android:layout_height="36dp"
+                    android:layout_marginTop="8dp"
+                    android:background="?android:attr/selectableItemBackground"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:gravity="center"
+                    android:textColor="@color/panel_text_dim"
+                    android:textSize="13sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+        </ScrollView>
+    </LinearLayout>
+</com.ahmadman.kenarpanel.PanelRoot>

@@ -71,7 +71,9 @@ final class Panel {
     private final AtvRemote atv;
     private Tween pageTween;
     private final View foldButton;
-    private final View pages;
+    private final View foldArrow;
+    private final View remoteClip;
+    private final View remoteBody;
     private Tween remoteTween;
     private final android.os.Handler main = new android.os.Handler(android.os.Looper.getMainLooper());
 
@@ -92,8 +94,10 @@ final class Panel {
         key(R.id.k_hdmi1, Remotes.Key.HDMI1);
         key(R.id.k_hdmi2, Remotes.Key.HDMI2);
         root.findViewById(R.id.settings).setOnClickListener(v -> host.openSettings(false));
-        pages = root.findViewById(R.id.pages);
+        remoteClip = root.findViewById(R.id.remote_clip);
+        remoteBody = root.findViewById(R.id.remote_body);
         foldButton = root.findViewById(R.id.remote_fold);
+        foldArrow = root.findViewById(R.id.remote_fold_arrow);
         foldButton.setOnClickListener(v -> {
             boolean open = !prefs.remoteOpen();
             prefs.remoteOpen(open);
@@ -166,6 +170,19 @@ final class Panel {
         gap.setMarginStart(right ? 0 : g);
         gap.setMarginEnd(right ? g : 0);
         remoteCard.setLayoutParams(gap);
+        // the arrow tab sits on the card's outer side; the card slides toward the app column
+        LinearLayout card = (LinearLayout) remoteCard;
+        card.removeAllViews();
+        card.addView(right ? foldButton : remoteClip);
+        card.addView(right ? remoteClip : foldButton);
+        LinearLayout.LayoutParams tab = (LinearLayout.LayoutParams) foldButton.getLayoutParams();
+        int t = Math.round(4 * dp);
+        tab.setMarginStart(right ? 0 : t);
+        tab.setMarginEnd(right ? t : 0);
+        foldButton.setLayoutParams(tab);
+        FrameLayout.LayoutParams body = (FrameLayout.LayoutParams) remoteBody.getLayoutParams();
+        body.gravity = (right ? Gravity.END : Gravity.START) | Gravity.CENTER_VERTICAL;
+        remoteBody.setLayoutParams(body);
         FrameLayout.LayoutParams lp = (FrameLayout.LayoutParams) content.getLayoutParams();
         lp.gravity = (right ? Gravity.END : Gravity.START) | Gravity.CENTER_VERTICAL;
         content.setLayoutParams(lp);
@@ -216,11 +233,11 @@ final class Panel {
     void fit() {
         int screenW = context.getResources().getDisplayMetrics().widthPixels;
         int screenH = context.getResources().getDisplayMetrics().heightPixels;
-        int width = Math.min(Math.round(236 * dp), screenW - Math.round((72 + 10 + 24 + 6) * dp));
-        LinearLayout.LayoutParams rl = (LinearLayout.LayoutParams) remoteCard.getLayoutParams();
+        int width = Math.min(Math.round(236 * dp), screenW - Math.round((72 + 10 + 30 + 24 + 6) * dp));
+        FrameLayout.LayoutParams rl = (FrameLayout.LayoutParams) remoteBody.getLayoutParams();
         if (rl.width != width) {
             rl.width = width;
-            remoteCard.setLayoutParams(rl);
+            remoteBody.setLayoutParams(rl);
         }
         content.measure(View.MeasureSpec.makeMeasureSpec(screenW, View.MeasureSpec.AT_MOST),
                 View.MeasureSpec.makeMeasureSpec(screenH, View.MeasureSpec.AT_MOST));
@@ -282,62 +299,64 @@ final class Panel {
         tween = Tween.run(progress, target, millis, opening ? Motion::spring : f -> f * f, this::setProgress, end);
     }
 
-    /** The remote's keys are shown (not folded into the small bar). */
+    /** The remote card is out (not slid away behind the app column). */
     boolean remoteShown() {
-        return pages.getVisibility() == View.VISIBLE;
+        return remoteClip.getVisibility() == View.VISIBLE;
     }
 
     /**
-     * The arrow at the bottom of the remote: folds the keys away so only the small LG / Android
-     * TV bar stays (the arrow then points down), and opens them again.
+     * The arrow tab on the remote's outer side: slides the card sideways under the app column so
+     * only the tab stays (the arrow turns around), and slides it back out. The keys keep their
+     * size while moving: the card is clipped, not squeezed.
      */
     void showRemote(boolean open, boolean animate) {
         if (remoteTween != null) {
             remoteTween.cancel();
             remoteTween = null;
         }
+        float rotTo = open == right ? 180f : 0f; // ‹ = slide away to the left, › = to the right
         foldButton.setContentDescription(context.getString(open ? R.string.remote_hide : R.string.remote_show));
-        ViewGroup.LayoutParams lp = pages.getLayoutParams();
+        ViewGroup.LayoutParams lp = remoteClip.getLayoutParams();
         if (!animate) {
-            pages.setVisibility(open ? View.VISIBLE : View.GONE);
-            pages.setAlpha(1f);
-            lp.height = ViewGroup.LayoutParams.WRAP_CONTENT;
-            pages.setLayoutParams(lp);
-            foldButton.setRotation(open ? 0f : 180f);
+            remoteClip.setVisibility(open ? View.VISIBLE : View.GONE);
+            lp.width = ViewGroup.LayoutParams.WRAP_CONTENT;
+            remoteClip.setLayoutParams(lp);
+            remoteBody.setTranslationX(0);
+            remoteBody.setAlpha(1f);
+            foldArrow.setRotation(rotTo);
             fit();
             return;
         }
-        // full height of the keys (the LG page decides it; the Android TV page fills the same box)
-        int inner = Math.max(1, Math.round(236 * dp) - remoteCard.getPaddingLeft() - remoteCard.getPaddingRight());
-        if (remoteCard.getWidth() > 0) {
-            inner = remoteCard.getWidth() - remoteCard.getPaddingLeft() - remoteCard.getPaddingRight();
-        }
-        pages.measure(View.MeasureSpec.makeMeasureSpec(inner, View.MeasureSpec.EXACTLY),
-                View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED));
-        int full = Math.max(1, pages.getMeasuredHeight());
-        int from = open ? 0 : (pages.getVisibility() == View.VISIBLE && pages.getHeight() > 0 ? pages.getHeight() : full);
+        int bodyWidth = remoteBody.getLayoutParams().width;
+        int full = bodyWidth > 0 ? bodyWidth : Math.round(236 * dp);
+        int from = open ? 0 : (remoteClip.getVisibility() == View.VISIBLE && remoteClip.getWidth() > 0
+                ? remoteClip.getWidth() : full);
         int to = open ? full : 0;
-        float rotFrom = foldButton.getRotation();
-        float rotTo = open ? 0f : 180f;
-        pages.setVisibility(View.VISIBLE);
-        lp.height = from;
-        pages.setLayoutParams(lp);
+        float toward = right ? 1 : -1; // toward the app column
+        float rotFrom = foldArrow.getRotation();
+        remoteClip.setVisibility(View.VISIBLE);
+        lp.width = from;
+        remoteClip.setLayoutParams(lp);
+        remoteBody.setTranslationX(toward * (full - from));
         if (open && "atv".equals(prefs.tvMode())) {
             atv.ensure();
         }
         long millis = Math.round(prefs.speed().millis * (open ? 1.8f : 1.1f));
         remoteTween = Tween.run(0f, 1f, millis, open ? (android.animation.TimeInterpolator) Motion::spring
                 : new DecelerateInterpolator(1.4f), f -> {
-                    lp.height = Math.max(0, Math.round(from + (to - from) * f));
-                    pages.setLayoutParams(lp);
-                    pages.setAlpha(Motion.clamp(open ? f * 1.4f : 1f - f * 1.3f));
-                    foldButton.setRotation(rotFrom + (rotTo - rotFrom) * Motion.clamp(f));
+                    int w = Math.max(0, Math.min(full, Math.round(from + (to - from) * f)));
+                    lp.width = w;
+                    remoteClip.setLayoutParams(lp);
+                    remoteBody.setTranslationX(toward * (full - w)); // slides with the moving edge
+                    remoteBody.setAlpha(Motion.clamp(w / (float) full * 1.3f));
+                    foldArrow.setRotation(rotFrom + (rotTo - rotFrom) * Motion.clamp(f));
                 }, () -> {
-                    lp.height = ViewGroup.LayoutParams.WRAP_CONTENT;
-                    pages.setLayoutParams(lp);
-                    pages.setAlpha(1f);
-                    pages.setVisibility(open ? View.VISIBLE : View.GONE);
-                    foldButton.setRotation(rotTo);
+                    lp.width = ViewGroup.LayoutParams.WRAP_CONTENT;
+                    remoteClip.setLayoutParams(lp);
+                    remoteBody.setTranslationX(0);
+                    remoteBody.setAlpha(1f);
+                    remoteClip.setVisibility(open ? View.VISIBLE : View.GONE);
+                    foldArrow.setRotation(rotTo);
                     fit();
                 });
     }

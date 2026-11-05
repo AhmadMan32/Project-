@@ -8,13 +8,13 @@ Panelde uygulama kısayolları ve TV kumandası bulunur. Kumandanın üstündeki
 
 <img src="docs/tutamak.png" width="190" alt="Kenardaki çubuk"> <img src="docs/cekme-1.png" width="190" alt="Çekerken: panel parmağı takip ediyor"> <img src="docs/cekme-2.png" width="190" alt="Çekerken: içerik sırayla geliyor"> <img src="docs/panel.png" width="190" alt="Panel açık">
 
-<img src="docs/panel-kucuk.png" width="190" alt="Ok ile küçültülmüş kumanda"> <img src="docs/android-tv-kucuk.png" width="190" alt="Küçültülmüş Android TV kumandası"> <img src="docs/android-tv.png" width="190" alt="Android TV sayfası"> <img src="docs/android-tv-eslestirilmedi.png" width="190" alt="Android TV, eşleştirilmemiş"> <img src="docs/eslestirme.png" width="190" alt="Tek seferlik eşleştirme"> <img src="docs/panel-sag.png" width="190" alt="Sağ kenar">
+<img src="docs/kumanda-kayiyor.png" width="190" alt="Kumanda sola kayıyor"> <img src="docs/kumanda-gizli.png" width="190" alt="Kumanda gizli: yalnızca ok kaldı"> <img src="docs/android-tv.png" width="190" alt="Android TV sayfası"> <img src="docs/android-tv-eslestirilmedi.png" width="190" alt="Android TV, eşleştirilmemiş"> <img src="docs/eslestirme.png" width="190" alt="Tek seferlik eşleştirme"> <img src="docs/panel-sag.png" width="190" alt="Sağ kenar">
 
 <img src="docs/ayarlar.png" width="190" alt="Ayarlar"> <img src="docs/ayarlar-koyu.png" width="190" alt="Ayarlar, koyu tema">
 
 ## Kurulum (APK)
 
-1. [`apk/KenarPanel-1.4.apk`](apk/KenarPanel-1.4.apk) dosyasını telefona indirin (124 KB). Dosyayı açın; Android "bilinmeyen kaynaklardan yükleme" izni isterse verin. Eski sürüm kuruluysa üzerine kurulur.
+1. [`apk/KenarPanel-1.5.apk`](apk/KenarPanel-1.5.apk) dosyasını telefona indirin (124 KB). Dosyayı açın; Android "bilinmeyen kaynaklardan yükleme" izni isterse verin. Eski sürüm kuruluysa üzerine kurulur.
 2. Uygulamayı açıp **Başlat**'a dokunun. **Diğer uygulamaların üzerinde göster** iznini açıp geri dönün.
 3. **Xiaomi / Redmi / POCO:** İzinler bölümündeki Xiaomi satırına dokunun. **Arka planda çalışırken açılır pencereleri göster** ve **Otomatik başlatma** seçeneklerini açın. Bunlar kapalıysa panelden uygulama açılamaz.
 
@@ -27,10 +27,12 @@ Android 6.0 ve üzeri sürümlerde çalışır. Başka bir uygulama gerekmez.
   - Yarıdan fazla çekip bırakırsanız açılır. Hızlıca fiskelemek de yeter.
   - Az çeker veya geri çekerseniz kapanır.
   - Çubuğa dokunmak da paneli açar.
-- **Kumandayı küçültmek ve açmak:**
-  - Kumanda kartının altındaki **⌃ ok** tuşları katlar; kart, yalnızca LG TV / Android TV seçicisinin ve **⌄ okun** kaldığı küçük bir şeride iner.
-  - Oka tekrar dokununca tuşlar yaylanarak açılır.
-  - Seçim hatırlanır; panel bir dahaki sefere de aynı halde açılır.
+- **Kumandayı gizlemek ve açmak:**
+  - Kumanda kartının dış kenarındaki **‹ ok**a dokununca kart sağdan sola, uygulama sütununun altına kayarak gizlenir. Ekranda yalnızca uygulama sütunu ve yanındaki **› ok** kalır.
+  - **›** oka dokununca kart yaylanarak geri çıkar.
+  - Tuşlar kayarken küçülmez, yalnızca uygulama sütununun altına girer.
+  - Panel sağ kenardaysa her şey aynalanır.
+  - Seçim hatırlanır.
 - **Paneli kapatmak:** Boş alana dokunun veya geri tuşuna basın; panel kenara kayarak kapanır.
 - **Çubuğu taşımak:** Çubuğu yukarı veya aşağı sürükleyin; yeri kaydedilir. Ayarlardan sol veya sağ kenar, uzunluk, kalınlık ve görünürlük seçilebilir. **Konumu kilitle** ile yanlışlıkla kayması önlenir.
 - **Uygulamalar:** Simgeye dokununca uygulama açılır. **+** veya ayarlardaki **Uygulamaları seç** ile en fazla 12 uygulama seçilir; işaretleme sırası paneldeki sıradır.
@@ -104,7 +106,11 @@ LG sinyalleri uygulamanın içinde NEC protokolüyle üretilir (LG adresi 0x04, 
     - Yanlış kod reddediliyor; TV'nin tanımadığı telefon "yeniden eşleştir" durumuna düşüyor.
 - **`ConscryptTest` (1 test):** Aynı eşleştirme ve tuş akışı, Android telefonların kullandığı TLS kütüphanesi Conscrypt ile iki tarafta da çalışıyor.
 - **`PanelTest` (13 test, Robolectric, gerçek servis, 90 Hz kare aralığıyla):**
-  - Ok, tuşları kayarak katlıyor ve kart yarıdan fazla küçülüyor. Seçici ve ok görünür kalıyor, ok aşağıyı gösteriyor. Seçim kaydediliyor; panel bir dahaki sefere de küçük açılıyor. Oka dokununca kart tam boyutuna dönüyor.
+  - **‹ ok:**
+    - Kumandayı sola kaydırarak gizliyor. Kayarken tuşların boyutu değişmiyor, kart yalnızca sola kayıyor. Sonunda yalnızca ok, uygulama sütununun hemen yanında kalıyor ve **›** oluyor.
+    - Okun sekmesi dönmüyor, yalnızca ok dönüyor.
+    - Seçim kaydediliyor; **›** ile kart aynı boyutta geri geliyor.
+    - Sağ kenarda yön aynalanıyor.
   - Arka plan pencere ayarlarında bulanıklık yok; yalnızca hafif karartma var.
   - Çekme, fiske, yay, lastik etkisi, çubuk büyümesi ve sürükleme çalışıyor; LG tuşları kızılötesi gönderiyor.
   - **Android TV sayfası:**

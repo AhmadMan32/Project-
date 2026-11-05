@@ -541,52 +541,80 @@ public class PanelTest {
     }
 
     @Test
-    public void arrowFoldsTheRemoteIntoASmallBarAndOpensItAgain() {
+    public void arrowSlidesTheRemoteSidewaysUnderTheAppColumn() {
         OverlayService s = service();
         s.openPanel();
         idle(600);
         View card = s.panel.root.findViewById(R.id.remote_card);
-        View pages = s.panel.root.findViewById(R.id.pages);
-        View arrow = s.panel.root.findViewById(R.id.remote_fold);
-        int full = card.getHeight();
-        assertEquals(View.VISIBLE, pages.getVisibility());
-        assertEquals(0f, arrow.getRotation(), 0f); // pointing up: "fold"
+        View clip = s.panel.root.findViewById(R.id.remote_clip);
+        View body = s.panel.root.findViewById(R.id.remote_body);
+        View tab = s.panel.root.findViewById(R.id.remote_fold);
+        View arrow = s.panel.root.findViewById(R.id.remote_fold_arrow);
+        View apps = s.panel.root.findViewById(R.id.apps_card);
+        int fullW = card.getWidth();
+        int bodyW = body.getWidth();
+        int fullH = card.getHeight();
+        int wide = s.panel.travel();
+        assertEquals(0f, arrow.getRotation(), 0f); // ‹ : slide away to the left
 
-        arrow.performClick();
-        idle(40);
-        assertEquals(View.VISIBLE, pages.getVisibility()); // folding, not just vanishing
-        assertTrue(pages.getHeight() > 0);
+        tab.performClick();
+        idle(60);
+        assertEquals(0f, tab.getRotation(), 0f); // the tab itself never turns
+        // half way: narrower, the keys keep their size and slide left with the moving edge
+        assertEquals(View.VISIBLE, clip.getVisibility());
+        assertTrue(clip.getWidth() < bodyW && clip.getWidth() > 0);
+        assertEquals(bodyW, body.getWidth());
+        assertTrue(body.getTranslationX() < 0);
         idle(600);
-        assertEquals(View.GONE, pages.getVisibility());
-        assertEquals(180f, arrow.getRotation(), 0f); // now pointing down: "open"
+        assertEquals(View.GONE, clip.getVisibility());
+        assertEquals(180f, arrow.getRotation(), 0f); // › : bring it back
         assertFalse(new Prefs(app).remoteOpen());
-        int bar = card.getHeight();
-        assertTrue("bar " + bar + " vs full " + full, bar < full / 2);
-        assertEquals(View.VISIBLE, s.panel.root.findViewById(R.id.tv_switch).getVisibility()); // LG / Android TV stays
-        assertEquals(View.VISIBLE, arrow.getVisibility());
+        assertTrue("card " + card.getWidth() + " vs " + fullW, card.getWidth() < fullW / 4); // only the tab
+        assertEquals(fullH > 0, true);
+        int[] a = new int[2];
+        int[] t = new int[2];
+        apps.getLocationOnScreen(a);
+        tab.getLocationOnScreen(t);
+        assertTrue(t[0] > a[0] && t[0] - (a[0] + apps.getWidth()) < 60); // right next to the app column
+        assertTrue(s.panel.travel() < wide / 2);
         assertTrue(s.panelOpen()); // the panel itself stays open
 
-        // the panel comes back folded next time (built again from the saved setting)
+        // the panel comes back with the remote slid away next time
         s.requestClose();
         idle(600);
         s.onDestroy();
         OverlayService s2 = service();
-        assertEquals(View.GONE, s2.panel.root.findViewById(R.id.pages).getVisibility());
+        assertEquals(View.GONE, s2.panel.root.findViewById(R.id.remote_clip).getVisibility());
         s2.openPanel();
         idle(600);
 
-        // the arrow opens it: the keys unfold back to full size
-        View arrow2 = s2.panel.root.findViewById(R.id.remote_fold);
-        View pages2 = s2.panel.root.findViewById(R.id.pages);
+        // › slides it back out, full size
+        View tab2 = s2.panel.root.findViewById(R.id.remote_fold);
+        View arrow2 = s2.panel.root.findViewById(R.id.remote_fold_arrow);
+        View clip2 = s2.panel.root.findViewById(R.id.remote_clip);
         View card2 = s2.panel.root.findViewById(R.id.remote_card);
-        arrow2.performClick();
-        idle(40);
-        assertEquals(View.VISIBLE, pages2.getVisibility());
+        tab2.performClick();
+        idle(60);
+        assertEquals(View.VISIBLE, clip2.getVisibility());
         idle(700);
-        assertEquals(1f, pages2.getAlpha(), 0.001f);
+        assertEquals(fullW, card2.getWidth());
+        assertEquals(fullH, card2.getHeight());
+        assertEquals(0f, s2.panel.root.findViewById(R.id.remote_body).getTranslationX(), 0.5f);
         assertEquals(0f, arrow2.getRotation(), 0f);
-        assertEquals(full, card2.getHeight());
         assertTrue(new Prefs(app).remoteOpen());
+        assertEquals(wide, s2.panel.travel());
+
+        // on the right edge everything is mirrored: the tab is on the left, › slides it away right
+        new Prefs(app).right(true);
+        OverlayService.settingsChanged();
+        LinearLayout c = (LinearLayout) card2;
+        assertEquals(R.id.remote_fold, c.getChildAt(0).getId());
+        assertEquals(180f, arrow2.getRotation(), 0f);
+        tab2.performClick();
+        idle(60);
+        assertTrue(s2.panel.root.findViewById(R.id.remote_body).getTranslationX() > 0);
+        idle(600);
+        assertEquals(0f, arrow2.getRotation(), 0f);
     }
 
     @Test

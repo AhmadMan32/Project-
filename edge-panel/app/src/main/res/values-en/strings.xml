@@ -101,6 +101,6 @@
     <string name="pair_wrong_code">Wrong code. The TV will show a new code…</string>
     <string name="atv_not_paired_panel">Pair once; then it connects by itself.</string>
     <string name="atv_refused_panel">The TV does not know this phone.</string>
-    <string name="remote_show">Open the TV remote</string>
-    <string name="remote_hide">Close the TV remote</string>
+    <string name="remote_show">Open the remote</string>
+    <string name="remote_hide">Fold the remote away</string>
 </resources>

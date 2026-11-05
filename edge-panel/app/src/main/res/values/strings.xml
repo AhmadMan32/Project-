@@ -109,6 +109,6 @@
     <string name="tab_atv" translatable="false">Android TV</string>
     <string name="atv_not_paired_panel">Bir kez eşleştirin, sonra kendiliğinden bağlanır.</string>
     <string name="atv_refused_panel">TV bu telefonu tanımıyor.</string>
-    <string name="remote_show">TV kumandasını aç</string>
-    <string name="remote_hide">TV kumandasını kapat</string>
+    <string name="remote_show">Kumandayı aç</string>
+    <string name="remote_hide">Kumandayı küçült</string>
 </resources>

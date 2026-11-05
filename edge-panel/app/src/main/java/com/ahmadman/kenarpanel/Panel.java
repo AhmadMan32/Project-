@@ -10,6 +10,7 @@ import android.view.HapticFeedbackConstants;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.animation.DecelerateInterpolator;
 import android.view.animation.OvershootInterpolator;
 import android.widget.FrameLayout;
@@ -69,7 +70,8 @@ final class Panel {
     private final View tabAtv;
     private final AtvRemote atv;
     private Tween pageTween;
-    private final View remoteToggle;
+    private final View foldButton;
+    private final View pages;
     private Tween remoteTween;
     private final android.os.Handler main = new android.os.Handler(android.os.Looper.getMainLooper());
 
@@ -90,8 +92,9 @@ final class Panel {
         key(R.id.k_hdmi1, Remotes.Key.HDMI1);
         key(R.id.k_hdmi2, Remotes.Key.HDMI2);
         root.findViewById(R.id.settings).setOnClickListener(v -> host.openSettings(false));
-        remoteToggle = root.findViewById(R.id.tv_toggle);
-        remoteToggle.setOnClickListener(v -> {
+        pages = root.findViewById(R.id.pages);
+        foldButton = root.findViewById(R.id.remote_fold);
+        foldButton.setOnClickListener(v -> {
             boolean open = !prefs.remoteOpen();
             prefs.remoteOpen(open);
             if (prefs.haptics()) {
@@ -199,8 +202,8 @@ final class Panel {
         remoteRows.add((View) root.findViewById(R.id.atv_pad).getParent());
         remoteRows.add(root.findViewById(R.id.atv_row1));
         remoteRows.add(root.findViewById(R.id.atv_row2));
+        remoteRows.add(root.findViewById(R.id.remote_fold));
         List<View> icons = new ArrayList<>();
-        icons.add(remoteToggle);
         for (int i = 0; i < apps.getChildCount(); i++) {
             icons.add(apps.getChildAt(i));
         }
@@ -279,62 +282,64 @@ final class Panel {
         tween = Tween.run(progress, target, millis, opening ? Motion::spring : f -> f * f, this::setProgress, end);
     }
 
+    /** The remote's keys are shown (not folded into the small bar). */
     boolean remoteShown() {
-        return remoteCard.getVisibility() == View.VISIBLE;
+        return pages.getVisibility() == View.VISIBLE;
     }
 
     /**
-     * Opens the TV remote next to the app column (it unfolds from the column with a small
-     * spring) or folds it away, so the panel takes only a thin strip of the screen.
+     * The arrow at the bottom of the remote: folds the keys away so only the small LG / Android
+     * TV bar stays (the arrow then points down), and opens them again.
      */
     void showRemote(boolean open, boolean animate) {
         if (remoteTween != null) {
             remoteTween.cancel();
             remoteTween = null;
         }
-        remoteToggle.setSelected(open);
-        remoteToggle.setContentDescription(context.getString(open ? R.string.remote_hide : R.string.remote_show));
-        float start = 28 * dp * (right ? 1 : -1); // tucked against the app column
+        foldButton.setContentDescription(context.getString(open ? R.string.remote_hide : R.string.remote_show));
+        ViewGroup.LayoutParams lp = pages.getLayoutParams();
         if (!animate) {
-            remoteCard.setVisibility(open ? View.VISIBLE : View.GONE);
-            remoteCard.setAlpha(1f);
-            remoteCard.setScaleX(1f);
-            remoteCard.setScaleY(1f);
-            remoteCard.setTranslationX(0);
+            pages.setVisibility(open ? View.VISIBLE : View.GONE);
+            pages.setAlpha(1f);
+            lp.height = ViewGroup.LayoutParams.WRAP_CONTENT;
+            pages.setLayoutParams(lp);
+            foldButton.setRotation(open ? 0f : 180f);
             fit();
             return;
         }
-        if (open) {
-            remoteCard.setVisibility(View.VISIBLE);
-            fit();
-            remoteCard.setPivotX(right ? remoteCard.getMeasuredWidth() : 0);
-            remoteCard.setPivotY(remoteCard.getMeasuredHeight() / 2f);
-            if ("atv".equals(prefs.tvMode())) {
-                atv.ensure();
-            }
-            remoteTween = Tween.run(0f, 1f, Math.round(prefs.speed().millis * 1.8f), Motion::spring, f -> {
-                remoteCard.setAlpha(Motion.clamp(f * 1.6f));
-                remoteCard.setScaleX(0.88f + 0.12f * f);
-                remoteCard.setScaleY(0.88f + 0.12f * f);
-                remoteCard.setTranslationX(start * (1f - f));
-            }, null);
-        } else {
-            remoteCard.setPivotX(right ? remoteCard.getWidth() : 0);
-            remoteCard.setPivotY(remoteCard.getHeight() / 2f);
-            remoteTween = Tween.run(1f, 0f, Math.round(prefs.speed().millis * 0.9f), x -> x * x, f -> {
-                remoteCard.setAlpha(f);
-                remoteCard.setScaleX(0.88f + 0.12f * f);
-                remoteCard.setScaleY(0.88f + 0.12f * f);
-                remoteCard.setTranslationX(start * (1f - f));
-            }, () -> {
-                remoteCard.setVisibility(View.GONE);
-                remoteCard.setAlpha(1f);
-                remoteCard.setScaleX(1f);
-                remoteCard.setScaleY(1f);
-                remoteCard.setTranslationX(0);
-                fit();
-            });
+        // full height of the keys (the LG page decides it; the Android TV page fills the same box)
+        int inner = Math.max(1, Math.round(236 * dp) - remoteCard.getPaddingLeft() - remoteCard.getPaddingRight());
+        if (remoteCard.getWidth() > 0) {
+            inner = remoteCard.getWidth() - remoteCard.getPaddingLeft() - remoteCard.getPaddingRight();
         }
+        pages.measure(View.MeasureSpec.makeMeasureSpec(inner, View.MeasureSpec.EXACTLY),
+                View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED));
+        int full = Math.max(1, pages.getMeasuredHeight());
+        int from = open ? 0 : (pages.getVisibility() == View.VISIBLE && pages.getHeight() > 0 ? pages.getHeight() : full);
+        int to = open ? full : 0;
+        float rotFrom = foldButton.getRotation();
+        float rotTo = open ? 0f : 180f;
+        pages.setVisibility(View.VISIBLE);
+        lp.height = from;
+        pages.setLayoutParams(lp);
+        if (open && "atv".equals(prefs.tvMode())) {
+            atv.ensure();
+        }
+        long millis = Math.round(prefs.speed().millis * (open ? 1.8f : 1.1f));
+        remoteTween = Tween.run(0f, 1f, millis, open ? (android.animation.TimeInterpolator) Motion::spring
+                : new DecelerateInterpolator(1.4f), f -> {
+                    lp.height = Math.max(0, Math.round(from + (to - from) * f));
+                    pages.setLayoutParams(lp);
+                    pages.setAlpha(Motion.clamp(open ? f * 1.4f : 1f - f * 1.3f));
+                    foldButton.setRotation(rotFrom + (rotTo - rotFrom) * Motion.clamp(f));
+                }, () -> {
+                    lp.height = ViewGroup.LayoutParams.WRAP_CONTENT;
+                    pages.setLayoutParams(lp);
+                    pages.setAlpha(1f);
+                    pages.setVisibility(open ? View.VISIBLE : View.GONE);
+                    foldButton.setRotation(rotTo);
+                    fit();
+                });
     }
 
     /** Switches between the LG and the Android TV page; the card keeps its size. */

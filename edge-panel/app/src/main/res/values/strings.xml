@@ -118,4 +118,17 @@
     <string name="pair_fail_other">%1$s ile bağlanılamadı.</string>
     <string name="pair_detail">Ayrıntı: %1$s</string>
     <string name="pair_retry">Tekrar dene</string>
+    <string name="music_seek">Şarkıda ilerle</string>
+    <string name="music_previous">Önceki şarkı</string>
+    <string name="music_next">Sonraki şarkı</string>
+    <string name="music_play">Çal</string>
+    <string name="music_pause">Duraklat</string>
+    <string name="music_no_access">Müzik kontrolü için bir kez izin verin.</string>
+    <string name="music_allow">İzin ver</string>
+    <string name="music_idle">Şu an müzik çalmıyor.</string>
+    <string name="music_open_yt" translatable="false">YouTube Music</string>
+    <string name="music_access_label">Kenar Panel müzik kontrolü</string>
+    <string name="opt_music">Panelde müzik kartı</string>
+    <string name="perm_music">Müzik kontrolü (bildirim erişimi)</string>
+    <string name="perm_music_desc">YouTube Music gibi uygulamalarda çalan şarkıyı ve tuşlarını panelde gösterir. Bildirimler okunmaz, saklanmaz. Düğme gri ise: Ayarlar → Uygulamalar → Kenar Panel → ⋮ → Kısıtlanmış ayarlara izin ver.</string>
 </resources>

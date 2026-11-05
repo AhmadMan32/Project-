@@ -296,6 +296,11 @@
             </LinearLayout>
 
             <Switch
+                android:id="@+id/opt_music"
+                style="@style/Option"
+                android:text="@string/opt_music" />
+
+            <Switch
                 android:id="@+id/opt_haptics"
                 style="@style/Option"
                 android:text="@string/opt_haptics" />

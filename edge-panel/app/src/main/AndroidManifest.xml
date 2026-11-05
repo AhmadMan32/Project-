@@ -63,6 +63,17 @@
                 android:value="Keeps a user-placed edge handle on screen that opens a shortcut and TV remote panel" />
         </service>
 
+        <!-- music control: lets the panel see the media sessions (it does not read notifications) -->
+        <service
+            android:name=".MusicAccess"
+            android:exported="true"
+            android:label="@string/music_access_label"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService" />
+            </intent-filter>
+        </service>
+
         <receiver
             android:name=".BootReceiver"
             android:exported="false">

@@ -2,7 +2,11 @@
 
 Ekranın kenarında her zaman ince bir çubuk durur. Çubuğu içeri çekince panel parmağınızla birlikte kenardan çıkar; bıraktığınızda yaylanarak açılır. Çubuğun yerini sürükleyerek siz belirlersiniz.
 
-Panelde uygulama kısayolları ve TV kumandası bulunur. Kumandanın üstündeki seçiciden ikisinden biri seçilir:
+Panelde uygulama kısayolları, bir müzik kartı ve TV kumandası bulunur.
+
+- **Müzik kartı:** YouTube Music gibi bir uygulamada çalan şarkıyı gösterir: kapak, şarkı adı, sanatçı ve ilerleme çubuğu. Önceki, çal/duraklat ve sonraki tuşları da vardır.
+
+TV kumandasının üstündeki seçiciden ikisinden biri seçilir:
 - **LG TV:** Kızılötesiyle **Güç**, **HDMI 1** ve **HDMI 2**.
 - **Android TV:** Wi-Fi üzerinden dokunmatik alan, geri, ana ekran, sessiz, ses −/+ ve güç. Google TV uygulamasındaki kumandanın küçük bir hali gibidir.
 
@@ -10,13 +14,17 @@ Panelde uygulama kısayolları ve TV kumandası bulunur. Kumandanın üstündeki
 
 <img src="docs/kumanda-kayiyor.png" width="190" alt="Kumanda sola kayıyor"> <img src="docs/kumanda-gizli.png" width="190" alt="Kumanda gizli: yalnızca ok kaldı"> <img src="docs/android-tv.png" width="190" alt="Android TV sayfası"> <img src="docs/android-tv-eslestirilmedi.png" width="190" alt="Android TV, eşleştirilmemiş"> <img src="docs/eslestirme.png" width="190" alt="Tek seferlik eşleştirme"> <img src="docs/panel-sag.png" width="190" alt="Sağ kenar">
 
-<img src="docs/ayarlar.png" width="190" alt="Ayarlar"> <img src="docs/ayarlar-koyu.png" width="190" alt="Ayarlar, koyu tema">
+<img src="docs/muzik-izin.png" width="190" alt="Müzik kartı: tek seferlik izin"> <img src="docs/muzik-bos.png" width="190" alt="Müzik kartı: çalan bir şey yok"> <img src="docs/ayarlar.png" width="190" alt="Ayarlar"> <img src="docs/ayarlar-koyu.png" width="190" alt="Ayarlar, koyu tema">
 
 ## Kurulum (APK)
 
-1. [`apk/KenarPanel-1.6.apk`](apk/KenarPanel-1.6.apk) dosyasını telefona indirin (128 KB). Dosyayı açın; Android "bilinmeyen kaynaklardan yükleme" izni isterse verin. Eski sürüm kuruluysa üzerine kurulur.
+1. [`apk/KenarPanel-1.7.apk`](apk/KenarPanel-1.7.apk) dosyasını telefona indirin (144 KB). Dosyayı açın; Android "bilinmeyen kaynaklardan yükleme" izni isterse verin. Eski sürüm kuruluysa üzerine kurulur.
 2. Uygulamayı açıp **Başlat**'a dokunun. **Diğer uygulamaların üzerinde göster** iznini açıp geri dönün.
-3. **Xiaomi / Redmi / POCO:** İzinler bölümündeki Xiaomi satırına dokunun. **Arka planda çalışırken açılır pencereleri göster** ve **Otomatik başlatma** seçeneklerini açın. Bunlar kapalıysa panelden uygulama açılamaz.
+3. **Müzik kartı için (bir kez):**
+   - Paneldeki müzik kartında **İzin ver**'e dokunun. Ayarlarda **Kenar Panel müzik kontrolü** için **Bildirim erişimi**ni açın.
+   - Düğme gri ve açılmıyorsa (Android 13 ve sonrası, APK'dan kurulan uygulamalar): Ayarlar → Uygulamalar → Kenar Panel → sağ üstteki **⋮** → **Kısıtlanmış ayarlara izin ver**. Sonra bildirim erişimini açın.
+   - Uygulama bildirimleri okumaz ve saklamaz. Bu izin, Android'in hangi uygulamanın müzik çaldığını göstermesi için gereklidir.
+4. **Xiaomi / Redmi / POCO:** İzinler bölümündeki Xiaomi satırına dokunun. **Arka planda çalışırken açılır pencereleri göster** ve **Otomatik başlatma** seçeneklerini açın. Bunlar kapalıysa panelden uygulama açılamaz.
 
 Android 6.0 ve üzeri sürümlerde çalışır. Başka bir uygulama gerekmez.
 
@@ -35,6 +43,15 @@ Android 6.0 ve üzeri sürümlerde çalışır. Başka bir uygulama gerekmez.
   - Seçim hatırlanır.
 - **Paneli kapatmak:** Boş alana dokunun veya geri tuşuna basın; panel kenara kayarak kapanır.
 - **Çubuğu taşımak:** Çubuğu yukarı veya aşağı sürükleyin; yeri kaydedilir. Ayarlardan sol veya sağ kenar, uzunluk, kalınlık ve görünürlük seçilebilir. **Konumu kilitle** ile yanlışlıkla kayması önlenir.
+- **Müzik:**
+  - Kart, kumandanın hemen üstündedir ve aynı genişliktedir.
+  - Kapağa veya şarkı adına dokununca müzik uygulaması açılır.
+  - Çubuğu sürükleyip bırakınca şarkıda o noktaya geçilir. Çalarken süre kendiliğinden ilerler.
+  - Birden fazla uygulama varsa çalan seçilir; hiçbiri çalmıyorsa YouTube Music seçilir.
+  - Hiçbir şey çalmıyorsa kart tek satıra iner; **YouTube Music** düğmesiyle uygulama açılır.
+  - Kumandayla birlikte **‹ ok**la gizlenir.
+  - Ayarlardaki **Panelde müzik kartı** ile tamamen kapatılabilir.
+  - Ekran yeterince uzun değilse (ör. telefon yan tutulduğunda) kart kendiliğinden gizlenir. Kumanda hiçbir zaman sıkışmaz.
 - **Uygulamalar:** Simgeye dokununca uygulama açılır. **+** veya ayarlardaki **Uygulamaları seç** ile en fazla 12 uygulama seçilir; işaretleme sırası paneldeki sıradır.
 - **LG TV kumandası:** Telefonun üst kenarını TV'ye doğru tutun.
   - **Güç**, LG kumandasındaki güç tuşunun kodunu gönderir: TV açıksa kapanır, kapalıysa açılır.
@@ -104,9 +121,10 @@ LG sinyalleri uygulamanın içinde NEC protokolüyle üretilir (LG adresi 0x04, 
 
 ## Nasıl test edildi?
 
-`./gradlew testReleaseUnitTest` 34 test çalıştırır:
+`./gradlew testReleaseUnitTest` 40 test çalıştırır:
 
 - **`IrTest` (3 test):** LG sinyalleri geri çözülüp bilinen kodlarla birebir karşılaştırıldı; NEC çerçevesi ve taşıyıcı frekansı doğru.
+- **`PlaybackTest` (2 test):** Çalan şarkının süresi doğru ilerliyor: duraklatınca duruyor, 2× hızda iki kat ilerliyor, şarkı sonunu geçmiyor. Süre yazıları da doğru ("3:07", "1:02:05").
 - **`MotionTest` (5 test):** Yay eğrisi, sıralı geliş, çekme sonunda açma/kapama kararı, lastik etkisi ve 90/120 Hz seçimi.
 - **`AtvTest` (10 test):**
   - Eşleştirme ve kumanda mesajları bayt bayt doğru.
@@ -121,7 +139,7 @@ LG sinyalleri uygulamanın içinde NEC protokolüyle üretilir (LG adresi 0x04, 
 - **`ConscryptTest` (2 test):**
   - Aynı eşleştirme ve tuş akışı, Android telefonların kullandığı TLS kütüphanesi Conscrypt ile iki tarafta da çalışıyor.
   - **Mi Box hatası yeniden üretildi:** 1.5'in anahtar deposu anahtarını taklit eden bir anahtar, TLS 1.2'de de 1.3'te de Android'deki hatanın aynısıyla düşüyor ("RSA/ECB/NoPadding" bulunamadı). Yeni kimlik aynı TV'lerle eşleşiyor. TV yalnızca eski imza türünü isteyince eski anahtar da geçiyor; bu da sebebin RSA-PSS olduğunu gösteriyor.
-- **`PanelTest` (14 test, Robolectric, gerçek servis, 90 Hz kare aralığıyla):**
+- **`PanelTest` (18 test, Robolectric, gerçek servis, 90 Hz kare aralığıyla):**
   - **‹ ok:**
     - Kumandayı sola kaydırarak gizliyor. Kayarken tuşların boyutu değişmiyor, kart yalnızca sola kayıyor. Sonunda yalnızca ok, uygulama sütununun hemen yanında kalıyor ve **›** oluyor.
     - Okun sekmesi dönmüyor, yalnızca ok dönüyor.
@@ -138,6 +156,16 @@ LG sinyalleri uygulamanın içinde NEC protokolüyle üretilir (LG adresi 0x04, 
     2. TV'nin gösterdiği kod yazılınca eşleşme kaydediliyor.
     3. Kumanda sormadan bağlanıyor ve basılan tuş sahte TV'ye ulaşıyor.
     - Bu akış uygulamanın gerçek kimlik koduyla çalışıyor (anahtar üretilip kaydediliyor).
+  - **Müzik kartı:**
+    - Sahte bir YouTube Music çalarken şarkı adı, sanatçı ve süre görünüyor. Kart kumandanın üstünde ve aynı genişlikte.
+    - Süre kendiliğinden ilerliyor.
+    - Duraklat/çal, önceki ve sonraki tuşları çalışıyor; duraklatınca süre duruyor.
+    - Çubuk sürüklenirken geri kaymıyor, bırakınca şarkıda o noktaya geçiliyor.
+    - Şarkı satırı müzik uygulamasını açıyor.
+    - İzin yokken tek satırda **İzin ver** çıkıyor ve doğrudan Kenar Panel'in bildirim erişimi ayarını açıyor. Çalan bir şey yoksa **YouTube Music** düğmesi çıkıyor.
+    - Kart, kumandayla birlikte **‹ ok**la kayıp gizleniyor. Kayarken tam genişliğini koruyor, kesilmiyor.
+    - Ayardan kapatılabiliyor; kumandanın boyutu değişmiyor.
+    - Kısa ekranda kart kendiliğinden gizleniyor ve kumanda sıkışmıyor.
   - **Eski TV servisi:** Eşleştirme ekranı "Android TV Remote Service eski" diyor, güncelleme adımlarını ve ayrıntıyı gösteriyor. Servis güncellenince **Tekrar dene** ile eşleşiyor.
 
 Android Lint 0 hata verdi. Paneller, çekme anındaki kareler, Android TV sayfası, eşleştirme ve ayarlar ekranı çizdirilip kontrol edildi.
@@ -146,11 +174,15 @@ Android Lint 0 hata verdi. Paneller, çekme anındaki kareler, Android TV sayfas
 - Bu ortamda gerçek telefon, LG TV ve Android TV olmadığı için gerçek cihazlarla denenemedi.
 - Android TV protokolü, yaygın kullanılan açık kaynak uygulamayla ve sahte TV ile doğrulandı.
 - Animasyonların akıcılığı gerçek ekranda görülemedi.
+- Müzik kartı sahte bir müzik çalarla denendi. Gerçek YouTube Music ile Android'in medya oturumları üzerinden çalışır, ama gerçek telefonda denenemedi.
 
 ## Bilinen sınırlamalar
 
 - **HDMI tuşları:** HDMI 1/2 kodları LG'nin "doğrudan giriş" kodlarıdır ve normal kumandada yoktur. Çoğu LG TV bu kodları tanır; tanımayan eski modellerde HDMI tuşları çalışmayabilir.
 - **Kızılötesi verici:** LG kumandası yalnızca kızılötesi vericisi olan telefonlarda çalışır. Birçok Xiaomi, Redmi ve POCO modelinde bu verici vardır. Android TV kumandası Wi-Fi ile çalışır, verici gerekmez.
+- **Müzik kartı:**
+  - Bildirim erişimi açılmadan çalışmaz.
+  - Kapak, şarkı adı ve süreyi müzik uygulaması verir. Bazı uygulamalar kapak veya süre göndermez; o zaman müzik simgesi görünür ve ilerleme çubuğu gizlenir.
 - **Android TV:**
   - Telefon ve TV aynı Wi-Fi'da olmalıdır.
   - İlk eşleştirmedeki kodu TV istediği için bir kez yazmak gerekir.
@@ -178,6 +210,8 @@ export ANDROID_HOME=/android/sdk/yolu
 | `atv/Proto.java`, `atv/Messages.java` | Android TV Remote v2 mesajları ve eşleştirme sırrı (saf Java) |
 | `atv/Tls.java`, `atv/Pairing.java`, `atv/Session.java` | İstemci sertifikalı TLS, tek seferlik eşleştirme, kumanda kanalı (saf Java) |
 | `atv/Touchpad.java`, `TouchpadView.java` | Kaydırma → yön tuşları, dokunma → seçim |
-| `AtvIdentity.java`, `AtvFinder.java`, `AtvRemote.java` | Anahtar deposu, Wi-Fi'da TV bulma, otomatik bağlanma |
-| `PairActivity.java` | Tek seferlik eşleştirme ekranı |
+| `AtvIdentity.java`, `AtvFinder.java`, `AtvRemote.java` | Anahtarın saklanması, Wi-Fi'da TV bulma, otomatik bağlanma |
+| `PairActivity.java` | Tek seferlik eşleştirme ekranı, hata sebebi ve çözümü |
+| `atv/SelfSigned.java`, `atv/Failure.java` | Telefonun anahtarı ve kendinden imzalı sertifikası, hata türleri (saf Java) |
+| `Music.java`, `MusicAccess.java`, `core/Playback.java` | Çalan şarkı ve tuşları (medya oturumları), bildirim erişimi, süre hesabı |
 | `MainActivity.java`, `AppPickerActivity.java` | Ayarlar, hız seçimi, tuş denemesi, uygulama seçimi |

@@ -59,6 +59,7 @@ public class MainActivity extends Activity {
         seek(R.id.opacity, R.id.opacity_label, R.string.opacity_value, 20, 100, prefs.opacity(), v -> prefs.opacity(v));
         bind(R.id.opt_locked, prefs.locked(), on -> prefs.locked(on));
         bind(R.id.opt_haptics, prefs.haptics(), on -> prefs.haptics(on));
+        bind(R.id.opt_music, prefs.music(), on -> prefs.music(on));
         bind(R.id.opt_boot, prefs.boot(), on -> prefs.boot(on));
         findViewById(R.id.reset_position).setOnClickListener(v -> {
             prefs.position(0.32f);
@@ -207,6 +208,7 @@ public class MainActivity extends Activity {
         permRow(box, R.string.perm_notifications, R.string.perm_notifications_desc, Perms.notifications(this),
                 () -> Perms.openNotifications(this));
         permRow(box, R.string.perm_battery, R.string.perm_battery_desc, Perms.battery(this), () -> Perms.openBattery(this));
+        permRow(box, R.string.perm_music, R.string.perm_music_desc, Perms.music(this), () -> Perms.openMusicAccess(this));
         if (Perms.isXiaomi()) {
             permRow(box, R.string.perm_xiaomi, R.string.perm_xiaomi_desc, null, () -> Perms.openXiaomi(this));
         }

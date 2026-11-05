@@ -393,6 +393,7 @@ public class OverlayService extends Service implements Panel.Host {
         try {
             wm.addView(panel.root, panelLp);
             attached = true;
+            panel.shown(true); // music card: what is playing right now
         } catch (RuntimeException e) {
             android.util.Log.w("KenarPanel", "panel", e);
         }
@@ -427,6 +428,7 @@ public class OverlayService extends Service implements Panel.Host {
         }
         attached = false;
         AtvRemote.get(this).idleLater();
+        panel.shown(false);
         try {
             wm.removeView(panel.root);
         } catch (RuntimeException ignored) {
@@ -453,6 +455,19 @@ public class OverlayService extends Service implements Panel.Host {
                 startActivity(i);
             } catch (RuntimeException e) {
                 android.util.Log.w("KenarPanel", "launch " + pkg, e);
+            }
+        }
+        requestClose();
+    }
+
+    @Override
+    public void openMusicAccess() {
+        for (Intent i : Perms.musicAccess(this)) {
+            try {
+                startActivity(i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+                break;
+            } catch (RuntimeException ignored) {
+                // try the general list
             }
         }
         requestClose();

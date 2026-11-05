@@ -4,6 +4,7 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.content.res.ColorStateList;
 import android.graphics.drawable.Drawable;
 import android.view.Gravity;
 import android.view.HapticFeedbackConstants;
@@ -16,16 +17,20 @@ import android.view.animation.OvershootInterpolator;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.SeekBar;
+import android.widget.TextView;
 
 import com.ahmadman.kenarpanel.core.Motion;
+import com.ahmadman.kenarpanel.core.Playback;
 import com.ahmadman.kenarpanel.core.Remotes;
 
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * The panel: app shortcuts and the TV remote: LG over infrared (power, HDMI 1, HDMI 2) or an
- * Android TV over Wi-Fi (touchpad, back, home, volume, power). Built once and kept in
+ * The panel: app shortcuts, a music card (what is playing, with its buttons) and the TV remote:
+ * LG over infrared (power, HDMI 1, HDMI 2) or an Android TV over Wi-Fi (touchpad, back, home,
+ * volume, power). Built once and kept in
  * memory. Everything on it is driven by one number, the open progress (0 = hidden at the edge,
  * 1 = open), so it can follow the finger while pulling and animate the same way on its own.
  */
@@ -44,6 +49,9 @@ final class Panel {
 
         /** One-time pairing with an Android TV. */
         void openPair();
+
+        /** The system screen where "notification access" (needed for music control) is switched on. */
+        void openMusicAccess();
     }
 
     static final String[] DEFAULT_APPS = {"com.whatsapp", "com.google.android.youtube", "com.instagram.android",
@@ -74,7 +82,28 @@ final class Panel {
     private final View foldArrow;
     private final View remoteClip;
     private final View remoteBody;
+    private final View remoteColumn;
     private Tween remoteTween;
+    private final Music music;
+    private final View musicCard;
+    private final View musicInfo;
+    private final View musicProgress;
+    private final View musicControls;
+    private final View musicEmpty;
+    private final ImageView musicArt;
+    private final ImageView musicPlay;
+    private final TextView musicTitle;
+    private final TextView musicArtist;
+    private final TextView musicPos;
+    private final TextView musicLen;
+    private final TextView musicEmptyText;
+    private final TextView musicAction;
+    private final SeekBar musicSeek;
+    private boolean shown;
+    private boolean seeking;
+    /** The screen is tall enough for the music card above the remote (not so in landscape). */
+    private boolean musicRoom = true;
+    private final Runnable tick = this::tick;
     private final android.os.Handler main = new android.os.Handler(android.os.Looper.getMainLooper());
 
     @SuppressLint("InflateParams") // window root
@@ -96,6 +125,7 @@ final class Panel {
         root.findViewById(R.id.settings).setOnClickListener(v -> host.openSettings(false));
         remoteClip = root.findViewById(R.id.remote_clip);
         remoteBody = root.findViewById(R.id.remote_body);
+        remoteColumn = root.findViewById(R.id.remote_column);
         foldButton = root.findViewById(R.id.remote_fold);
         foldArrow = root.findViewById(R.id.remote_fold_arrow);
         foldButton.setOnClickListener(v -> {
@@ -156,6 +186,59 @@ final class Panel {
             }
         });
         atv.add(this::renderAtv);
+
+        // music card
+        music = new Music(c, this::renderMusic);
+        musicCard = root.findViewById(R.id.music_card);
+        musicInfo = root.findViewById(R.id.music_info);
+        musicProgress = root.findViewById(R.id.music_progress);
+        musicControls = root.findViewById(R.id.music_controls);
+        musicEmpty = root.findViewById(R.id.music_empty);
+        musicArt = root.findViewById(R.id.music_art);
+        musicArt.setClipToOutline(true); // the cover gets the rounded corners
+        musicPlay = root.findViewById(R.id.music_play);
+        musicTitle = root.findViewById(R.id.music_title);
+        musicArtist = root.findViewById(R.id.music_artist);
+        musicPos = root.findViewById(R.id.music_pos);
+        musicLen = root.findViewById(R.id.music_len);
+        musicEmptyText = root.findViewById(R.id.music_empty_text);
+        musicAction = root.findViewById(R.id.music_action);
+        musicSeek = root.findViewById(R.id.music_seek);
+        musicButton(musicPlay, music::playPause);
+        musicButton(root.findViewById(R.id.music_prev), music::previous);
+        musicButton(root.findViewById(R.id.music_next), music::next);
+        musicInfo.setOnClickListener(v -> {
+            Music.Track t = music.track();
+            if (t != null && t.pkg != null) {
+                host.openApp(t.pkg); // the player itself
+            }
+        });
+        musicAction.setOnClickListener(v -> {
+            if (music.state() == Music.State.NO_ACCESS) {
+                host.openMusicAccess();
+            } else {
+                host.openApp(Music.YT_MUSIC);
+            }
+        });
+        musicSeek.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar b, int p, boolean fromUser) {
+                if (fromUser) {
+                    musicPos.setText(Playback.time(p));
+                }
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar b) {
+                seeking = true;
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar b) {
+                seeking = false;
+                music.seek(b.getProgress());
+            }
+        });
         refresh();
     }
 
@@ -180,9 +263,9 @@ final class Panel {
         tab.setMarginStart(right ? 0 : t);
         tab.setMarginEnd(right ? t : 0);
         foldButton.setLayoutParams(tab);
-        FrameLayout.LayoutParams body = (FrameLayout.LayoutParams) remoteBody.getLayoutParams();
-        body.gravity = (right ? Gravity.END : Gravity.START) | Gravity.CENTER_VERTICAL;
-        remoteBody.setLayoutParams(body);
+        FrameLayout.LayoutParams column = (FrameLayout.LayoutParams) remoteColumn.getLayoutParams();
+        column.gravity = (right ? Gravity.END : Gravity.START) | Gravity.CENTER_VERTICAL;
+        remoteColumn.setLayoutParams(column);
         FrameLayout.LayoutParams lp = (FrameLayout.LayoutParams) content.getLayoutParams();
         lp.gravity = (right ? Gravity.END : Gravity.START) | Gravity.CENTER_VERTICAL;
         content.setLayoutParams(lp);
@@ -194,6 +277,8 @@ final class Panel {
         showPage("atv".equals(mode), false);
         ((TouchpadView) root.findViewById(R.id.atv_pad)).setHaptics(prefs.haptics());
         renderAtv();
+        followMusic();
+        renderMusic();
         boolean ir = remote.available();
         root.findViewById(R.id.ir_missing).setVisibility(ir ? View.GONE : View.VISIBLE);
         for (int id : new int[]{R.id.k_power, R.id.k_hdmi1, R.id.k_hdmi2}) {
@@ -211,6 +296,10 @@ final class Panel {
         cascade.clear();
         LinearLayout apps = root.findViewById(R.id.apps);
         List<View> remoteRows = new ArrayList<>();
+        remoteRows.add(musicInfo);
+        remoteRows.add(musicProgress);
+        remoteRows.add(musicControls);
+        remoteRows.add(musicEmpty);
         remoteRows.add(root.findViewById(R.id.remote_header));
         remoteRows.add(root.findViewById(R.id.k_power));
         remoteRows.add(root.findViewById(R.id.power_label));
@@ -234,14 +323,38 @@ final class Panel {
         int screenW = context.getResources().getDisplayMetrics().widthPixels;
         int screenH = context.getResources().getDisplayMetrics().heightPixels;
         int width = Math.min(Math.round(236 * dp), screenW - Math.round((72 + 10 + 30 + 24 + 6) * dp));
-        FrameLayout.LayoutParams rl = (FrameLayout.LayoutParams) remoteBody.getLayoutParams();
-        if (rl.width != width) {
-            rl.width = width;
-            remoteBody.setLayoutParams(rl);
+        // the column keeps its width while the clip around it narrows (otherwise it would be cut)
+        for (View v : new View[]{remoteColumn, remoteBody, musicCard}) { // music as wide as the remote
+            ViewGroup.LayoutParams rl = v.getLayoutParams();
+            if (rl.width != width) {
+                rl.width = width;
+                v.setLayoutParams(rl);
+            }
+        }
+        boolean room = screenH >= neededHeight(width);
+        if (room != musicRoom) {
+            musicRoom = room;
+            renderMusic();
         }
         content.measure(View.MeasureSpec.makeMeasureSpec(screenW, View.MeasureSpec.AT_MOST),
                 View.MeasureSpec.makeMeasureSpec(screenH, View.MeasureSpec.AT_MOST));
         travel = Math.max(1, content.getMeasuredWidth());
+    }
+
+    /** Height of the remote with the music card (showing a song) above it, at their natural sizes. */
+    private int neededHeight(int width) {
+        int any = View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED);
+        remoteBody.measure(View.MeasureSpec.makeMeasureSpec(width, View.MeasureSpec.EXACTLY), any);
+        int inner = View.MeasureSpec.makeMeasureSpec(
+                Math.max(0, width - musicCard.getPaddingLeft() - musicCard.getPaddingRight()), View.MeasureSpec.EXACTLY);
+        int h = content.getPaddingTop() + content.getPaddingBottom() + remoteBody.getMeasuredHeight()
+                + musicCard.getPaddingTop() + musicCard.getPaddingBottom()
+                + ((ViewGroup.MarginLayoutParams) musicCard.getLayoutParams()).bottomMargin;
+        for (View row : new View[]{musicInfo, musicProgress, musicControls}) {
+            row.measure(inner, any); // measured even while hidden: the card must fit when a song starts
+            h += row.getMeasuredHeight() + ((ViewGroup.MarginLayoutParams) row.getLayoutParams()).topMargin;
+        }
+        return h;
     }
 
     /** How far the finger has to pull for the panel to be fully open, in pixels. */
@@ -321,10 +434,11 @@ final class Panel {
             remoteClip.setVisibility(open ? View.VISIBLE : View.GONE);
             lp.width = ViewGroup.LayoutParams.WRAP_CONTENT;
             remoteClip.setLayoutParams(lp);
-            remoteBody.setTranslationX(0);
-            remoteBody.setAlpha(1f);
+            remoteColumn.setTranslationX(0);
+            remoteColumn.setAlpha(1f);
             foldArrow.setRotation(rotTo);
             fit();
+            followMusic();
             return;
         }
         int bodyWidth = remoteBody.getLayoutParams().width;
@@ -337,9 +451,12 @@ final class Panel {
         remoteClip.setVisibility(View.VISIBLE);
         lp.width = from;
         remoteClip.setLayoutParams(lp);
-        remoteBody.setTranslationX(toward * (full - from));
+        remoteColumn.setTranslationX(toward * (full - from));
         if (open && "atv".equals(prefs.tvMode())) {
             atv.ensure();
+        }
+        if (open) {
+            followMusic(); // fresh song info while it slides out
         }
         long millis = Math.round(prefs.speed().millis * (open ? 1.8f : 1.1f));
         remoteTween = Tween.run(0f, 1f, millis, open ? (android.animation.TimeInterpolator) Motion::spring
@@ -347,18 +464,151 @@ final class Panel {
                     int w = Math.max(0, Math.min(full, Math.round(from + (to - from) * f)));
                     lp.width = w;
                     remoteClip.setLayoutParams(lp);
-                    remoteBody.setTranslationX(toward * (full - w)); // slides with the moving edge
-                    remoteBody.setAlpha(Motion.clamp(w / (float) full * 1.3f));
+                    remoteColumn.setTranslationX(toward * (full - w)); // slides with the moving edge
+                    remoteColumn.setAlpha(Motion.clamp(w / (float) full * 1.3f));
                     foldArrow.setRotation(rotFrom + (rotTo - rotFrom) * Motion.clamp(f));
                 }, () -> {
                     lp.width = ViewGroup.LayoutParams.WRAP_CONTENT;
                     remoteClip.setLayoutParams(lp);
-                    remoteBody.setTranslationX(0);
-                    remoteBody.setAlpha(1f);
+                    remoteColumn.setTranslationX(0);
+                    remoteColumn.setAlpha(1f);
                     remoteClip.setVisibility(open ? View.VISIBLE : View.GONE);
                     foldArrow.setRotation(rotTo);
                     fit();
+                    followMusic();
                 });
+    }
+
+    // ---------------------------------------------------------------------------------------
+    // Music
+
+    /** The panel window came on screen (true) or went away (false). */
+    void shown(boolean on) {
+        shown = on;
+        followMusic();
+    }
+
+    Music music() {
+        return music;
+    }
+
+    /** Follows the player only while the card can be seen. */
+    private void followMusic() {
+        if (music == null) {
+            return; // still being built
+        }
+        if (shown && prefs.music() && musicRoom && prefs.remoteOpen()) {
+            music.start();
+            renderMusic();
+        } else {
+            music.stop();
+            main.removeCallbacks(tick);
+        }
+    }
+
+    /** Song, artist, cover, play/pause and the progress bar; or a one-line hint. */
+    void renderMusic() {
+        main.removeCallbacks(tick);
+        boolean on = prefs.music() && musicRoom;
+        musicCard.setVisibility(on ? View.VISIBLE : View.GONE);
+        if (!on) {
+            return;
+        }
+        Music.State st = music.state();
+        Music.Track t = st == Music.State.ACTIVE ? music.track() : null;
+        boolean active = t != null;
+        musicInfo.setVisibility(active ? View.VISIBLE : View.GONE);
+        musicControls.setVisibility(active ? View.VISIBLE : View.GONE);
+        musicEmpty.setVisibility(active ? View.GONE : View.VISIBLE);
+        if (!active) {
+            musicProgress.setVisibility(View.GONE);
+            boolean noAccess = st == Music.State.NO_ACCESS;
+            musicEmptyText.setText(noAccess ? R.string.music_no_access : R.string.music_idle);
+            musicAction.setText(noAccess ? R.string.music_allow : R.string.music_open_yt);
+            boolean canOpen = noAccess || launch(context, Music.YT_MUSIC) != null;
+            musicAction.setVisibility(canOpen ? View.VISIBLE : View.GONE);
+            return;
+        }
+        CharSequence label = appLabel(t.pkg);
+        musicTitle.setText(t.title != null ? t.title : label);
+        musicArtist.setText(t.artist != null ? t.artist : label);
+        if (t.art != null) {
+            musicArt.setImageBitmap(t.art);
+            musicArt.setImageTintList(null);
+            musicArt.setPadding(0, 0, 0, 0);
+        } else {
+            musicArt.setImageResource(R.drawable.ic_music);
+            musicArt.setImageTintList(ColorStateList.valueOf(context.getColor(R.color.panel_text_dim)));
+            int pad = Math.round(10 * dp);
+            musicArt.setPadding(pad, pad, pad, pad);
+        }
+        musicPlay.setImageResource(t.playing ? R.drawable.ic_pause : R.drawable.ic_play);
+        musicPlay.setContentDescription(context.getString(t.playing ? R.string.music_pause : R.string.music_play));
+        boolean timed = t.duration > 0; // a live stream has no length
+        musicProgress.setVisibility(timed ? View.VISIBLE : View.GONE);
+        musicSeek.setEnabled(t.canSeek);
+        musicSeek.setMax((int) Math.min(Integer.MAX_VALUE, t.duration));
+        musicLen.setText(Playback.time(t.duration));
+        showPosition(t);
+        if (t.playing && timed && shown) {
+            main.postDelayed(tick, 500);
+        }
+    }
+
+    /** While playing, the time and the bar move on by themselves. */
+    private void tick() {
+        Music.Track t = music.track();
+        if (t == null) {
+            return;
+        }
+        showPosition(t);
+        if (t.playing && shown) {
+            main.postDelayed(tick, 500);
+        }
+    }
+
+    private void showPosition(Music.Track t) {
+        if (seeking) {
+            return; // the finger is on the bar
+        }
+        long p = Playback.position(t.position, t.updatedAt, t.speed, t.playing, Music.now(), t.duration);
+        musicSeek.setProgress((int) Math.min(Integer.MAX_VALUE, p));
+        musicPos.setText(Playback.time(p));
+    }
+
+    private CharSequence appLabel(String pkg) {
+        if (pkg == null) {
+            return "";
+        }
+        PackageManager pm = context.getPackageManager();
+        try {
+            return pm.getApplicationLabel(pm.getApplicationInfo(pkg, 0));
+        } catch (PackageManager.NameNotFoundException | RuntimeException e) {
+            return pkg;
+        }
+    }
+
+    /** Music buttons act at once, squeeze a little and bounce back. */
+    @SuppressLint("ClickableViewAccessibility") // click is wired too
+    private void musicButton(View v, Runnable action) {
+        v.setOnTouchListener((view, e) -> {
+            Motion.Speed speed = prefs.speed();
+            if (e.getActionMasked() == MotionEvent.ACTION_DOWN) {
+                if (speed != Motion.Speed.OFF) {
+                    scale(view, 0.88f, 70, new DecelerateInterpolator());
+                }
+            } else if (e.getActionMasked() == MotionEvent.ACTION_UP || e.getActionMasked() == MotionEvent.ACTION_CANCEL) {
+                scale(view, 1f, speed == Motion.Speed.OFF ? 0 : Math.round(speed.millis * 1.6f),
+                        new OvershootInterpolator(3f));
+            }
+            return false; // the click still happens
+        });
+        v.setOnClickListener(view -> {
+            action.run();
+            if (prefs.haptics()) {
+                view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY);
+            }
+        });
     }
 
     /** Switches between the LG and the Android TV page; the card keeps its size. */

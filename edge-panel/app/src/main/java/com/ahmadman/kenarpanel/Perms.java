@@ -55,6 +55,31 @@ final class Perms {
         }
     }
 
+    /** Music control: "notification access" switched on for this app. */
+    static boolean music(Context c) {
+        return Music.hasAccess(c);
+    }
+
+    /** This app's own switch first (Android 11+), the list of apps otherwise. */
+    static Intent[] musicAccess(Context c) {
+        Intent list = new Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            Intent own = new Intent(Settings.ACTION_NOTIFICATION_LISTENER_DETAIL_SETTINGS)
+                    .putExtra(Settings.EXTRA_NOTIFICATION_LISTENER_COMPONENT_NAME, Music.component(c).flattenToString());
+            return new Intent[]{own, list};
+        }
+        return new Intent[]{list};
+    }
+
+    static void openMusicAccess(Activity a) {
+        for (Intent i : musicAccess(a)) {
+            if (open(a, i)) {
+                return;
+            }
+        }
+        openAppDetails(a);
+    }
+
     static void openOverlay(Activity a) {
         if (!open(a, new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, pkg(a)))) {
             openAppDetails(a);

@@ -109,6 +109,15 @@ final class Prefs {
         p.edit().putBoolean("remoteOpen", open).apply();
     }
 
+    /** The music card above the remote (what is playing, with its buttons). */
+    boolean music() {
+        return p.getBoolean("music", true);
+    }
+
+    void music(boolean on) {
+        p.edit().putBoolean("music", on).apply();
+    }
+
     /** Which remote the panel shows: "lg" (infrared) or "atv" (Android TV over Wi-Fi). */
     String tvMode() {
         return p.getString("tvMode", "lg");

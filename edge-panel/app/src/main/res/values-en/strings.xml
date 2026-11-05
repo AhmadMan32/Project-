@@ -110,4 +110,16 @@
     <string name="pair_fail_other">Could not connect to %1$s.</string>
     <string name="pair_detail">Details: %1$s</string>
     <string name="pair_retry">Try again</string>
+    <string name="music_seek">Seek in the song</string>
+    <string name="music_previous">Previous song</string>
+    <string name="music_next">Next song</string>
+    <string name="music_play">Play</string>
+    <string name="music_pause">Pause</string>
+    <string name="music_no_access">Allow access once to control music.</string>
+    <string name="music_allow">Allow</string>
+    <string name="music_idle">Nothing is playing.</string>
+    <string name="music_access_label">Kenar Panel music control</string>
+    <string name="opt_music">Music card in the panel</string>
+    <string name="perm_music">Music control (notification access)</string>
+    <string name="perm_music_desc">Shows the song playing in apps like YouTube Music, with its buttons, in the panel. Notifications are not read or stored. If the switch is greyed out: Settings → Apps → Kenar Panel → ⋮ → Allow restricted settings.</string>
 </resources>

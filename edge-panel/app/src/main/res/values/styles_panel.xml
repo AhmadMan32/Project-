@@ -36,4 +36,24 @@
         <item name="android:scaleType">fitCenter</item>
         <item name="android:tint">@color/panel_text</item>
     </style>
+
+    <style name="MusicTime">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:minWidth">32dp</item>
+        <item name="android:fontFeatureSettings">tnum</item>
+        <item name="android:maxLines">1</item>
+        <item name="android:textColor">@color/panel_text_dim</item>
+        <item name="android:textSize">10.5sp</item>
+    </style>
+
+    <style name="MusicButton">
+        <item name="android:layout_width">36dp</item>
+        <item name="android:layout_height">36dp</item>
+        <item name="android:background">@drawable/bg_music_button</item>
+        <item name="android:clickable">true</item>
+        <item name="android:focusable">true</item>
+        <item name="android:padding">6dp</item>
+        <item name="android:tint">@color/panel_text</item>
+    </style>
 </resources>

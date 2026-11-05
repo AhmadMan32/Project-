@@ -59,11 +59,193 @@
                 android:layout_height="wrap_content"
                 tools:ignore="UselessParent">
 
+                <!-- music on top, the remote under it: they slide away together -->
+                <LinearLayout
+                    android:id="@+id/remote_column"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="start"
+                    android:orientation="vertical">
+
+                <LinearLayout
+                    android:id="@+id/music_card"
+                    android:layout_width="236dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="8dp"
+                    android:background="@drawable/bg_panel"
+                    android:orientation="vertical"
+                    android:paddingStart="12dp"
+                    android:paddingTop="10dp"
+                    android:paddingEnd="12dp"
+                    android:paddingBottom="8dp">
+
+                    <LinearLayout
+                        android:id="@+id/music_info"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/bg_music_info"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <ImageView
+                            android:id="@+id/music_art"
+                            android:layout_width="42dp"
+                            android:layout_height="42dp"
+                            android:background="@drawable/bg_music_art"
+                            android:importantForAccessibility="no"
+                            android:padding="10dp"
+                            android:scaleType="centerCrop"
+                            android:src="@drawable/ic_music"
+                            android:tint="@color/panel_text_dim" />
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="10dp"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:id="@+id/music_title"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:ellipsize="end"
+                                android:maxLines="1"
+                                android:textColor="@color/panel_text"
+                                android:textSize="14sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:id="@+id/music_artist"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="1dp"
+                                android:ellipsize="end"
+                                android:maxLines="1"
+                                android:textColor="@color/panel_text_dim"
+                                android:textSize="12sp" />
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:id="@+id/music_progress"
+                        android:layout_width="match_parent"
+                        android:layout_height="22dp"
+                        android:layout_marginTop="4dp"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:id="@+id/music_pos"
+                            style="@style/MusicTime" />
+
+                        <SeekBar
+                            android:id="@+id/music_seek"
+                            android:layout_width="0dp"
+                            android:layout_height="match_parent"
+                            android:layout_weight="1"
+                            android:contentDescription="@string/music_seek"
+                            android:maxHeight="4dp"
+                            android:minHeight="4dp"
+                            android:paddingStart="8dp"
+                            android:paddingEnd="8dp"
+                            android:progressDrawable="@drawable/music_track"
+                            android:splitTrack="false"
+                            android:thumb="@drawable/music_thumb" />
+
+                        <TextView
+                            android:id="@+id/music_len"
+                            style="@style/MusicTime"
+                            android:gravity="end|center_vertical" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:id="@+id/music_controls"
+                        android:layout_width="match_parent"
+                        android:layout_height="40dp"
+                        android:layout_marginTop="2dp"
+                        android:gravity="center"
+                        android:orientation="horizontal">
+
+                        <ImageView
+                            android:id="@+id/music_prev"
+                            style="@style/MusicButton"
+                            android:contentDescription="@string/music_previous"
+                            android:src="@drawable/ic_skip_prev" />
+
+                        <ImageView
+                            android:id="@+id/music_play"
+                            android:layout_width="40dp"
+                            android:layout_height="40dp"
+                            android:layout_marginStart="22dp"
+                            android:layout_marginEnd="22dp"
+                            android:background="@drawable/bg_music_play"
+                            android:clickable="true"
+                            android:contentDescription="@string/music_play"
+                            android:focusable="true"
+                            android:padding="9dp"
+                            android:src="@drawable/ic_play"
+                            android:tint="@color/on_primary" />
+
+                        <ImageView
+                            android:id="@+id/music_next"
+                            style="@style/MusicButton"
+                            android:contentDescription="@string/music_next"
+                            android:src="@drawable/ic_skip_next" />
+                    </LinearLayout>
+
+                    <!-- nothing playing, or no access yet: one compact row -->
+                    <LinearLayout
+                        android:id="@+id/music_empty"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="2dp"
+                        android:gravity="center_vertical"
+                        android:minHeight="32dp"
+                        android:orientation="horizontal"
+                        android:visibility="gone">
+
+                        <ImageView
+                            android:layout_width="18dp"
+                            android:layout_height="18dp"
+                            android:importantForAccessibility="no"
+                            android:src="@drawable/ic_music"
+                            android:tint="@color/panel_text_dim" />
+
+                        <TextView
+                            android:id="@+id/music_empty_text"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:layout_weight="1"
+                            android:maxLines="2"
+                            android:textColor="@color/panel_text_dim"
+                            android:textSize="12sp" />
+
+                        <TextView
+                            android:id="@+id/music_action"
+                            android:layout_width="wrap_content"
+                            android:layout_height="30dp"
+                            android:layout_marginStart="8dp"
+                            android:background="@drawable/bg_music_action"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:gravity="center"
+                            android:maxLines="1"
+                            android:paddingStart="12dp"
+                            android:paddingEnd="12dp"
+                            android:textColor="@color/panel_accent"
+                            android:textSize="12sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+                </LinearLayout>
+
                 <LinearLayout
                     android:id="@+id/remote_body"
                     android:layout_width="236dp"
                     android:layout_height="wrap_content"
-                    android:layout_gravity="start"
                     android:background="@drawable/bg_panel"
                     android:orientation="vertical"
                     android:padding="16dp">
@@ -343,6 +525,7 @@
                         </LinearLayout>
                     </FrameLayout>
 
+                </LinearLayout>
                 </LinearLayout>
             </FrameLayout>
 

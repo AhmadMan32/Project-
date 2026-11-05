@@ -105,6 +105,8 @@ public class PanelTest {
         Remote.testEmitter = null;
         AtvRemote.reset();
         AtvIdentity.testIdentity = null;
+        Music.testSource = null;
+        Music.testAccess = null;
         PairActivity.pairPortForTests = com.ahmadman.kenarpanel.atv.Messages.PAIRING_PORT;
         org.robolectric.shadows.ShadowChoreographer.reset();
     }
@@ -596,7 +598,10 @@ public class PanelTest {
         assertEquals(View.VISIBLE, clip.getVisibility());
         assertTrue(clip.getWidth() < bodyW && clip.getWidth() > 0);
         assertEquals(bodyW, body.getWidth());
-        assertTrue(body.getTranslationX() < 0);
+        // the music card and the remote move together, at full width (clipped, not cut short)
+        View column = s.panel.root.findViewById(R.id.remote_column);
+        assertTrue(column.getTranslationX() < 0);
+        assertEquals(bodyW, column.getWidth());
         idle(600);
         assertEquals(View.GONE, clip.getVisibility());
         assertEquals(180f, arrow.getRotation(), 0f); // › : bring it back
@@ -631,7 +636,7 @@ public class PanelTest {
         idle(700);
         assertEquals(fullW, card2.getWidth());
         assertEquals(fullH, card2.getHeight());
-        assertEquals(0f, s2.panel.root.findViewById(R.id.remote_body).getTranslationX(), 0.5f);
+        assertEquals(0f, s2.panel.root.findViewById(R.id.remote_column).getTranslationX(), 0.5f);
         assertEquals(0f, arrow2.getRotation(), 0f);
         assertTrue(new Prefs(app).remoteOpen());
         assertEquals(wide, s2.panel.travel());
@@ -644,7 +649,7 @@ public class PanelTest {
         assertEquals(180f, arrow2.getRotation(), 0f);
         tab2.performClick();
         idle(60);
-        assertTrue(s2.panel.root.findViewById(R.id.remote_body).getTranslationX() > 0);
+        assertTrue(s2.panel.root.findViewById(R.id.remote_column).getTranslationX() > 0);
         idle(600);
         assertEquals(0f, arrow2.getRotation(), 0f);
     }
@@ -659,5 +664,240 @@ public class PanelTest {
         assertEquals(0, lp.getBlurBehindRadius());
         // only a light dim remains
         assertTrue(s.panel.root.getBackground().getAlpha() > 0);
+    }
+
+    /** A player for the music card: YouTube Music playing one song. */
+    static class FakePlayer implements Music.Source {
+        Music.Track track;
+        int nexts;
+        int previouses;
+        long seekedTo = -1;
+
+        FakePlayer(String title, String artist, long position, long duration, boolean playing) {
+            track = new Music.Track();
+            track.pkg = Music.YT_MUSIC;
+            track.title = title;
+            track.artist = artist;
+            track.position = position;
+            track.duration = duration;
+            track.playing = playing;
+            track.updatedAt = Music.now();
+            track.canSeek = true;
+        }
+
+        @Override
+        public Music.Track current() {
+            return track;
+        }
+
+        @Override
+        public void play() {
+            track.position = position();
+            track.updatedAt = Music.now();
+            track.playing = true;
+        }
+
+        @Override
+        public void pause() {
+            track.position = position();
+            track.updatedAt = Music.now();
+            track.playing = false;
+        }
+
+        private long position() {
+            return com.ahmadman.kenarpanel.core.Playback.position(track.position, track.updatedAt, 1f, track.playing,
+                    Music.now(), track.duration);
+        }
+
+        @Override
+        public void next() {
+            nexts++;
+            track.title = "Sonraki";
+            track.position = 0;
+            track.updatedAt = Music.now();
+        }
+
+        @Override
+        public void previous() {
+            previouses++;
+        }
+
+        @Override
+        public void seek(long ms) {
+            seekedTo = ms;
+            track.position = ms;
+            track.updatedAt = Music.now();
+        }
+    }
+
+    private static String text(View root, int id) {
+        return ((TextView) root.findViewById(id)).getText().toString();
+    }
+
+    @Test
+    @Config(qualifiers = "+w411dp-h891dp") // a phone held upright
+    public void musicCardShowsTheSongAndControlsIt() {
+        install(Music.YT_MUSIC, "YouTube Music");
+        FakePlayer player = new FakePlayer("Gülümse", "Sezen Aksu", 60_000, 200_000, true);
+        Music.testSource = player;
+        OverlayService s = service();
+        s.openPanel();
+        idle(600);
+        View root = s.panel.root;
+        View card = root.findViewById(R.id.music_card);
+        assertEquals(View.VISIBLE, card.getVisibility());
+        assertEquals(root.findViewById(R.id.remote_body).getWidth(), card.getWidth()); // as wide as the remote
+        int[] c = new int[2];
+        int[] r = new int[2];
+        card.getLocationOnScreen(c);
+        root.findViewById(R.id.remote_body).getLocationOnScreen(r);
+        assertTrue("above the remote", c[1] + card.getHeight() <= r[1]);
+        assertEquals("Gülümse", text(root, R.id.music_title));
+        assertEquals("Sezen Aksu", text(root, R.id.music_artist));
+        assertEquals("3:20", text(root, R.id.music_len));
+        android.widget.SeekBar seek = root.findViewById(R.id.music_seek);
+        assertEquals(200_000, seek.getMax());
+        String before = text(root, R.id.music_pos);
+        assertTrue(before, before.equals("1:00") || before.equals("1:01"));
+
+        // while playing the time moves on by itself
+        idle(3000);
+        long pos = seek.getProgress();
+        assertTrue("position " + pos, pos >= 63_000 && pos < 66_000);
+        assertEquals(com.ahmadman.kenarpanel.core.Playback.time(pos), text(root, R.id.music_pos));
+
+        // pause, then the time stands still
+        View play = root.findViewById(R.id.music_play);
+        assertEquals("Duraklat", play.getContentDescription());
+        play.performClick();
+        idle(50);
+        assertFalse(player.track.playing);
+        assertEquals("Çal", play.getContentDescription());
+        int paused = seek.getProgress();
+        idle(2000);
+        assertEquals(paused, seek.getProgress());
+        play.performClick();
+        idle(50);
+        assertTrue(player.track.playing);
+
+        // next / previous
+        root.findViewById(R.id.music_next).performClick();
+        idle(50);
+        assertEquals(1, player.nexts);
+        assertEquals("Sonraki", text(root, R.id.music_title));
+        root.findViewById(R.id.music_prev).performClick();
+        assertEquals(1, player.previouses);
+
+        // dragging the bar seeks when the finger lets go
+        android.widget.SeekBar.OnSeekBarChangeListener l = shadowOf(seek).getOnSeekBarChangeListener();
+        l.onStartTrackingTouch(seek);
+        seek.setProgress(150_000);
+        l.onProgressChanged(seek, 150_000, true);
+        assertEquals("2:30", text(root, R.id.music_pos));
+        idle(1000); // the ticking does not pull the bar back meanwhile
+        assertEquals(150_000, seek.getProgress());
+        assertEquals(-1, player.seekedTo);
+        l.onStopTrackingTouch(seek);
+        assertEquals(150_000, player.seekedTo);
+
+        // the song's row opens the player
+        root.findViewById(R.id.music_info).performClick();
+        Intent started = shadowOf(app).getNextStartedActivity();
+        assertNotNull(started);
+        assertEquals(Music.YT_MUSIC, started.getComponent().getPackageName());
+    }
+
+    @Test
+    @Config(qualifiers = "+w411dp-h891dp") // a phone held upright
+    public void musicCardAsksForAccessOnceAndOffersYouTubeMusicWhenIdle() {
+        Music.testAccess = false;
+        OverlayService s = service();
+        s.openPanel();
+        idle(600);
+        View root = s.panel.root;
+        assertEquals(View.VISIBLE, root.findViewById(R.id.music_empty).getVisibility());
+        assertEquals(View.GONE, root.findViewById(R.id.music_controls).getVisibility());
+        assertEquals(app.getString(R.string.music_no_access), text(root, R.id.music_empty_text));
+        assertEquals("İzin ver", text(root, R.id.music_action));
+        root.findViewById(R.id.music_action).performClick();
+        Intent started = shadowOf(app).getNextStartedActivity();
+        assertNotNull(started);
+        assertEquals(android.provider.Settings.ACTION_NOTIFICATION_LISTENER_DETAIL_SETTINGS, started.getAction());
+        assertEquals(Music.component(app).flattenToString(),
+                started.getStringExtra(android.provider.Settings.EXTRA_NOTIFICATION_LISTENER_COMPONENT_NAME));
+        idle(800);
+        assertFalse(s.panelOpen()); // the panel steps aside for the settings screen
+
+        // access given, nothing playing: one line, and YouTube Music one tap away
+        install(Music.YT_MUSIC, "YouTube Music");
+        Music.testAccess = true;
+        Music.testSource = new FakePlayer("x", "y", 0, 1, false) {
+            @Override
+            public Music.Track current() {
+                return null;
+            }
+        };
+        s.openPanel();
+        idle(600);
+        assertEquals(app.getString(R.string.music_idle), text(root, R.id.music_empty_text));
+        assertEquals("YouTube Music", text(root, R.id.music_action));
+        root.findViewById(R.id.music_action).performClick();
+        started = shadowOf(app).getNextStartedActivity();
+        assertNotNull(started);
+        assertEquals(Music.YT_MUSIC, started.getComponent().getPackageName());
+    }
+
+    @Test
+    @Config(qualifiers = "+w411dp-h891dp") // a phone held upright
+    public void musicCardSlidesAwayWithTheRemoteAndCanBeSwitchedOff() {
+        Music.testSource = new FakePlayer("Gülümse", "Sezen Aksu", 0, 200_000, true);
+        OverlayService s = service();
+        s.openPanel();
+        idle(600);
+        View root = s.panel.root;
+        View remoteCard = root.findViewById(R.id.remote_card);
+        View body = root.findViewById(R.id.remote_body);
+        int bodyH = body.getHeight();
+        int bodyW = body.getWidth();
+        // the remote itself keeps its size on both pages
+        s.panel.select("atv", false);
+        idle(100);
+        assertEquals(bodyH, body.getHeight());
+        assertEquals(bodyW, body.getWidth());
+        s.panel.select("lg", false);
+        idle(100);
+
+        root.findViewById(R.id.remote_fold).performClick();
+        idle(800);
+        assertEquals(View.GONE, root.findViewById(R.id.remote_clip).getVisibility()); // music went with it
+        assertTrue(remoteCard.getWidth() < bodyW / 4);
+        root.findViewById(R.id.remote_fold).performClick();
+        idle(800);
+        assertEquals(View.VISIBLE, root.findViewById(R.id.music_card).getVisibility());
+        assertEquals("Gülümse", text(root, R.id.music_title));
+
+        Prefs prefs = new Prefs(app);
+        prefs.music(false);
+        OverlayService.settingsChanged();
+        idle(100);
+        assertEquals(View.GONE, root.findViewById(R.id.music_card).getVisibility());
+        assertEquals(bodyH, body.getHeight());
+    }
+
+    @Test
+    public void musicCardMakesWayOnShortScreens() {
+        // the default test screen (470 dp high) is like a phone on its side: no room above the remote
+        Music.testSource = new FakePlayer("Gülümse", "Sezen Aksu", 0, 200_000, true);
+        OverlayService s = service();
+        s.openPanel();
+        idle(600);
+        View root = s.panel.root;
+        assertEquals(View.GONE, root.findViewById(R.id.music_card).getVisibility());
+        int withSong = root.findViewById(R.id.remote_body).getHeight();
+        Music.testSource = null;
+        new Prefs(app).music(false);
+        OverlayService.settingsChanged();
+        idle(100);
+        assertEquals(withSong, root.findViewById(R.id.remote_body).getHeight()); // the remote is never squeezed
     }
 }

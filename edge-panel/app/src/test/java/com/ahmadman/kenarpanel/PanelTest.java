@@ -87,6 +87,7 @@ public class PanelTest {
         ShadowSettings.setCanDrawOverlays(true);
         ir = new FakeIr();
         Remote.testEmitter = ir;
+        AtvRemote.reset();
         // frames only when time passes, one every 11 ms (90 Hz), as on a 90 Hz screen
         org.robolectric.shadows.ShadowChoreographer.setPaused(true);
         org.robolectric.shadows.ShadowChoreographer.setFrameDelay(Duration.ofMillis(11));
@@ -102,6 +103,9 @@ public class PanelTest {
             s.onDestroy();
         }
         Remote.testEmitter = null;
+        AtvRemote.reset();
+        AtvIdentity.testIdentity = null;
+        PairActivity.pairPortForTests = com.ahmadman.kenarpanel.atv.Messages.PAIRING_PORT;
         org.robolectric.shadows.ShadowChoreographer.reset();
     }
 
@@ -153,12 +157,12 @@ public class PanelTest {
     }
 
     private static void waitFor(Runnable check) throws InterruptedException {
-        for (int i = 0; i < 100; i++) {
+        for (int i = 0; i < 300; i++) {
             try {
                 check.run();
                 return;
             } catch (AssertionError e) {
-                if (i == 99) {
+                if (i == 299) {
                     throw e;
                 }
                 Thread.sleep(10);
@@ -403,5 +407,136 @@ public class PanelTest {
         assertEquals(java.util.Collections.singletonList("com.example.video"), new Prefs(app).apps());
         list.performItemClick(null, 0, 0);
         assertEquals(java.util.Arrays.asList("com.example.video", "com.example.chat"), new Prefs(app).apps());
+    }
+
+    @Test
+    public void androidTvPageKeepsTheCardSizeAndSendsKeys() {
+        java.util.List<Integer> sent = new java.util.concurrent.CopyOnWriteArrayList<>();
+        AtvRemote.get(app).testSink = code -> {
+            sent.add(code);
+            return true;
+        };
+        OverlayService s = service();
+        s.openPanel();
+        idle(600);
+        View card = s.panel.root.findViewById(R.id.remote_card);
+        int w = card.getWidth();
+        int h = card.getHeight();
+        assertTrue(w > 0 && h > 0);
+
+        s.panel.root.findViewById(R.id.tab_atv).performClick();
+        idle(600);
+        assertEquals("atv", new Prefs(app).tvMode());
+        assertEquals(View.VISIBLE, s.panel.root.findViewById(R.id.page_atv).getVisibility());
+        assertEquals(View.INVISIBLE, s.panel.root.findViewById(R.id.page_lg).getVisibility());
+        assertEquals(w, card.getWidth()); // same box as the LG page
+        assertEquals(h, card.getHeight());
+        assertTrue(s.panel.root.findViewById(R.id.atv_chip).isActivated()); // connected: green
+        assertEquals(View.GONE, s.panel.root.findViewById(R.id.atv_unpaired).getVisibility());
+
+        View power = s.panel.root.findViewById(R.id.atv_power);
+        touch(power, MotionEvent.ACTION_DOWN, 5, 5);
+        touch(power, MotionEvent.ACTION_UP, 5, 5);
+        assertEquals(Integer.valueOf(26), sent.get(sent.size() - 1));
+        View home = s.panel.root.findViewById(R.id.atv_home);
+        touch(home, MotionEvent.ACTION_DOWN, 5, 5);
+        touch(home, MotionEvent.ACTION_UP, 5, 5);
+        assertEquals(Integer.valueOf(3), sent.get(sent.size() - 1));
+
+        // volume repeats while held
+        View volUp = s.panel.root.findViewById(R.id.atv_vol_up);
+        sent.clear();
+        touch(volUp, MotionEvent.ACTION_DOWN, 5, 5);
+        idle(700);
+        touch(volUp, MotionEvent.ACTION_UP, 5, 5);
+        int held = sent.size();
+        assertTrue("repeats=" + held, held >= 3);
+        for (int k : sent) {
+            assertEquals(24, k);
+        }
+        idle(500);
+        assertEquals(held, sent.size()); // stops when let go
+
+        // touchpad: swipe right three steps, then tap = select
+        TouchpadView pad = s.panel.root.findViewById(R.id.atv_pad);
+        assertTrue(pad.getWidth() > 0);
+        float step = 26 * app.getResources().getDisplayMetrics().density;
+        sent.clear();
+        touch(pad, MotionEvent.ACTION_DOWN, 20, 40);
+        touch(pad, MotionEvent.ACTION_MOVE, 20 + step * 1.5f, 42);
+        touch(pad, MotionEvent.ACTION_MOVE, 20 + step * 3.2f, 44);
+        assertTrue(pad.dotX() > 20); // the dot follows the finger
+        touch(pad, MotionEvent.ACTION_UP, 20 + step * 3.2f, 44);
+        assertEquals(java.util.Arrays.asList(22, 22, 22), sent);
+        sent.clear();
+        touch(pad, MotionEvent.ACTION_DOWN, 30, 30, 10);
+        touch(pad, MotionEvent.ACTION_UP, 31, 31, 80);
+        assertEquals(java.util.Collections.singletonList(23), sent);
+
+        // back to LG: same size again, LG keys still infrared
+        s.panel.root.findViewById(R.id.tab_lg).performClick();
+        idle(600);
+        assertEquals(View.VISIBLE, s.panel.root.findViewById(R.id.page_lg).getVisibility());
+        assertEquals(View.GONE, s.panel.root.findViewById(R.id.page_atv).getVisibility());
+        assertEquals(h, card.getHeight());
+        assertEquals("lg", new Prefs(app).tvMode());
+    }
+
+    @Test
+    public void unpairedAndroidTvOffersPairing() {
+        new Prefs(app).tvMode("atv");
+        OverlayService s = service();
+        s.openPanel();
+        idle(600);
+        assertEquals(View.VISIBLE, s.panel.root.findViewById(R.id.atv_unpaired).getVisibility());
+        assertFalse(s.panel.root.findViewById(R.id.atv_chip).isActivated());
+        // the "not paired" cover does not change the card's size either
+        View card = s.panel.root.findViewById(R.id.remote_card);
+        int h = card.getHeight();
+        s.panel.select("lg", false);
+        idle(100);
+        assertEquals(h, card.getHeight());
+        s.panel.select("atv", false);
+        idle(100);
+        s.panel.root.findViewById(R.id.atv_pair).performClick();
+        Intent started = shadowOf(app).getNextStartedActivity();
+        assertNotNull(started);
+        assertEquals(PairActivity.class.getName(), started.getComponent().getClassName());
+    }
+
+    @Test
+    public void pairOnceThenTheRemoteConnectsByItself() throws Exception {
+        try (com.ahmadman.kenarpanel.atv.FakeTv tv = new com.ahmadman.kenarpanel.atv.FakeTv()) {
+            AtvIdentity.testIdentity = com.ahmadman.kenarpanel.atv.FakeTv.identity("phone");
+            PairActivity.pairPortForTests = tv.pairingServer.getLocalPort();
+            PairActivity p = Robolectric.buildActivity(PairActivity.class).setup().get();
+            p.found("Salon TV", "127.0.0.1", tv.remoteServer.getLocalPort());
+            idle(3000); // only one TV: pairing starts by itself
+            waitFor(() -> {
+                idle(50);
+                assertEquals(View.VISIBLE, p.findViewById(R.id.code_box).getVisibility());
+            });
+            assertNotNull(tv.shownCode);
+            ((TextView) p.findViewById(R.id.code)).setText(tv.shownCode); // typing 6 characters submits
+            Prefs prefs = new Prefs(app);
+            waitFor(() -> {
+                idle(50);
+                assertTrue(prefs.atvPaired());
+            });
+            assertEquals("Salon TV", prefs.atvName());
+            assertEquals("atv", prefs.tvMode());
+
+            // the panel connects without asking and the key reaches the TV
+            AtvRemote atv = AtvRemote.get(app);
+            atv.key(com.ahmadman.kenarpanel.atv.Messages.KEY_HOME); // sent as soon as connected
+            waitFor(() -> {
+                idle(50);
+                assertEquals(AtvRemote.State.READY, atv.state());
+            });
+            assertEquals(Integer.valueOf(3), tv.keys.poll(5, java.util.concurrent.TimeUnit.SECONDS));
+            assertTrue(atv.key(com.ahmadman.kenarpanel.atv.Messages.KEY_DPAD_DOWN));
+            assertEquals(Integer.valueOf(20), tv.keys.poll(5, java.util.concurrent.TimeUnit.SECONDS));
+            atv.close();
+        }
     }
 }

@@ -394,6 +394,9 @@ public class OverlayService extends Service implements Panel.Host {
             panelLp.setBlurBehindRadius(0);
         }
         lastBlur = 0;
+        if ("atv".equals(prefs.tvMode())) {
+            AtvRemote.get(this).ensure(); // connects while the panel comes out: ready when it is open
+        }
         panel.fit(); // screen size may have changed (rotation)
         panel.setProgress(0);
         try {
@@ -432,6 +435,7 @@ public class OverlayService extends Service implements Panel.Host {
             return;
         }
         attached = false;
+        AtvRemote.get(this).idleLater();
         try {
             wm.removeView(panel.root);
         } catch (RuntimeException ignored) {
@@ -484,6 +488,16 @@ public class OverlayService extends Service implements Panel.Host {
             } catch (RuntimeException e) {
                 android.util.Log.w("KenarPanel", "launch " + pkg, e);
             }
+        }
+        requestClose();
+    }
+
+    @Override
+    public void openPair() {
+        try {
+            startActivity(new Intent(this, PairActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+        } catch (RuntimeException ignored) {
+            // refused from the background
         }
         requestClose();
     }

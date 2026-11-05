@@ -29,4 +29,4 @@ AirPods ve Beats bağlanınca sol kulaklığın, sağ kulaklığın ve kutunun p
 
 ## Kenar Panel (Android)
 
-Ekranın kenarında her zaman duran, yeri sürüklenerek ayarlanan ince bir çubuk. İçeri çekince panel parmağı takip ederek çıkar ve yaylanarak açılır; animasyonlar 90 FPS'dir. Panelde uygulama kısayolları ve LG TV kumandası (güç, HDMI 1, HDMI 2) var: [`edge-panel/`](edge-panel/). Hazır APK: [`edge-panel/apk/KenarPanel-1.1.apk`](edge-panel/apk/KenarPanel-1.1.apk)
+Ekranın kenarında her zaman duran, yeri sürüklenerek ayarlanan ince bir çubuk. İçeri çekince panel parmağı takip ederek çıkar ve yaylanarak açılır; animasyonlar 90 FPS'dir. Panelde uygulama kısayolları ve TV kumandası var: LG TV (kızılötesi: güç, HDMI 1, HDMI 2) ve Android TV (Wi-Fi: dokunmatik alan, geri, ana ekran, ses, güç; bir kez eşleştirildikten sonra kendiliğinden bağlanır): [`edge-panel/`](edge-panel/). Hazır APK: [`edge-panel/apk/KenarPanel-1.2.apk`](edge-panel/apk/KenarPanel-1.2.apk)

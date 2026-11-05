@@ -1,14 +1,20 @@
 # Kenar Panel
 
-Ekranın kenarında her zaman ince bir çubuk durur. Çubuğu içeri çekince panel parmağınızla birlikte kenardan çıkar; bıraktığınızda yaylanarak açılır. Panelde uygulama kısayolları ve üç tuşlu bir **LG TV kumandası** bulunur: **Güç**, **HDMI 1** ve **HDMI 2**. Çubuğun yerini sürükleyerek siz belirlersiniz.
+Ekranın kenarında her zaman ince bir çubuk durur. Çubuğu içeri çekince panel parmağınızla birlikte kenardan çıkar; bıraktığınızda yaylanarak açılır. Çubuğun yerini sürükleyerek siz belirlersiniz.
+
+Panelde uygulama kısayolları ve TV kumandası bulunur. Kumandanın üstündeki seçiciden ikisinden biri seçilir:
+- **LG TV:** Kızılötesiyle **Güç**, **HDMI 1** ve **HDMI 2**.
+- **Android TV:** Wi-Fi üzerinden dokunmatik alan, geri, ana ekran, sessiz, ses −/+ ve güç. Google TV uygulamasındaki kumandanın küçük bir hali gibidir.
 
 <img src="docs/tutamak.png" width="190" alt="Kenardaki çubuk"> <img src="docs/cekme-1.png" width="190" alt="Çekerken: panel parmağı takip ediyor"> <img src="docs/cekme-2.png" width="190" alt="Çekerken: içerik sırayla geliyor"> <img src="docs/panel.png" width="190" alt="Panel açık">
 
-<img src="docs/panel-sag.png" width="190" alt="Sağ kenar"> <img src="docs/ayarlar.png" width="190" alt="Ayarlar"> <img src="docs/ayarlar-koyu.png" width="190" alt="Ayarlar, koyu tema">
+<img src="docs/android-tv.png" width="190" alt="Android TV sayfası"> <img src="docs/android-tv-eslestirilmedi.png" width="190" alt="Android TV, eşleştirilmemiş"> <img src="docs/eslestirme.png" width="190" alt="Tek seferlik eşleştirme"> <img src="docs/panel-sag.png" width="190" alt="Sağ kenar">
+
+<img src="docs/ayarlar.png" width="190" alt="Ayarlar"> <img src="docs/ayarlar-koyu.png" width="190" alt="Ayarlar, koyu tema">
 
 ## Kurulum (APK)
 
-1. [`apk/KenarPanel-1.1.apk`](apk/KenarPanel-1.1.apk) dosyasını telefona indirin (78 KB). Dosyayı açın; Android "bilinmeyen kaynaklardan yükleme" izni isterse verin. 1.0 sürümü kuruluysa üzerine kurulur.
+1. [`apk/KenarPanel-1.2.apk`](apk/KenarPanel-1.2.apk) dosyasını telefona indirin (122 KB). Dosyayı açın; Android "bilinmeyen kaynaklardan yükleme" izni isterse verin. Eski sürüm kuruluysa üzerine kurulur.
 2. Uygulamayı açıp **Başlat**'a dokunun. **Diğer uygulamaların üzerinde göster** iznini açıp geri dönün.
 3. **Xiaomi / Redmi / POCO:** İzinler bölümündeki Xiaomi satırına dokunun. **Arka planda çalışırken açılır pencereleri göster** ve **Otomatik başlatma** seçeneklerini açın. Bunlar kapalıysa panelden uygulama açılamaz.
 
@@ -29,6 +35,31 @@ Android 6.0 ve üzeri sürümlerde çalışır. Başka bir uygulama gerekmez.
   - **HDMI 1** ve **HDMI 2**, LG'nin doğrudan giriş kodlarını gönderir.
   - Üç tuş ayarlar ekranından da denenebilir.
 
+## Android TV
+
+- **Seçmek:** Kumandanın üstündeki **LG TV / Android TV** seçicisine dokunun. Kumanda kartının boyutu değişmez; Android TV sayfası LG sayfasıyla aynı alana sığar ve sayfalar kayarak geçer.
+- **İlk eşleştirme (bir kez):**
+  - Android TV sayfasındaki **Eşleştir**'e (veya ayarlardaki Android TV kartına) dokunun.
+  - TV aynı Wi-Fi'da kendiliğinden bulunur; tek TV varsa hemen ona bağlanılır.
+  - TV ekranında 6 karakterli bir kod çıkar. Kodu yazınca, düğmeye basmadan eşleşir.
+  - Bu kod, Android TV'nin güvenlik gereğidir ve yalnızca ilk seferde sorulur.
+  - TV bulunamazsa IP adresiyle de eklenebilir.
+- **Sonrası tamamen otomatik:**
+  - Panel çekilmeye başladığı anda TV'ye kendiliğinden bağlanılır; hiçbir şey sorulmaz.
+  - TV'nin Wi-Fi adresi değişirse TV adıyla yeniden bulunur.
+  - Bağlantı, panel kapandıktan 2 dakika sonra kapanır.
+  - Bağlanmadan önce basılan tuş, bağlantı kurulur kurulmaz gönderilir.
+- **Tuşlar:**
+  - Üstte TV adı yazar; bağlıyken yeşil olur, yanında güç tuşu durur.
+  - **Dokunmatik alan:** kaydırınca yön tuşları gider, dokununca seçim yapılır. Ortadaki nokta parmağı takip eder.
+  - Altta geri, ana ekran, sessiz ve ses −/+ var. Ses tuşları basılı tutulunca tekrarlar.
+- **Nasıl çalışır:** Google TV uygulamasının kullandığı Android TV Remote v2 protokolü kullanılır:
+  - Eşleştirme 6467 numaralı porttan, kumanda 6466 numaralı porttan, istemci sertifikalı TLS ile yapılır.
+  - TV Wi-Fi'da `_androidtvremote2._tcp` olarak bulunur.
+  - Telefonun anahtarı Android'in güvenli anahtar deposunda üretilir ve oradan çıkmaz.
+  - TV'nin sertifikası eşleştirmede kaydedilir; sonra yalnızca o TV kabul edilir.
+  - Telefon yalnızca evdeki TV ile konuşur.
+
 ## Animasyonlar
 
 - **Çekerken:** Panel parmağın tam altındadır, gecikme yoktur. Tam açık konumu geçince lastik gibi zorlaşır. Bırakınca yay hareketiyle yerine oturur (yaklaşık %3'lük küçük bir sekme); kapanırken hızlanarak kenara kayar.
@@ -45,7 +76,7 @@ Android 6.0 ve üzeri sürümlerde çalışır. Başka bir uygulama gerekmez.
 
 ## TV kodları
 
-Sinyaller uygulamanın içinde NEC protokolüyle üretilir (LG adresi 0x04, 38 kHz) ve Android'in standart `ConsumerIrManager` arayüzüyle gönderilir.
+LG sinyalleri uygulamanın içinde NEC protokolüyle üretilir (LG adresi 0x04, 38 kHz) ve Android'in standart `ConsumerIrManager` arayüzüyle gönderilir.
 
 | Tuş | Kod |
 |---|---|
@@ -55,39 +86,46 @@ Sinyaller uygulamanın içinde NEC protokolüyle üretilir (LG adresi 0x04, 38 k
 
 ## Nasıl test edildi?
 
-`./gradlew testReleaseUnitTest` 16 test çalıştırır:
+`./gradlew testReleaseUnitTest` 27 test çalıştırır:
 
-- **`IrTest` (3 test):**
-  - Üretilen sinyaller geri çözülüp yukarıdaki LG kodlarıyla birebir karşılaştırıldı.
-  - NEC çerçeve yapısı doğrulandı: 9 ms + 4,5 ms başlık, 32 bit, durma biti.
-  - Taşıyıcı frekansı telefonun aralığına uyduruluyor.
-- **`MotionTest` (5 test):**
-  - Yay eğrisi hemen hareket ediyor, %1–5 sekip duruyor.
-  - İçerik sırayla geliyor.
-  - Çekme sonunda açma/kapama kararı: yarı yol ve fiske hızı.
-  - Lastik etkisi çalışıyor.
-  - 90/120 Hz seçimi doğru.
-- **`PanelTest` (8 test, Robolectric, gerçek servis, 90 Hz kare aralığıyla):**
-  - Dokununca panel gerçekten kare kare açılıyor: 30 ms sonra yolun ortasında, sonra tam açık. Geri tuşuyla kayarak kapanıyor ve pencere kalkıyor.
-  - Çekerken panel parmağın tam altında: %30 çekişte %30 açık. Çubuk soluyor ve içerik sırayla geliyor.
-  - Yavaş bırakınca kapanıyor, yarıyı geçince açılıyor. Hızlı fiske çeyrek yolda bile açıyor.
-  - Tam açıktan sonra çekmek lastik gibi zorlaşıyor. "Kapalı" hız ayarında panel animasyonsuz açılıp kapanıyor.
-  - Çubuk tutulunca kalınlaşıyor ve bırakınca geri dönüyor. Sürüklenince yeri değişiyor, kilitliyken kıpırdamıyor.
-  - Güç, HDMI 1 ve HDMI 2 tuşları dokunur dokunmaz doğru LG kodunu gönderiyor. Tuş basınca küçülüyor ve geri yaylanıyor.
-  - Kızılötesi verici yoksa panel bunu yazıyor ve tuşlar kapalı oluyor.
-  - Ayarlar ekranı, hız seçimi, tuş denemeleri ve uygulama seçici çalışıyor.
+- **`IrTest` (3 test):** LG sinyalleri geri çözülüp bilinen kodlarla birebir karşılaştırıldı; NEC çerçevesi ve taşıyıcı frekansı doğru.
+- **`MotionTest` (5 test):** Yay eğrisi, sıralı geliş, çekme sonunda açma/kapama kararı, lastik etkisi ve 90/120 Hz seçimi.
+- **`AtvTest` (7 test):**
+  - Eşleştirme ve kumanda mesajları bayt bayt doğru.
+  - Eşleştirme sırrı, Python'daki açık kaynak referans uygulamanın (androidtvremote2) formülüyle aynı sonucu veriyor.
+  - Dokunmatik alanda kaydırma ve dokunma doğru algılanıyor.
+  - Sahte bir Android TV'ye gerçek TLS ile bağlanılıyor:
+    - Eşleştirme tamamlanıyor; kumanda kanalı açılıyor ve TV'nin ping'lerine cevap veriliyor.
+    - Güç, yön ve sessiz tuşları TV'ye ulaşıyor.
+    - Yanlış kod reddediliyor; TV'nin tanımadığı telefon "yeniden eşleştir" durumuna düşüyor.
+- **`ConscryptTest` (1 test):** Aynı eşleştirme ve tuş akışı, Android telefonların kullandığı TLS kütüphanesi Conscrypt ile iki tarafta da çalışıyor.
+- **`PanelTest` (11 test, Robolectric, gerçek servis, 90 Hz kare aralığıyla):**
+  - Çekme, fiske, yay, lastik etkisi, çubuk büyümesi ve sürükleme çalışıyor; LG tuşları kızılötesi gönderiyor.
+  - **Android TV sayfası:**
+    - LG ↔ Android TV geçişinde kumanda kartının genişliği ve yüksekliği değişmiyor; eşleştirilmemiş durumda da değişmiyor.
+    - Güç, ana ekran ve ses tuşları gidiyor; ses basılı tutulunca tekrarlıyor, bırakınca duruyor.
+    - Dokunmatik alanda sağa kaydırma 3 adım gönderiyor, dokunma seçim gönderiyor.
+  - **Baştan sona akış:**
+    1. Eşleştirme ekranı tek TV'yi görünce kendiliğinden başlıyor.
+    2. TV'nin gösterdiği kod yazılınca eşleşme kaydediliyor.
+    3. Kumanda sormadan bağlanıyor ve basılan tuş sahte TV'ye ulaşıyor.
 
-Android Lint 0 hata verdi. Panel, çekme anındaki kareler ve ayarlar ekranı çizdirilip kontrol edildi.
+Android Lint 0 hata verdi. Paneller, çekme anındaki kareler, Android TV sayfası, eşleştirme ve ayarlar ekranı çizdirilip kontrol edildi.
 
 **Test edilemeyenler:**
-- Bu ortamda gerçek telefon ve TV olmadığı için animasyonların akıcılığı gerçek ekranda izlenemedi.
-- Arka plan bulanıklığı bu ortamda çizdirilemiyor.
-- HDMI kodları gerçek bir LG TV'de denenemedi. Güç kodu, LG kumandasının standart kodudur.
+- Bu ortamda gerçek telefon, LG TV ve Android TV olmadığı için gerçek cihazlarla denenemedi.
+- Android TV protokolü, yaygın kullanılan açık kaynak uygulamayla ve sahte TV ile doğrulandı.
+- Animasyonların akıcılığı ve arka plan bulanıklığı gerçek ekranda görülemedi.
 
 ## Bilinen sınırlamalar
 
 - **HDMI tuşları:** HDMI 1/2 kodları LG'nin "doğrudan giriş" kodlarıdır ve normal kumandada yoktur. Çoğu LG TV bu kodları tanır; tanımayan eski modellerde HDMI tuşları çalışmayabilir.
-- **Kızılötesi verici:** Kumanda yalnızca kızılötesi vericisi olan telefonlarda çalışır. Birçok Xiaomi, Redmi ve POCO modelinde bu verici vardır.
+- **Kızılötesi verici:** LG kumandası yalnızca kızılötesi vericisi olan telefonlarda çalışır. Birçok Xiaomi, Redmi ve POCO modelinde bu verici vardır. Android TV kumandası Wi-Fi ile çalışır, verici gerekmez.
+- **Android TV:**
+  - Telefon ve TV aynı Wi-Fi'da olmalıdır.
+  - İlk eşleştirmedeki kodu TV istediği için bir kez yazmak gerekir.
+  - Mikrofonla sesli arama şimdilik yok.
+  - TV sıfırlanırsa panel "Yeniden eşleştir" der.
 - **90 Hz:** Ekranın 90 Hz veya üzerini desteklemesi gerekir. Bazı telefonlar (ör. Xiaomi'nin "akıllı yenileme hızı" ayarı) uygulama isteğine rağmen ekran hızını kendi belirler.
 - **Bulanıklık:** Android 12 öncesinde, pil tasarrufu modunda veya pencere bulanıklığını desteklemeyen telefonlarda arka plan yalnızca kararır.
 - **İmza:** APK debug anahtarıyla imzalıdır. Farklı bir ortamda derlenen sürüm üzerine kurulmazsa önce eskisini kaldırın.
@@ -108,4 +146,9 @@ export ANDROID_HOME=/android/sdk/yolu
 | `Tween.java` | Ekran yenilemesine bağlı animasyon adımları |
 | `OverlayService.java`, `HandleView.java` | Çubuk, parmağı takip eden çekme, fiske, bulanıklık, 90 Hz isteği |
 | `Panel.java`, `PanelRoot.java`, `Remote.java` | Hazır bekleyen panel, ilerleme tabanlı animasyon, tuşlar |
+| `atv/Proto.java`, `atv/Messages.java` | Android TV Remote v2 mesajları ve eşleştirme sırrı (saf Java) |
+| `atv/Tls.java`, `atv/Pairing.java`, `atv/Session.java` | İstemci sertifikalı TLS, tek seferlik eşleştirme, kumanda kanalı (saf Java) |
+| `atv/Touchpad.java`, `TouchpadView.java` | Kaydırma → yön tuşları, dokunma → seçim |
+| `AtvIdentity.java`, `AtvFinder.java`, `AtvRemote.java` | Anahtar deposu, Wi-Fi'da TV bulma, otomatik bağlanma |
+| `PairActivity.java` | Tek seferlik eşleştirme ekranı |
 | `MainActivity.java`, `AppPickerActivity.java` | Ayarlar, hız seçimi, tuş denemesi, uygulama seçimi |

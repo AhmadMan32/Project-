@@ -100,6 +100,50 @@ final class Prefs {
         p.edit().putString("speed", s.name()).apply();
     }
 
+    /** Which remote the panel shows: "lg" (infrared) or "atv" (Android TV over Wi-Fi). */
+    String tvMode() {
+        return p.getString("tvMode", "lg");
+    }
+
+    void tvMode(String mode) {
+        p.edit().putString("tvMode", mode).apply();
+    }
+
+    /** The paired Android TV: name, address, port and its certificate fingerprint. */
+    String atvName() {
+        return p.getString("atvName", null);
+    }
+
+    String atvHost() {
+        return p.getString("atvHost", null);
+    }
+
+    int atvPort() {
+        return p.getInt("atvPort", com.ahmadman.kenarpanel.atv.Messages.REMOTE_PORT);
+    }
+
+    String atvPin() {
+        return p.getString("atvPin", null);
+    }
+
+    boolean atvPaired() {
+        return atvHost() != null && atvPin() != null;
+    }
+
+    void atv(String name, String host, int port, String pin) {
+        p.edit().putString("atvName", name).putString("atvHost", host).putInt("atvPort", port)
+                .putString("atvPin", pin).apply();
+    }
+
+    /** The TV got a new address on the Wi-Fi (found again by name). */
+    void atvHost(String host, int port) {
+        p.edit().putString("atvHost", host).putInt("atvPort", port).apply();
+    }
+
+    void forgetAtv() {
+        p.edit().remove("atvName").remove("atvHost").remove("atvPort").remove("atvPin").apply();
+    }
+
     List<String> apps() {
         String s = p.getString("apps", "");
         List<String> out = new ArrayList<>();

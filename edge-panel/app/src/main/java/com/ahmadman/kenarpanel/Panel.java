@@ -23,7 +23,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * The panel: app shortcuts and the LG remote (power, HDMI 1, HDMI 2). Built once and kept in
+ * The panel: app shortcuts and the TV remote: LG over infrared (power, HDMI 1, HDMI 2) or an
+ * Android TV over Wi-Fi (touchpad, back, home, volume, power). Built once and kept in
  * memory. Everything on it is driven by one number, the open progress (0 = hidden at the edge,
  * 1 = open), so it can follow the finger while pulling and animate the same way on its own.
  */
@@ -42,6 +43,9 @@ final class Panel {
 
         /** The edge handle fades out while the panel comes in. */
         void handleAlpha(float alpha);
+
+        /** One-time pairing with an Android TV. */
+        void openPair();
     }
 
     static final String[] DEFAULT_APPS = {"com.whatsapp", "com.google.android.youtube", "com.instagram.android",
@@ -62,6 +66,13 @@ final class Panel {
     private int travel = 1;
     private float progress;
     private Tween tween;
+    private final View pageLg;
+    private final View pageAtv;
+    private final View tabLg;
+    private final View tabAtv;
+    private final AtvRemote atv;
+    private Tween pageTween;
+    private final android.os.Handler main = new android.os.Handler(android.os.Looper.getMainLooper());
 
     @SuppressLint("InflateParams") // window root
     Panel(Context c, Remote remote, Host host) {
@@ -80,6 +91,56 @@ final class Panel {
         key(R.id.k_hdmi1, Remotes.Key.HDMI1);
         key(R.id.k_hdmi2, Remotes.Key.HDMI2);
         root.findViewById(R.id.settings).setOnClickListener(v -> host.openSettings(false));
+
+        // Android TV page
+        pageLg = root.findViewById(R.id.page_lg);
+        pageAtv = root.findViewById(R.id.page_atv);
+        tabLg = root.findViewById(R.id.tab_lg);
+        tabAtv = root.findViewById(R.id.tab_atv);
+        atv = AtvRemote.get(c);
+        tabLg.setOnClickListener(v -> select("lg", true));
+        tabAtv.setOnClickListener(v -> select("atv", true));
+        atvKey(R.id.atv_power, com.ahmadman.kenarpanel.atv.Messages.KEY_POWER, false);
+        atvKey(R.id.atv_back, com.ahmadman.kenarpanel.atv.Messages.KEY_BACK, false);
+        atvKey(R.id.atv_home, com.ahmadman.kenarpanel.atv.Messages.KEY_HOME, false);
+        atvKey(R.id.atv_mute, com.ahmadman.kenarpanel.atv.Messages.KEY_VOLUME_MUTE, false);
+        atvKey(R.id.atv_vol_down, com.ahmadman.kenarpanel.atv.Messages.KEY_VOLUME_DOWN, true);
+        atvKey(R.id.atv_vol_up, com.ahmadman.kenarpanel.atv.Messages.KEY_VOLUME_UP, true);
+        TouchpadView pad = root.findViewById(R.id.atv_pad);
+        pad.setKeys(new TouchpadView.Keys() {
+            @Override
+            public void step(com.ahmadman.kenarpanel.atv.Touchpad.Step s) {
+                switch (s) {
+                    case UP:
+                        atv.key(com.ahmadman.kenarpanel.atv.Messages.KEY_DPAD_UP);
+                        break;
+                    case DOWN:
+                        atv.key(com.ahmadman.kenarpanel.atv.Messages.KEY_DPAD_DOWN);
+                        break;
+                    case LEFT:
+                        atv.key(com.ahmadman.kenarpanel.atv.Messages.KEY_DPAD_LEFT);
+                        break;
+                    default:
+                        atv.key(com.ahmadman.kenarpanel.atv.Messages.KEY_DPAD_RIGHT);
+                        break;
+                }
+            }
+
+            @Override
+            public void select() {
+                atv.key(com.ahmadman.kenarpanel.atv.Messages.KEY_DPAD_CENTER);
+            }
+        });
+        root.findViewById(R.id.atv_pair).setOnClickListener(v -> host.openPair());
+        root.findViewById(R.id.atv_chip).setOnClickListener(v -> {
+            AtvRemote.State st = atv.state();
+            if (st == AtvRemote.State.NOT_PAIRED || st == AtvRemote.State.REFUSED) {
+                host.openPair();
+            } else {
+                atv.ensure(); // tap to reconnect
+            }
+        });
+        atv.add(this::renderAtv);
         refresh();
     }
 
@@ -98,6 +159,12 @@ final class Panel {
         lp.gravity = (right ? Gravity.END : Gravity.START) | Gravity.CENTER_VERTICAL;
         content.setLayoutParams(lp);
         loadApps();
+        String mode = prefs.tvMode();
+        tabLg.setSelected(!"atv".equals(mode));
+        tabAtv.setSelected("atv".equals(mode));
+        showPage("atv".equals(mode), false);
+        ((TouchpadView) root.findViewById(R.id.atv_pad)).setHaptics(prefs.haptics());
+        renderAtv();
         boolean ir = remote.available();
         root.findViewById(R.id.ir_missing).setVisibility(ir ? View.GONE : View.VISIBLE);
         for (int id : new int[]{R.id.k_power, R.id.k_hdmi1, R.id.k_hdmi2}) {
@@ -119,6 +186,10 @@ final class Panel {
         remoteRows.add(root.findViewById(R.id.k_power));
         remoteRows.add(root.findViewById(R.id.power_label));
         remoteRows.add(root.findViewById(R.id.hdmi_row));
+        remoteRows.add(root.findViewById(R.id.atv_top));
+        remoteRows.add((View) root.findViewById(R.id.atv_pad).getParent());
+        remoteRows.add(root.findViewById(R.id.atv_row1));
+        remoteRows.add(root.findViewById(R.id.atv_row2));
         List<View> icons = new ArrayList<>();
         for (int i = 0; i < apps.getChildCount(); i++) {
             icons.add(apps.getChildAt(i));
@@ -166,7 +237,7 @@ final class Panel {
         for (int i = 0; i < n; i++) {
             float q = Motion.cascade(c, i, n);
             View v = cascade.get(i);
-            v.setAlpha(v.isEnabled() || v.getId() == R.id.hdmi_row ? q : q * 0.35f);
+            v.setAlpha(v.isEnabled() || !(v instanceof android.widget.ImageView) ? q : q * 0.35f);
             v.setTranslationX((1f - q) * slide);
         }
     }
@@ -197,6 +268,131 @@ final class Panel {
         // the spring's motion is mostly in its first half: it feels as fast as the setting
         long millis = Math.round(speed.millis * distance * (opening ? 2.0f : 0.9f));
         tween = Tween.run(progress, target, millis, opening ? Motion::spring : f -> f * f, this::setProgress, end);
+    }
+
+    /** Switches between the LG and the Android TV page; the card keeps its size. */
+    void select(String mode, boolean animate) {
+        if (mode.equals(prefs.tvMode()) && animate) {
+            if ("atv".equals(mode)) {
+                atv.ensure();
+            }
+            return;
+        }
+        prefs.tvMode(mode);
+        boolean isAtv = "atv".equals(mode);
+        tabLg.setSelected(!isAtv);
+        tabAtv.setSelected(isAtv);
+        showPage(isAtv, animate && prefs.speed() != Motion.Speed.OFF);
+        if (isAtv) {
+            atv.ensure(); // connect right away, without asking
+        }
+        if (prefs.haptics()) {
+            (isAtv ? tabAtv : tabLg).performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY);
+        }
+    }
+
+    /** The LG page stays laid out (invisible) under the Android TV page, so the size never changes. */
+    private void showPage(boolean isAtv, boolean animate) {
+        if (pageTween != null) {
+            pageTween.cancel();
+        }
+        View in = isAtv ? pageAtv : pageLg;
+        View out = isAtv ? pageLg : pageAtv;
+        float shift = 14 * dp * (isAtv ? 1 : -1);
+        in.setVisibility(View.VISIBLE);
+        if (!animate) {
+            in.setAlpha(1f);
+            in.setTranslationX(0);
+            out.setAlpha(0f);
+            out.setVisibility(isAtv ? View.INVISIBLE : View.GONE);
+            return;
+        }
+        in.setAlpha(0f);
+        in.setTranslationX(shift);
+        pageTween = Tween.run(0f, 1f, Math.round(prefs.speed().millis * 1.3f), new DecelerateInterpolator(1.6f), f -> {
+            in.setAlpha(f);
+            in.setTranslationX(shift * (1f - f));
+            out.setAlpha(1f - f);
+            out.setTranslationX(-shift * f);
+        }, () -> {
+            out.setVisibility(isAtv ? View.INVISIBLE : View.GONE);
+            out.setTranslationX(0);
+        });
+    }
+
+    /** Connection status in the chip: green with the TV's name when connected. */
+    void renderAtv() {
+        AtvRemote.State st = atv.state();
+        View chip = root.findViewById(R.id.atv_chip);
+        android.widget.TextView name = root.findViewById(R.id.atv_name);
+        chip.setActivated(st == AtvRemote.State.READY);
+        switch (st) {
+            case READY:
+                name.setText(atv.name());
+                break;
+            case CONNECTING:
+                name.setText(context.getString(R.string.atv_connecting, atv.name()));
+                break;
+            case REFUSED:
+                name.setText(R.string.atv_refused);
+                break;
+            case NOT_PAIRED:
+                name.setText(R.string.atv_not_paired_short);
+                break;
+            default:
+                name.setText(context.getString(R.string.atv_offline, atv.name()));
+                break;
+        }
+        boolean paired = st != AtvRemote.State.NOT_PAIRED;
+        root.findViewById(R.id.atv_unpaired).setVisibility(paired && st != AtvRemote.State.REFUSED
+                ? View.GONE : View.VISIBLE);
+        ((android.widget.TextView) root.findViewById(R.id.atv_unpaired_text)).setText(
+                st == AtvRemote.State.REFUSED ? R.string.atv_refused_panel : R.string.atv_not_paired_panel);
+        ((android.widget.TextView) root.findViewById(R.id.atv_pair)).setText(
+                st == AtvRemote.State.REFUSED ? R.string.atv_pair_again : R.string.atv_pair);
+    }
+
+    /** Android TV keys: sent on touch-down; volume repeats while held. */
+    @SuppressLint("ClickableViewAccessibility")
+    private void atvKey(int id, int code, boolean repeats) {
+        View v = root.findViewById(id);
+        Runnable[] repeat = new Runnable[1];
+        repeat[0] = () -> {
+            atv.key(code);
+            main.postDelayed(repeat[0], 130);
+        };
+        v.setOnTouchListener((view, e) -> {
+            Motion.Speed speed = prefs.speed();
+            switch (e.getActionMasked()) {
+                case MotionEvent.ACTION_DOWN:
+                    view.drawableHotspotChanged(e.getX(), e.getY());
+                    view.setPressed(true);
+                    atv.key(code);
+                    if (repeats) {
+                        main.postDelayed(repeat[0], 400);
+                    }
+                    if (prefs.haptics()) {
+                        view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY);
+                    }
+                    if (speed != Motion.Speed.OFF) {
+                        scale(view, 0.9f, 70, new DecelerateInterpolator());
+                    }
+                    return true;
+                case MotionEvent.ACTION_MOVE:
+                    view.drawableHotspotChanged(e.getX(), e.getY());
+                    return true;
+                case MotionEvent.ACTION_UP:
+                case MotionEvent.ACTION_CANCEL:
+                    view.setPressed(false);
+                    main.removeCallbacks(repeat[0]);
+                    scale(view, 1f, speed == Motion.Speed.OFF ? 0 : Math.round(speed.millis * 1.6f),
+                            new OvershootInterpolator(3f));
+                    return true;
+                default:
+                    return true;
+            }
+        });
+        v.setOnClickListener(view -> atv.key(code));
     }
 
     static List<String> appsOrDefault(Context c, Prefs prefs) {

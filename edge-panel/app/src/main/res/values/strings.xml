@@ -57,7 +57,7 @@
     <string name="settings">Ayarlar</string>
     <string name="remote_title" translatable="false">LG TV</string>
     <string name="key_power">Güç</string>
-    <string name="footer">Kenar Panel · İnternet izni yok.</string>
+    <string name="footer">Kenar Panel · Yalnızca evdeki TV ile konuşur, başka hiçbir yere bağlanmaz.</string>
     <string name="anim_hint">Panel çekerken parmağınızı takip eder, bırakınca yaylanarak açılır. İçindekiler sırayla gelir, tuşlar basınca esner ve dalgalanır, arka plan bulanıklaşır.</string>
     <string name="anim_speed">Animasyon hızı</string>
     <string name="anim_title">Animasyonlar</string>
@@ -70,4 +70,43 @@
     <string name="speed_medium">Orta</string>
     <string name="speed_off">Kapalı</string>
     <string name="speed_slow">Yavaş</string>
+    <string name="atv_card" translatable="false">Android TV</string>
+    <string name="atv_card_hint">Telefon ve TV aynı Wi-Fi\'da olmalı. Panel açılırken TV\'ye kendiliğinden bağlanır; adresi değişirse TV\'yi yeniden bulur.</string>
+    <string name="atv_connecting">%1$s · bağlanıyor…</string>
+    <string name="atv_forget">Unut</string>
+    <string name="atv_not_paired">Android TV henüz eşleştirilmedi. Bir kez eşleştirin, sonra kendiliğinden bağlanır.</string>
+    <string name="atv_not_paired_short">Eşleştirilmedi</string>
+    <string name="atv_offline">%1$s · bağlanılamadı</string>
+    <string name="atv_pair">Eşleştir</string>
+    <string name="atv_pair_again">Yeniden eşleştir</string>
+    <string name="atv_paired_with">Eşleşti: %1$s (%2$s)</string>
+    <string name="atv_refused">Yeniden eşleştirin</string>
+    <string name="key_back">Geri</string>
+    <string name="key_home">Ana ekran</string>
+    <string name="key_mute">Sesi kapat</string>
+    <string name="key_vol_down">Sesi azalt</string>
+    <string name="key_vol_up">Sesi artır</string>
+    <string name="pad_description">Dokunmatik alan: kaydırarak gezin, dokunarak seçin</string>
+    <string name="pad_hint_swipe">Gezinmek için kaydırın</string>
+    <string name="pad_hint_tap">Seçmek için dokunun</string>
+    <string name="pair_checking">Kod kontrol ediliyor…</string>
+    <string name="pair_choose">Eşleştirmek istediğiniz TV\'ye dokunun.</string>
+    <string name="pair_code_hint" translatable="false">A1B2C3</string>
+    <string name="pair_connecting">%1$s ile bağlantı kuruluyor…</string>
+    <string name="pair_done">✓ %1$s eşleşti. Artık panelden kendiliğinden bağlanır.</string>
+    <string name="pair_enter_code">%1$s ekranında görünen 6 karakterli kodu yazın.</string>
+    <string name="pair_failed">%1$s ile bağlanılamadı. TV açık ve aynı Wi-Fi\'da mı?</string>
+    <string name="pair_footer">Eşleştirme bir kez yapılır. Telefonun anahtarı telefonun güvenli donanımında kalır; yalnızca evdeki TV ile konuşulur.</string>
+    <string name="pair_manual_connect">Bağlan</string>
+    <string name="pair_manual_hint">TV bulunamazsa: TV\'de Ayarlar → Ağ ve İnternet → Wi-Fi ağınız: IP adresini buraya yazın.</string>
+    <string name="pair_manual_ip_hint" translatable="false">192.168.1.20</string>
+    <string name="pair_manual_title">IP adresiyle ekle</string>
+    <string name="pair_none_found">Android TV bulunamadı. TV açık ve aynı Wi-Fi\'da mı? Aşağıdan IP adresiyle de ekleyebilirsiniz.</string>
+    <string name="pair_searching">Wi-Fi\'da Android TV aranıyor…</string>
+    <string name="pair_title">Android TV\'yi eşleştir</string>
+    <string name="pair_tv_row" translatable="false">%1$s · %2$s</string>
+    <string name="pair_wrong_code">Kod yanlış. TV yeni bir kod gösterecek…</string>
+    <string name="tab_atv" translatable="false">Android TV</string>
+    <string name="atv_not_paired_panel">Bir kez eşleştirin, sonra kendiliğinden bağlanır.</string>
+    <string name="atv_refused_panel">TV bu telefonu tanımıyor.</string>
 </resources>

@@ -66,6 +66,14 @@ public class MainActivity extends Activity {
             Toast.makeText(this, R.string.position_reset, Toast.LENGTH_SHORT).show();
         });
         findViewById(R.id.choose_apps).setOnClickListener(v -> startActivity(new Intent(this, AppPickerActivity.class)));
+        findViewById(R.id.atv_pair_button).setOnClickListener(v -> startActivity(new Intent(this, PairActivity.class)));
+        findViewById(R.id.atv_forget).setOnClickListener(v -> {
+            prefs.forgetAtv();
+            prefs.tvMode("lg");
+            AtvRemote.get(this).pairedChanged();
+            OverlayService.settingsChanged();
+            render();
+        });
 
         Motion.Speed[] speeds = Motion.Speed.values();
         int current = prefs.speed().ordinal();
@@ -165,6 +173,14 @@ public class MainActivity extends Activity {
         }
         ((TextView) findViewById(R.id.apps_count)).setText(getString(R.string.apps_count, row.getChildCount(),
                 Prefs.MAX_APPS));
+
+        String tv = prefs.atvName();
+        ((TextView) findViewById(R.id.atv_status)).setText(prefs.atvPaired()
+                ? getString(R.string.atv_paired_with, tv != null ? tv : prefs.atvHost(), prefs.atvHost())
+                : getString(R.string.atv_not_paired));
+        ((TextView) findViewById(R.id.atv_pair_button)).setText(prefs.atvPaired() ? R.string.atv_pair_again
+                : R.string.atv_pair);
+        findViewById(R.id.atv_forget).setVisibility(prefs.atvPaired() ? View.VISIBLE : View.GONE);
 
         boolean ir = remote.available();
         ImageView irIcon = findViewById(R.id.ir_icon);

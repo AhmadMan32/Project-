@@ -10,8 +10,8 @@ android {
         applicationId = "com.ahmadman.kenarpanel"
         minSdk = 23
         targetSdk = 35
-        versionCode = 2
-        versionName = "1.1"
+        versionCode = 3
+        versionName = "1.2"
     }
 
     buildTypes {
@@ -39,6 +39,8 @@ dependencies {
 
 // Optional: -ProbolectricRepo=<maven mirror> when Maven Central is rate limited.
 tasks.withType<Test>().configureEach {
+    // Conscrypt (Android's TLS library, used by Robolectric) reads a JDK internal on desktop Java
+    jvmArgs("--add-opens=java.base/java.net=ALL-UNNAMED")
     providers.gradleProperty("robolectricRepo").orNull?.let {
         systemProperty("robolectric.dependency.repo.url", it)
     }

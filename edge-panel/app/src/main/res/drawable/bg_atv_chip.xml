@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- green when connected (like the TV app), grey while connecting -->
+<ripple xmlns:android="http://schemas.android.com/apk/res/android" android:color="@color/panel_ripple">
+    <item>
+        <selector>
+            <item android:state_activated="true">
+                <shape android:shape="rectangle">
+                    <solid android:color="@color/panel_atv" />
+                    <corners android:radius="16dp" />
+                </shape>
+            </item>
+            <item>
+                <shape android:shape="rectangle">
+                    <solid android:color="@color/panel_atv_wait" />
+                    <corners android:radius="16dp" />
+                </shape>
+            </item>
+        </selector>
+    </item>
+</ripple>

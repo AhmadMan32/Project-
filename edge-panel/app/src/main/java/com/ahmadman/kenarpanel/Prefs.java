@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-/** Handle position and look, panel apps and the TV brand. */
+/** Handle position and look, panel apps and animation speed. */
 final class Prefs {
 
     static final int MAX_APPS = 12;
@@ -83,13 +83,6 @@ final class Prefs {
         p.edit().putBoolean("haptics", on).apply();
     }
 
-    boolean digits() {
-        return p.getBoolean("digits", false);
-    }
-
-    void digits(boolean on) {
-        p.edit().putBoolean("digits", on).apply();
-    }
 
     boolean boot() {
         return p.getBoolean("boot", true);
@@ -99,12 +92,12 @@ final class Prefs {
         p.edit().putBoolean("boot", on).apply();
     }
 
-    String brand() {
-        return p.getString("brand", "samsung");
+    com.ahmadman.kenarpanel.core.Motion.Speed speed() {
+        return com.ahmadman.kenarpanel.core.Motion.Speed.of(p.getString("speed", "FAST"));
     }
 
-    void brand(String id) {
-        p.edit().putString("brand", id).apply();
+    void speed(com.ahmadman.kenarpanel.core.Motion.Speed s) {
+        p.edit().putString("speed", s.name()).apply();
     }
 
     List<String> apps() {

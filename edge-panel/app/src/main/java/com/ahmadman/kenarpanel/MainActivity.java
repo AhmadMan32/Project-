@@ -19,11 +19,12 @@ import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.ahmadman.kenarpanel.core.Motion;
 import com.ahmadman.kenarpanel.core.Remotes;
 
 import java.util.List;
 
-/** Start/stop, handle position and look, panel apps, TV brand and permissions. */
+/** Start/stop, handle position and look, animation speed, panel apps, TV keys and permissions. */
 public class MainActivity extends Activity {
 
     private static MainActivity visible;
@@ -31,7 +32,6 @@ public class MainActivity extends Activity {
     private Prefs prefs;
     private Remote remote;
     private boolean waitingForOverlay;
-    private TextView[] brandViews;
 
     static void notifyStateChanged() {
         MainActivity a = visible;
@@ -59,7 +59,6 @@ public class MainActivity extends Activity {
         seek(R.id.opacity, R.id.opacity_label, R.string.opacity_value, 20, 100, prefs.opacity(), v -> prefs.opacity(v));
         bind(R.id.opt_locked, prefs.locked(), on -> prefs.locked(on));
         bind(R.id.opt_haptics, prefs.haptics(), on -> prefs.haptics(on));
-        bind(R.id.opt_digits, prefs.digits(), on -> prefs.digits(on));
         bind(R.id.opt_boot, prefs.boot(), on -> prefs.boot(on));
         findViewById(R.id.reset_position).setOnClickListener(v -> {
             prefs.position(0.32f);
@@ -68,24 +67,18 @@ public class MainActivity extends Activity {
         });
         findViewById(R.id.choose_apps).setOnClickListener(v -> startActivity(new Intent(this, AppPickerActivity.class)));
 
-        Remotes.Brand[] brands = Remotes.ALL;
-        int current = 0;
-        for (int i = 0; i < brands.length; i++) {
-            if (brands[i].id.equals(prefs.brand())) {
-                current = i;
-            }
-        }
-        brandViews = segment(R.id.seg_brand, null, current, i -> {
-            prefs.brand(Remotes.ALL[i].id);
-            changed();
-        });
-        findViewById(R.id.test_power).setOnClickListener(v -> {
-            if (!remote.press(Remotes.byId(prefs.brand()), Remotes.Key.POWER)) {
-                Toast.makeText(this, R.string.ir_missing, Toast.LENGTH_SHORT).show();
-            }
-            remote.release();
-        });
-        findViewById(R.id.find_brand).setOnClickListener(v -> findBrand());
+        Motion.Speed[] speeds = Motion.Speed.values();
+        int current = prefs.speed().ordinal();
+        segment(R.id.seg_speed, new int[]{R.string.speed_fast, R.string.speed_medium, R.string.speed_slow,
+                R.string.speed_off}, current, i -> prefs.speed(speeds[i]));
+        test(R.id.test_power, Remotes.Key.POWER);
+        test(R.id.test_hdmi1, Remotes.Key.HDMI1);
+        test(R.id.test_hdmi2, Remotes.Key.HDMI2);
+        float max = OverlayService.maxRefreshRate(this);
+        float fast = OverlayService.fastRefreshRate(this);
+        ((TextView) findViewById(R.id.refresh_info)).setText(fast > 0
+                ? getString(R.string.refresh_fast, Math.round(max), Math.round(fast))
+                : getString(R.string.refresh_slow, Math.round(max)));
     }
 
     @Override
@@ -181,47 +174,12 @@ public class MainActivity extends Activity {
         renderPermissions();
     }
 
-    private void findBrand() {
-        if (!remote.available()) {
-            Toast.makeText(this, R.string.ir_missing, Toast.LENGTH_SHORT).show();
-            return;
-        }
-        final int[] index = {-1};
-        AlertDialog d = new AlertDialog.Builder(this)
-                .setTitle(R.string.find_title)
-                .setMessage(R.string.find_text)
-                .setPositiveButton(R.string.find_worked, null)
-                .setNegativeButton(R.string.cancel, null)
-                .create();
-        Runnable next = new Runnable() {
-            @Override
-            public void run() {
-                if (!d.isShowing()) {
-                    return;
-                }
-                index[0] = (index[0] + 1) % Remotes.ALL.length;
-                Remotes.Brand b = Remotes.ALL[index[0]];
-                d.setMessage(getString(R.string.find_trying, b.name));
-                remote.press(b, Remotes.Key.POWER);
-                remote.release();
-                handler.postDelayed(this, 3000);
+    private void test(int id, Remotes.Key key) {
+        findViewById(id).setOnClickListener(v -> {
+            if (!remote.press(key)) {
+                Toast.makeText(this, R.string.ir_missing, Toast.LENGTH_SHORT).show();
             }
-        };
-        d.setOnShowListener(x -> d.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
-            if (index[0] >= 0) {
-                Remotes.Brand b = Remotes.ALL[index[0]];
-                prefs.brand(b.id);
-                for (int i = 0; i < brandViews.length; i++) {
-                    brandViews[i].setSelected(i == index[0]);
-                }
-                changed();
-                Toast.makeText(this, getString(R.string.find_saved, b.name), Toast.LENGTH_LONG).show();
-            }
-            d.dismiss();
-        }));
-        d.setOnDismissListener(x -> handler.removeCallbacks(next));
-        d.show();
-        handler.post(next);
+        });
     }
 
     // ---------------------------------------------------------------------------------------
@@ -263,18 +221,13 @@ public class MainActivity extends Activity {
         void set(boolean v);
     }
 
-    /** @param labels null = brand names */
     private TextView[] segment(int id, int[] labels, int selected, IntSetter set) {
         LinearLayout box = findViewById(id);
-        int n = labels != null ? labels.length : Remotes.ALL.length;
+        int n = labels.length;
         TextView[] views = new TextView[n];
         for (int i = 0; i < n; i++) {
             TextView t = (TextView) LayoutInflater.from(this).inflate(R.layout.item_segment, box, false);
-            if (labels != null) {
-                t.setText(labels[i]);
-            } else {
-                t.setText(Remotes.ALL[i].name);
-            }
+            t.setText(labels[i]);
             final int index = i;
             t.setOnClickListener(v -> {
                 for (int k = 0; k < views.length; k++) {

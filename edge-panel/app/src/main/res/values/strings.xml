@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Kenar Panel</string>
-    <string name="tagline">Ekran kenarında her an açılan panel: uygulamalar ve TV kumandası</string>
+    <string name="tagline">Ekran kenarında her an açılan panel: uygulamalar ve LG TV kumandası</string>
     <string name="handle_description">Kenar paneli tutamağı</string>
     <string name="notif_title">Kenar paneli açık</string>
-    <string name="notif_text">Tutamağa dokunun veya içeri kaydırın</string>
+    <string name="notif_text">Tutamağı içeri çekin veya dokunun</string>
     <string name="channel">Kenar paneli</string>
     <string name="stop">Durdur</string>
     <string name="start">Başlat</string>
     <string name="state_on">Panel açık</string>
     <string name="state_off">Panel kapalı</string>
-    <string name="state_on_text">Ekranın kenarındaki çubuğa dokunun veya içeri kaydırın: panel anında açılır. Çubuğu yukarı/aşağı sürükleyerek yerini değiştirin.</string>
+    <string name="state_on_text">Ekranın kenarındaki çubuğu içeri çekin: panel parmağınızla birlikte gelir. Dokunmak da açar. Çubuğu yukarı/aşağı sürükleyerek yerini değiştirin.</string>
     <string name="state_off_text">Başlatınca ekranın kenarında ince bir çubuk durur; her uygulamanın üzerinde görünür.</string>
     <string name="overlay_explain">Çubuğun ve panelin diğer uygulamaların üzerinde görünebilmesi için “Diğer uygulamaların üzerinde göster” iznini açın, sonra geri dönün.</string>
     <string name="allow">İzin ver</string>
@@ -35,20 +35,11 @@
     <string name="apps_max">En fazla %1$d uygulama seçilebilir</string>
     <string name="apps_add">Uygulama ekle</string>
     <string name="back">Geri</string>
-    <string name="tv_card">TV kumandası</string>
+    <string name="tv_card">LG TV kumandası</string>
     <string name="ir_ok">Bu telefonda kızılötesi verici var</string>
     <string name="ir_missing">Bu telefonda kızılötesi verici yok</string>
     <string name="ir_missing_panel">Bu telefonda kızılötesi verici yok; TV kumandası çalışmaz.</string>
-    <string name="brand">TV markası</string>
-    <string name="test_power">Güç tuşunu dene</string>
-    <string name="find_brand">Markayı bul</string>
-    <string name="tv_hint">Telefonun üst kenarını TV\'ye doğru tutun. Ses ve kanal tuşları basılı tutulunca tekrarlar. Marka paneldeki etikete dokunarak da değiştirilebilir.</string>
-    <string name="find_title">Markayı bul</string>
-    <string name="find_text">Telefonu TV\'ye doğru tutun…</string>
-    <string name="find_trying">%1$s güç kodu gönderiliyor…\n\nTV kapanır veya açılırsa “Çalıştı”ya dokunun.</string>
-    <string name="find_worked">Çalıştı</string>
-    <string name="find_saved">Marka kaydedildi: %1$s</string>
-    <string name="opt_digits">Panelde rakam tuşlarını göster</string>
+    <string name="tv_hint">Telefonun üst kenarını TV\'ye doğru tutun. Güç tuşu LG kumandasındaki güç tuşunun kodunu gönderir; HDMI tuşları LG\'nin doğrudan giriş kodlarını kullanır. Aşağıdaki tuşlarla buradan da deneyebilirsiniz.</string>
     <string name="opt_haptics">Tuşlarda titreşim</string>
     <string name="opt_boot">Telefon açılınca başlat</string>
     <string name="perm_title">İzinler</string>
@@ -64,37 +55,19 @@
     <string name="perm_missing">Eksik</string>
     <string name="perm_info">Bilgi</string>
     <string name="settings">Ayarlar</string>
-    <string name="remote_title">TV KUMANDA</string>
-    <string name="brand_chip">%1$s ▾</string>
-    <string name="digits_show">123 · Rakamları göster</string>
-    <string name="digits_hide">Rakamları gizle</string>
-    <string name="label_vol">SES</string>
-    <string name="label_ch">KANAL</string>
+    <string name="remote_title" translatable="false">LG TV</string>
     <string name="key_power">Güç</string>
-    <string name="key_input">Kaynak</string>
-    <string name="key_mute">Sessiz</string>
-    <string name="key_vol_up">Ses aç</string>
-    <string name="key_vol_down">Ses kıs</string>
-    <string name="key_ch_up">Kanal yukarı</string>
-    <string name="key_ch_down">Kanal aşağı</string>
-    <string name="key_up">Yukarı</string>
-    <string name="key_down">Aşağı</string>
-    <string name="key_left">Sol</string>
-    <string name="key_right">Sağ</string>
-    <string name="key_ok" translatable="false">OK</string>
-    <string name="key_back">Geri</string>
-    <string name="key_home">Ana sayfa</string>
-    <string name="key_menu">Menü</string>
-    <string name="key_exit">Çıkış</string>
-    <string name="d0" translatable="false">0</string>
-    <string name="d1" translatable="false">1</string>
-    <string name="d2" translatable="false">2</string>
-    <string name="d3" translatable="false">3</string>
-    <string name="d4" translatable="false">4</string>
-    <string name="d5" translatable="false">5</string>
-    <string name="d6" translatable="false">6</string>
-    <string name="d7" translatable="false">7</string>
-    <string name="d8" translatable="false">8</string>
-    <string name="d9" translatable="false">9</string>
     <string name="footer">Kenar Panel · İnternet izni yok.</string>
+    <string name="anim_hint">Panel çekerken parmağınızı takip eder, bırakınca yaylanarak açılır. İçindekiler sırayla gelir, tuşlar basınca esner ve dalgalanır, arka plan bulanıklaşır.</string>
+    <string name="anim_speed">Animasyon hızı</string>
+    <string name="anim_title">Animasyonlar</string>
+    <string name="key_hdmi1" translatable="false">HDMI 1</string>
+    <string name="key_hdmi2" translatable="false">HDMI 2</string>
+    <string name="power_label">AÇ / KAPAT</string>
+    <string name="refresh_fast">Bu ekran en fazla %1$d Hz. Çekerken ve panel açıkken %2$d Hz istenir, kapanınca normale döner.</string>
+    <string name="refresh_slow">Bu ekran en fazla %1$d Hz; animasyonlar bu hızda oynar (90 FPS için 90 Hz ekran gerekir).</string>
+    <string name="speed_fast">Hızlı</string>
+    <string name="speed_medium">Orta</string>
+    <string name="speed_off">Kapalı</string>
+    <string name="speed_slow">Yavaş</string>
 </resources>

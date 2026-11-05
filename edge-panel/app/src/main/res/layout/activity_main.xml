@@ -120,6 +120,31 @@
                 android:text="@string/reset_position" />
         </LinearLayout>
 
+        <!-- Animation -->
+        <LinearLayout style="@style/Card">
+
+            <TextView
+                style="@style/CardTitle"
+                android:text="@string/anim_title" />
+
+            <TextView
+                style="@style/OptionDesc"
+                android:text="@string/anim_hint" />
+
+            <TextView
+                style="@style/Label"
+                android:text="@string/anim_speed" />
+
+            <LinearLayout
+                android:id="@+id/seg_speed"
+                style="@style/SegmentGroup" />
+
+            <TextView
+                android:id="@+id/refresh_info"
+                style="@style/OptionDesc"
+                android:layout_marginTop="10dp" />
+        </LinearLayout>
+
         <!-- Apps -->
         <LinearLayout style="@style/Card">
 
@@ -194,12 +219,9 @@
             </LinearLayout>
 
             <TextView
-                style="@style/Label"
-                android:text="@string/brand" />
-
-            <LinearLayout
-                android:id="@+id/seg_brand"
-                style="@style/SegmentGroup" />
+                style="@style/OptionDesc"
+                android:layout_marginTop="10dp"
+                android:text="@string/tv_hint" />
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -211,28 +233,25 @@
                     android:id="@+id/test_power"
                     style="@style/OutlineButton"
                     android:layout_width="0dp"
-                    android:layout_marginEnd="8dp"
+                    android:layout_marginEnd="6dp"
                     android:layout_weight="1"
-                    android:text="@string/test_power" />
+                    android:text="@string/key_power" />
 
                 <TextView
-                    android:id="@+id/find_brand"
+                    android:id="@+id/test_hdmi1"
+                    style="@style/OutlineButton"
+                    android:layout_width="0dp"
+                    android:layout_marginEnd="6dp"
+                    android:layout_weight="1"
+                    android:text="@string/key_hdmi1" />
+
+                <TextView
+                    android:id="@+id/test_hdmi2"
                     style="@style/OutlineButton"
                     android:layout_width="0dp"
                     android:layout_weight="1"
-                    android:text="@string/find_brand" />
+                    android:text="@string/key_hdmi2" />
             </LinearLayout>
-
-            <TextView
-                style="@style/OptionDesc"
-                android:layout_marginTop="10dp"
-                android:text="@string/tv_hint" />
-
-            <Switch
-                android:id="@+id/opt_digits"
-                style="@style/Option"
-                android:layout_marginTop="6dp"
-                android:text="@string/opt_digits" />
 
             <Switch
                 android:id="@+id/opt_haptics"

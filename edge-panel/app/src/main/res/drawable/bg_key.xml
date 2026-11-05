@@ -1,15 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<selector xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:state_pressed="true">
-        <shape android:shape="rectangle">
-            <solid android:color="@color/panel_key_pressed" />
-            <corners android:radius="18dp" />
-        </shape>
-    </item>
+<!-- the ripple starts where the finger touches -->
+<ripple xmlns:android="http://schemas.android.com/apk/res/android" android:color="@color/panel_ripple">
     <item>
         <shape android:shape="rectangle">
             <solid android:color="@color/panel_key" />
             <corners android:radius="18dp" />
         </shape>
     </item>
-</selector>
+</ripple>

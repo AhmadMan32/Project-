@@ -1,14 +1,14 @@
 # Kenar Panel
 
-Ekranın kenarında her zaman ince bir çubuk durur. Çubuğa dokununca veya içeri kaydırınca panel anında açılır. Panelde uygulama kısayolları ve kızılötesi **TV kumandası** bulunur. Çubuğun yerini parmağınızla sürükleyerek siz belirlersiniz.
+Ekranın kenarında her zaman ince bir çubuk durur. Çubuğu içeri çekince panel parmağınızla birlikte kenardan çıkar; bıraktığınızda yaylanarak açılır. Panelde uygulama kısayolları ve üç tuşlu bir **LG TV kumandası** bulunur: **Güç**, **HDMI 1** ve **HDMI 2**. Çubuğun yerini sürükleyerek siz belirlersiniz.
 
-<img src="docs/tutamak.png" width="200" alt="Kenardaki çubuk"> <img src="docs/panel.png" width="200" alt="Panel: uygulamalar ve TV kumandası"> <img src="docs/panel-sag-rakamlar.png" width="200" alt="Sağ kenar, rakam tuşları açık">
+<img src="docs/tutamak.png" width="190" alt="Kenardaki çubuk"> <img src="docs/cekme-1.png" width="190" alt="Çekerken: panel parmağı takip ediyor"> <img src="docs/cekme-2.png" width="190" alt="Çekerken: içerik sırayla geliyor"> <img src="docs/panel.png" width="190" alt="Panel açık">
 
-<img src="docs/ayarlar.png" width="200" alt="Ayarlar"> <img src="docs/ayarlar-koyu.png" width="200" alt="Ayarlar, koyu tema">
+<img src="docs/panel-sag.png" width="190" alt="Sağ kenar"> <img src="docs/ayarlar.png" width="190" alt="Ayarlar"> <img src="docs/ayarlar-koyu.png" width="190" alt="Ayarlar, koyu tema">
 
 ## Kurulum (APK)
 
-1. [`apk/KenarPanel-1.0.apk`](apk/KenarPanel-1.0.apk) dosyasını telefona indirin (91 KB). Dosyayı açın; Android "bilinmeyen kaynaklardan yükleme" izni isterse verin.
+1. [`apk/KenarPanel-1.1.apk`](apk/KenarPanel-1.1.apk) dosyasını telefona indirin (78 KB). Dosyayı açın; Android "bilinmeyen kaynaklardan yükleme" izni isterse verin. 1.0 sürümü kuruluysa üzerine kurulur.
 2. Uygulamayı açıp **Başlat**'a dokunun. **Diğer uygulamaların üzerinde göster** iznini açıp geri dönün.
 3. **Xiaomi / Redmi / POCO:** İzinler bölümündeki Xiaomi satırına dokunun. **Arka planda çalışırken açılır pencereleri göster** ve **Otomatik başlatma** seçeneklerini açın. Bunlar kapalıysa panelden uygulama açılamaz.
 
@@ -16,66 +16,80 @@ Android 6.0 ve üzeri sürümlerde çalışır. Başka bir uygulama gerekmez.
 
 ## Kullanım
 
-- **Paneli açmak:** Kenardaki çubuğa dokunun veya ekranın içine doğru kaydırın.
-- **Çubuğu taşımak:** Çubuğu yukarı veya aşağı sürükleyin; yeri kaydedilir. Ayarlardan sol veya sağ kenarı seçebilir, uzunluğunu, kalınlığını ve görünürlüğünü değiştirebilirsiniz. **Konumu kilitle** ile yanlışlıkla kaymasını önleyebilirsiniz.
-- **Paneli kapatmak:** Boş alana dokunun veya geri tuşuna basın.
-- **Uygulamalar:** Paneldeki simgeye dokununca uygulama açılır ve panel kapanır. **+** veya ayarlardaki **Uygulamaları seç** ile en fazla 12 uygulama seçilir; işaretleme sırası paneldeki sıradır.
-- **TV kumandası:**
-  - Telefonun üst kenarını TV'ye doğru tutun.
-  - Tuşlar: güç, kaynak, sessiz, ses +/−, kanal +/−, yön tuşları ve OK, geri, ana sayfa, menü, çıkış. İsterseniz 0–9 rakam tuşlarını da açabilirsiniz.
-  - Ses, kanal ve yön tuşları basılı tutulunca tekrarlar.
-  - **Marka:** Samsung, LG, Sony veya Philips. Paneldeki marka etiketine dokununca sıradaki markaya geçer.
-  - **Markayı bul:** Ayarlardaki bu düğme her markanın güç kodunu sırayla gönderir; TV kapanınca **Çalıştı**'ya dokunursunuz.
+- **Paneli açmak:**
+  - Kenardaki çubuğu içeri çekin; panel parmağınızı takip eder.
+  - Yarıdan fazla çekip bırakırsanız açılır. Hızlıca fiskelemek de yeter.
+  - Az çeker veya geri çekerseniz kapanır.
+  - Çubuğa dokunmak da paneli açar.
+- **Paneli kapatmak:** Boş alana dokunun veya geri tuşuna basın; panel kenara kayarak kapanır.
+- **Çubuğu taşımak:** Çubuğu yukarı veya aşağı sürükleyin; yeri kaydedilir. Ayarlardan sol veya sağ kenar, uzunluk, kalınlık ve görünürlük seçilebilir. **Konumu kilitle** ile yanlışlıkla kayması önlenir.
+- **Uygulamalar:** Simgeye dokununca uygulama açılır. **+** veya ayarlardaki **Uygulamaları seç** ile en fazla 12 uygulama seçilir; işaretleme sırası paneldeki sıradır.
+- **LG TV kumandası:** Telefonun üst kenarını TV'ye doğru tutun.
+  - **Güç**, LG kumandasındaki güç tuşunun kodunu gönderir: TV açıksa kapanır, kapalıysa açılır.
+  - **HDMI 1** ve **HDMI 2**, LG'nin doğrudan giriş kodlarını gönderir.
+  - Üç tuş ayarlar ekranından da denenebilir.
 
-## "Bekleme olmasın" için yapılanlar
+## Animasyonlar
 
-- **Panel hazır bekler:** Panel, uygulama simgeleriyle birlikte servis başlarken bir kez hazırlanır ve bellekte tutulur. Açmak yalnızca hazır pencereyi ekrana eklemektir; yükleme ve animasyon beklemesi yoktur.
-- **Kaydırma anında açar:** Panel parmak kalkmadan, kaydırma 20 dp'yi geçtiği anda açılır.
-- **Tuş dokunduğunuz anda gider:** Kumanda tuşu parmak dokunduğu anda (bırakmayı beklemeden) gönderilir. Gönderme ayrı bir iş parçacığında yapılır, böylece ekran hiç takılmaz.
-- **Sistem hareketiyle çakışmaz:** Hareketli gezinmede çubuğun bulunduğu alan sistem "geri" hareketinden hariç tutulur. Böylece içeri kaydırma geri hareketine dönüşmez.
+- **Çekerken:** Panel parmağın tam altındadır, gecikme yoktur. Tam açık konumu geçince lastik gibi zorlaşır. Bırakınca yay hareketiyle yerine oturur (yaklaşık %3'lük küçük bir sekme); kapanırken hızlanarak kenara kayar.
+- **İçerik sırayla gelir:** Önce kumandanın satırları, sonra uygulama simgeleri; ekrana giriş sırasına göre kayarak ve belirerek gelir. Çubuk, panel geldikçe solar.
+- **Tuşlar:** Basınca hafifçe küçülür, bırakınca esneyerek geri döner. Dalga efekti parmağın dokunduğu noktadan yayılır. Kod, parmak dokunduğu anda gönderilir; animasyonu beklemez.
+- **Çubuk:** Tutulunca kalınlaşır ve parlaklaşır; bırakınca yaylanarak eski haline döner.
+- **Arka plan:** Panel geldikçe kararır. Android 12 ve üzerinde arka plan ayrıca bulanıklaşır (telefon pencere bulanıklığını destekliyorsa).
+- **Hız:** Ayarlardan **Hızlı** (varsayılan), **Orta**, **Yavaş** veya **Kapalı** seçilir. Telefonun geliştirici seçeneklerindeki animasyon ölçeği de dikkate alınır.
+- **90 FPS:**
+  - Animasyonlar her ekran yenilemesinde bir adım ilerler; 90 Hz ekranda saniyede 90 kare oynar.
+  - Çekerken ve panel açıkken ekrandan 90 Hz istenir. Ekranda 90 Hz modu yoksa ondan yüksek en düşük mod (ör. 120 Hz) istenir; panel kapanınca normale döner.
+  - Ekranın kaç Hz desteklediği ayarlar ekranında yazar.
+  - 60 Hz ekranlarda animasyonlar 60 FPS oynar.
 
-## TV kodları nasıl üretiliyor?
+## TV kodları
 
-Kızılötesi sinyaller uygulamanın içinde, protokolün kendisinden üretilir:
+Sinyaller uygulamanın içinde NEC protokolüyle üretilir (LG adresi 0x04, 38 kHz) ve Android'in standart `ConsumerIrManager` arayüzüyle gönderilir.
 
-| Marka | Protokol | Taşıyıcı |
-|---|---|---|
-| Samsung | Samsung32 (4,5 ms başlık, adres 0x07) | 38 kHz |
-| LG | NEC (9 ms başlık, adres 0x04) | 38 kHz |
-| Sony | SIRC 12 bit (3 tekrar, 45 ms arayla) | 40 kHz |
-| Philips | RC5 (Manchester, 889 µs) | 36 kHz |
-
-Gönderme için Android'in standart `ConsumerIrManager` arayüzü kullanılır. Telefonun desteklemediği bir taşıyıcı frekansı istenirse en yakın desteklenen frekans seçilir.
+| Tuş | Kod |
+|---|---|
+| Güç (aç/kapat) | `0x20DF10EF` |
+| HDMI 1 | `0x20DF738C` |
+| HDMI 2 | `0x20DF33CC` |
 
 ## Nasıl test edildi?
 
-`./gradlew testReleaseUnitTest` 12 test çalıştırır:
+`./gradlew testReleaseUnitTest` 16 test çalıştırır:
 
-- **`IrTest` (6 test):**
-  - Üretilen sinyaller geri çözülüp bilinen kodlarla karşılaştırıldı:
-    - LG güç `0x20DF10EF`, ses `0x20DF40BF` / `0x20DFC03F`, sessiz, kaynak, rakamlar.
-    - Samsung güç `0xE0E040BF`, ses `0xE0E0E01F` / `0xE0E0D02F`, kanal, kaynak, rakamlar.
-    - Sony güç `0xA90`; çerçeveler 3 kez, 45 ms arayla gönderiliyor.
-    - Philips RC5'te 14 bit Manchester kodlaması doğru; toggle biti her basışta değişiyor.
-  - Tüm tuşların sinyalleri 2 saniye sınırının altında ve "açık" ile başlayıp bitiyor.
+- **`IrTest` (3 test):**
+  - Üretilen sinyaller geri çözülüp yukarıdaki LG kodlarıyla birebir karşılaştırıldı.
+  - NEC çerçeve yapısı doğrulandı: 9 ms + 4,5 ms başlık, 32 bit, durma biti.
   - Taşıyıcı frekansı telefonun aralığına uyduruluyor.
-- **`PanelTest` (6 test, Robolectric, gerçek servis):**
-  - Çubuk seçilen kenarda duruyor. Sürüklenince yeri değişip kaydediliyor; kilitliyken kıpırdamıyor.
-  - Dokunma ve içeri kaydırma paneli aynı dokunuşta açıyor. Geri tuşu ve boş alana dokunma paneli kapatıyor.
-  - Seçilen uygulamalar panelde sırayla görünüyor; dokununca açılıyor. Sağ kenarda kartların sırası ters dönüyor.
-  - Güç tuşuna dokununca LG güç sinyali anında gönderiliyor. Marka etiketi markayı değiştiriyor. Ses tuşu basılı tutulunca tekrarlıyor ve bırakınca duruyor.
+- **`MotionTest` (5 test):**
+  - Yay eğrisi hemen hareket ediyor, %1–5 sekip duruyor.
+  - İçerik sırayla geliyor.
+  - Çekme sonunda açma/kapama kararı: yarı yol ve fiske hızı.
+  - Lastik etkisi çalışıyor.
+  - 90/120 Hz seçimi doğru.
+- **`PanelTest` (8 test, Robolectric, gerçek servis, 90 Hz kare aralığıyla):**
+  - Dokununca panel gerçekten kare kare açılıyor: 30 ms sonra yolun ortasında, sonra tam açık. Geri tuşuyla kayarak kapanıyor ve pencere kalkıyor.
+  - Çekerken panel parmağın tam altında: %30 çekişte %30 açık. Çubuk soluyor ve içerik sırayla geliyor.
+  - Yavaş bırakınca kapanıyor, yarıyı geçince açılıyor. Hızlı fiske çeyrek yolda bile açıyor.
+  - Tam açıktan sonra çekmek lastik gibi zorlaşıyor. "Kapalı" hız ayarında panel animasyonsuz açılıp kapanıyor.
+  - Çubuk tutulunca kalınlaşıyor ve bırakınca geri dönüyor. Sürüklenince yeri değişiyor, kilitliyken kıpırdamıyor.
+  - Güç, HDMI 1 ve HDMI 2 tuşları dokunur dokunmaz doğru LG kodunu gönderiyor. Tuş basınca küçülüyor ve geri yaylanıyor.
   - Kızılötesi verici yoksa panel bunu yazıyor ve tuşlar kapalı oluyor.
-  - Ayarlar ekranı ve uygulama seçici çalışıyor; seçim sırası kaydediliyor.
+  - Ayarlar ekranı, hız seçimi, tuş denemeleri ve uygulama seçici çalışıyor.
 
-Android Lint 0 hata verdi. Panel ve ayarlar ekranı çizdirilip kontrol edildi.
+Android Lint 0 hata verdi. Panel, çekme anındaki kareler ve ayarlar ekranı çizdirilip kontrol edildi.
 
-**Test edilemeyen:** Bu ortamda gerçek telefon ve TV olmadığı için sinyaller gerçek bir TV'de denenemedi. Kodlar yaygın olarak kullanılan bilinen değerlerdir, ancak bazı TV modelleri farklı kod setleri kullanabilir.
+**Test edilemeyenler:**
+- Bu ortamda gerçek telefon ve TV olmadığı için animasyonların akıcılığı gerçek ekranda izlenemedi.
+- Arka plan bulanıklığı bu ortamda çizdirilemiyor.
+- HDMI kodları gerçek bir LG TV'de denenemedi. Güç kodu, LG kumandasının standart kodudur.
 
 ## Bilinen sınırlamalar
 
-- **Kızılötesi verici:** TV kumandası yalnızca kızılötesi vericisi olan telefonlarda çalışır. Birçok Xiaomi, Redmi ve POCO modelinde bu verici vardır; Samsung ve Pixel'in yeni modellerinde yoktur.
-- **Markalar:** Şimdilik Samsung, LG, Sony ve Philips var. Vestel, Arçelik/Beko, TCL gibi markalar farklı kodlar kullanabilir. "Markayı bul" ile denenebilir; çalışmazsa bu markalar sonra eklenebilir.
-- **Uygulama açma:** Xiaomi telefonlarda "arka planda açılır pencere" izni kapalıysa panelden uygulama açılmaz. Diğer telefonlarda "Diğer uygulamaların üzerinde göster" izni yeterlidir.
+- **HDMI tuşları:** HDMI 1/2 kodları LG'nin "doğrudan giriş" kodlarıdır ve normal kumandada yoktur. Çoğu LG TV bu kodları tanır; tanımayan eski modellerde HDMI tuşları çalışmayabilir.
+- **Kızılötesi verici:** Kumanda yalnızca kızılötesi vericisi olan telefonlarda çalışır. Birçok Xiaomi, Redmi ve POCO modelinde bu verici vardır.
+- **90 Hz:** Ekranın 90 Hz veya üzerini desteklemesi gerekir. Bazı telefonlar (ör. Xiaomi'nin "akıllı yenileme hızı" ayarı) uygulama isteğine rağmen ekran hızını kendi belirler.
+- **Bulanıklık:** Android 12 öncesinde, pil tasarrufu modunda veya pencere bulanıklığını desteklemeyen telefonlarda arka plan yalnızca kararır.
 - **İmza:** APK debug anahtarıyla imzalıdır. Farklı bir ortamda derlenen sürüm üzerine kurulmazsa önce eskisini kaldırın.
 
 ## Kaynaktan derleme
@@ -89,8 +103,9 @@ export ANDROID_HOME=/android/sdk/yolu
 
 | Dosya | Görev |
 |---|---|
-| `core/Ir.java` | NEC, Samsung32, Sony SIRC, Philips RC5 sinyal üretimi (saf Java, test edilebilir) |
-| `core/Remotes.java` | Markalar ve tuş kodları |
-| `OverlayService.java`, `HandleView.java` | Kenardaki çubuk, sürükleme, paneli açma/kapatma |
-| `Panel.java`, `PanelRoot.java`, `Remote.java` | Hazır bekleyen panel, uygulama kısayolları, kumanda tuşları ve tekrar |
-| `MainActivity.java`, `AppPickerActivity.java` | Ayarlar, marka bulma, uygulama seçimi |
+| `core/Ir.java`, `core/Remotes.java` | NEC sinyal üretimi, LG güç/HDMI kodları (saf Java) |
+| `core/Motion.java` | Yay eğrisi, sıralı geliş, lastik etkisi, açma kararı, 90 Hz seçimi (saf Java) |
+| `Tween.java` | Ekran yenilemesine bağlı animasyon adımları |
+| `OverlayService.java`, `HandleView.java` | Çubuk, parmağı takip eden çekme, fiske, bulanıklık, 90 Hz isteği |
+| `Panel.java`, `PanelRoot.java`, `Remote.java` | Hazır bekleyen panel, ilerleme tabanlı animasyon, tuşlar |
+| `MainActivity.java`, `AppPickerActivity.java` | Ayarlar, hız seçimi, tuş denemesi, uygulama seçimi |

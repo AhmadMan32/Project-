@@ -12,27 +12,35 @@ import android.content.pm.ServiceInfo;
 import android.content.res.Configuration;
 import android.graphics.PixelFormat;
 import android.graphics.Rect;
+import android.hardware.display.DisplayManager;
 import android.os.Build;
 import android.os.IBinder;
+import android.os.SystemClock;
 import android.provider.Settings;
 import android.util.DisplayMetrics;
+import android.view.Display;
 import android.view.Gravity;
 import android.view.MotionEvent;
+import android.view.VelocityTracker;
 import android.view.View;
 import android.view.ViewConfiguration;
 import android.view.WindowManager;
 
+import com.ahmadman.kenarpanel.core.Motion;
+
 import java.util.Collections;
 
 /**
- * Keeps the edge handle on screen above every app and opens the panel the moment the handle
- * is tapped or swiped inwards. Dragging the handle up or down moves it.
+ * Keeps the edge handle on screen above every app. Pulling the handle brings the panel out
+ * under the finger; letting go springs it open (or back). A tap opens it, a vertical drag
+ * moves the handle. During movement the screen is asked for 90 Hz.
  */
 public class OverlayService extends Service implements Panel.Host {
 
     static final String CHANNEL = "panel";
     static final int ID = 1;
     static final String ACTION_STOP = "com.ahmadman.kenarpanel.STOP";
+    static final float WANTED_HZ = 90f;
 
     private static volatile OverlayService running;
 
@@ -78,8 +86,13 @@ public class OverlayService extends Service implements Panel.Host {
     private Remote remote;
     private HandleView handle;
     private WindowManager.LayoutParams handleLp;
+    private WindowManager.LayoutParams panelLp;
     Panel panel;
-    private boolean panelShown;
+    private boolean attached;
+    private boolean closing;
+    private float fastRate;
+    private int lastBlur = -1;
+    private long lastBlurAt;
 
     @Override
     public void onCreate() {
@@ -102,8 +115,9 @@ public class OverlayService extends Service implements Panel.Host {
             return;
         }
         wm = getSystemService(WindowManager.class);
+        fastRate = fastRefreshRate(this);
         remote = new Remote(this);
-        panel = new Panel(this, remote, this); // built now so opening is instant
+        panel = new Panel(this, remote, this); // built now so opening needs no loading
         handle = new HandleView(this);
         handle.setOnTouchListener(new HandleTouch());
         handleLp = new WindowManager.LayoutParams(1, 1, overlayType(),
@@ -137,7 +151,10 @@ public class OverlayService extends Service implements Panel.Host {
     @Override
     public void onDestroy() {
         running = null;
-        closePanel();
+        if (panel != null) {
+            panel.cancelAnimation();
+        }
+        detachPanel();
         if (handle != null && handle.isAttachedToWindow()) {
             wm.removeView(handle);
         }
@@ -165,6 +182,40 @@ public class OverlayService extends Service implements Panel.Host {
                 ? WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY : WindowManager.LayoutParams.TYPE_PHONE;
     }
 
+    /** Lowest refresh rate of at least 90 Hz the screen offers at its current resolution; 0 if none. */
+    static float fastRefreshRate(Context c) {
+        try {
+            DisplayManager dm = c.getSystemService(DisplayManager.class);
+            Display d = dm.getDisplay(Display.DEFAULT_DISPLAY);
+            Display.Mode cur = d.getMode();
+            Display.Mode[] modes = d.getSupportedModes();
+            float[] rates = new float[modes.length];
+            int n = 0;
+            for (Display.Mode m : modes) {
+                if (m.getPhysicalWidth() == cur.getPhysicalWidth() && m.getPhysicalHeight() == cur.getPhysicalHeight()) {
+                    rates[n++] = m.getRefreshRate();
+                }
+            }
+            return Motion.refreshRate(java.util.Arrays.copyOf(rates, n), WANTED_HZ);
+        } catch (RuntimeException e) {
+            return 0;
+        }
+    }
+
+    /** Highest refresh rate of the screen (for the settings screen). */
+    static float maxRefreshRate(Context c) {
+        try {
+            Display d = c.getSystemService(DisplayManager.class).getDisplay(Display.DEFAULT_DISPLAY);
+            float max = d.getRefreshRate();
+            for (Display.Mode m : d.getSupportedModes()) {
+                max = Math.max(max, m.getRefreshRate());
+            }
+            return max;
+        } catch (RuntimeException e) {
+            return 60;
+        }
+    }
+
     private float dp(float v) {
         return v * getResources().getDisplayMetrics().density;
     }
@@ -178,12 +229,22 @@ public class OverlayService extends Service implements Panel.Host {
         return handleLp;
     }
 
+    WindowManager.LayoutParams panelParams() {
+        return panelLp;
+    }
+
     HandleView handleView() {
         return handle;
     }
 
+    /** The panel window is on screen (also while it animates in or out). */
     boolean panelShown() {
-        return panelShown;
+        return attached;
+    }
+
+    /** Open, or opening: not on its way out. */
+    boolean panelOpen() {
+        return attached && !closing;
     }
 
     @SuppressLint("RtlHardcoded") // the physical screen edge, whatever the language direction
@@ -194,14 +255,14 @@ public class OverlayService extends Service implements Panel.Host {
         boolean right = prefs.right();
         int length = Math.round(dp(prefs.lengthDp()));
         float thickness = dp(prefs.thicknessDp());
-        handleLp.width = Math.round(thickness + dp(18)); // wider touch area than the visible bar
+        handleLp.width = Math.round(thickness * 1.7f + dp(14)); // room for the bar to grow while held
         handleLp.height = length;
         handleLp.gravity = Gravity.TOP | (right ? Gravity.RIGHT : Gravity.LEFT);
         handleLp.x = 0;
         handleLp.y = Math.round(prefs.position() * Math.max(0, screenHeight() - length));
         handle.style(right, thickness, prefs.opacity());
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            // keep the system back gesture from taking the swipe
+            // keep the system back gesture from taking the pull
             handle.setSystemGestureExclusionRects(Collections.singletonList(new Rect(0, 0, handleLp.width, length)));
         }
         if (handle.isAttachedToWindow()) {
@@ -209,38 +270,67 @@ public class OverlayService extends Service implements Panel.Host {
         }
     }
 
-    /** Tap or inward swipe opens; vertical drag moves the handle. */
+    /** Asks for 90 Hz on the handle window while it moves; back to normal afterwards. */
+    private void handleFast(boolean fast) {
+        float rate = fast ? fastRate : 0;
+        if (handleLp.preferredRefreshRate != rate && handle.isAttachedToWindow()) {
+            handleLp.preferredRefreshRate = rate;
+            wm.updateViewLayout(handle, handleLp);
+        }
+    }
+
+    /** Pull from the edge (panel follows), tap to open, vertical drag to move the handle. */
     private final class HandleTouch implements View.OnTouchListener {
+        private static final int NONE = 0;
+        private static final int PULL = 1;
+        private static final int MOVE = 2;
+        private int mode;
         private float downX;
         private float downY;
+        private float pullX;
         private int startY;
-        private boolean dragging;
-        private boolean opened;
+        private VelocityTracker velocity;
+
+        private float inward(float rawX, float fromX) {
+            return prefs.right() ? fromX - rawX : rawX - fromX;
+        }
 
         @SuppressLint("ClickableViewAccessibility")
         @Override
         public boolean onTouch(View v, MotionEvent e) {
             int slop = ViewConfiguration.get(v.getContext()).getScaledTouchSlop();
+            if (velocity == null) {
+                velocity = VelocityTracker.obtain();
+            }
+            // raw coordinates: the handle window itself does not move with the pull
+            MotionEvent raw = MotionEvent.obtain(e);
+            raw.setLocation(e.getRawX(), e.getRawY());
+            velocity.addMovement(raw);
+            raw.recycle();
             switch (e.getActionMasked()) {
                 case MotionEvent.ACTION_DOWN:
                     downX = e.getRawX();
                     downY = e.getRawY();
                     startY = handleLp.y;
-                    dragging = false;
-                    opened = false;
+                    mode = NONE;
+                    velocity.clear();
                     return true;
                 case MotionEvent.ACTION_MOVE: {
-                    float dx = prefs.right() ? downX - e.getRawX() : e.getRawX() - downX;
+                    float dx = inward(e.getRawX(), downX);
                     float dy = e.getRawY() - downY;
-                    if (!dragging && !opened && dx > dp(20) && dx > Math.abs(dy)) {
-                        opened = true;
-                        openPanel();
-                        return true;
+                    if (mode == NONE && dx > slop && dx > Math.abs(dy)) {
+                        mode = PULL;
+                        pullX = e.getRawX();
+                        attachPanel();
+                    } else if (mode == NONE && !prefs.locked() && Math.abs(dy) > slop * 1.5f && Math.abs(dy) > dx) {
+                        mode = MOVE;
+                        handle.grab(true, prefs.speed().millis);
+                        handleFast(true);
                     }
-                    if (!dragging && !opened && !prefs.locked() && Math.abs(dy) > slop * 1.5f && Math.abs(dy) > dx) {
-                        dragging = true;
-                    }
-                    if (dragging) {
+                    if (mode == PULL) {
+                        float p = inward(e.getRawX(), pullX) / panel.travel();
+                        panel.setProgress(Motion.rubberBand(p));
+                    } else if (mode == MOVE) {
                         int max = Math.max(0, screenHeight() - handleLp.height);
                         handleLp.y = Math.max(0, Math.min(max, Math.round(startY + dy)));
                         wm.updateViewLayout(handle, handleLp);
@@ -248,51 +338,100 @@ public class OverlayService extends Service implements Panel.Host {
                     return true;
                 }
                 case MotionEvent.ACTION_UP:
-                    if (dragging) {
+                case MotionEvent.ACTION_CANCEL: {
+                    boolean up = e.getActionMasked() == MotionEvent.ACTION_UP;
+                    velocity.computeCurrentVelocity(1000);
+                    float vx = velocity.getXVelocity();
+                    float inwardDp = (prefs.right() ? -vx : vx) / getResources().getDisplayMetrics().density;
+                    if (mode == PULL) {
+                        if (up && Motion.settleOpen(panel.progress(), inwardDp)) {
+                            settleOpen();
+                        } else {
+                            requestClose();
+                        }
+                    } else if (mode == MOVE) {
                         int max = Math.max(1, screenHeight() - handleLp.height);
                         prefs.position(handleLp.y / (float) max);
-                    } else if (!opened) {
+                        handle.grab(false, prefs.speed().millis * 2);
+                        handle.postDelayed(() -> handleFast(false), prefs.speed().millis * 2L + 50);
+                    } else if (up) {
                         float dist = Math.abs(e.getRawX() - downX) + Math.abs(e.getRawY() - downY);
                         if (dist < slop * 2) {
                             v.performClick();
                             openPanel();
                         }
                     }
-                    dragging = false;
+                    mode = NONE;
+                    velocity.recycle();
+                    velocity = null;
                     return true;
+                }
                 default:
                     return true;
             }
         }
     }
 
-    void openPanel() {
-        if (panelShown) {
+    /** Puts the panel window on screen at progress 0 (hidden at the edge). */
+    @SuppressWarnings("deprecation") // FLAG_BLUR_BEHIND is the blur flag again from Android 12
+    private void attachPanel() {
+        closing = false;
+        panel.cancelAnimation();
+        if (attached) {
             return;
         }
-        WindowManager.LayoutParams lp = new WindowManager.LayoutParams(WindowManager.LayoutParams.MATCH_PARENT,
+        panelLp = new WindowManager.LayoutParams(WindowManager.LayoutParams.MATCH_PARENT,
                 WindowManager.LayoutParams.MATCH_PARENT, overlayType(),
                 WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN, PixelFormat.TRANSLUCENT);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            lp.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
+            panelLp.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
         }
-        panel.fit(); // screen width may have changed (rotation)
+        if (fastRate > 0) {
+            panelLp.preferredRefreshRate = fastRate; // 90 Hz only while the panel is on screen
+        }
+        if (blurSupported()) {
+            panelLp.flags |= WindowManager.LayoutParams.FLAG_BLUR_BEHIND;
+            panelLp.setBlurBehindRadius(0);
+        }
+        lastBlur = 0;
+        panel.fit(); // screen size may have changed (rotation)
+        panel.setProgress(0);
         try {
-            wm.addView(panel.root, lp);
-            panelShown = true;
-            handle.setVisibility(View.INVISIBLE);
+            wm.addView(panel.root, panelLp);
+            attached = true;
         } catch (RuntimeException e) {
             android.util.Log.w("KenarPanel", "panel", e);
         }
     }
 
+    private void settleOpen() {
+        closing = false;
+        panel.animateTo(1f, prefs.speed(), () -> handle.setVisibility(View.INVISIBLE));
+    }
+
+    void openPanel() {
+        attachPanel();
+        if (attached) {
+            settleOpen();
+        }
+    }
+
     @Override
-    public void closePanel() {
-        if (!panelShown) {
+    public void requestClose() {
+        if (!attached || closing) {
             return;
         }
-        panelShown = false;
-        remote.release();
+        closing = true;
+        handle.setVisibility(View.VISIBLE);
+        panel.animateTo(0f, prefs.speed(), this::detachPanel);
+    }
+
+    private void detachPanel() {
+        closing = false;
+        if (!attached) {
+            return;
+        }
+        attached = false;
         try {
             wm.removeView(panel.root);
         } catch (RuntimeException ignored) {
@@ -300,13 +439,45 @@ public class OverlayService extends Service implements Panel.Host {
         }
         if (handle != null) {
             handle.setVisibility(View.VISIBLE);
+            handle.setAlpha(1f);
+        }
+    }
+
+    private boolean blurSupported() {
+        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && wm.isCrossWindowBlurEnabled();
+    }
+
+    /** Blurs the screen behind the panel; updates are rate-limited to keep frames smooth. */
+    @Override
+    public void blur(float fraction) {
+        if (!attached || panelLp == null || !blurSupported()) {
+            return;
+        }
+        int max = Math.round(dp(26));
+        int r = Math.round(fraction * max);
+        long now = SystemClock.uptimeMillis();
+        boolean edge = r == 0 || r == max;
+        if (r == lastBlur || (!edge && (Math.abs(r - lastBlur) < 2 || now - lastBlurAt < 22))) {
+            return;
+        }
+        lastBlur = r;
+        lastBlurAt = now;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            panelLp.setBlurBehindRadius(r);
+            wm.updateViewLayout(panel.root, panelLp);
+        }
+    }
+
+    @Override
+    public void handleAlpha(float alpha) {
+        if (handle != null) {
+            handle.setAlpha(alpha);
         }
     }
 
     @Override
     public void openApp(String pkg) {
         Intent i = Panel.launch(this, pkg);
-        closePanel();
         if (i != null) {
             try {
                 startActivity(i);
@@ -314,11 +485,11 @@ public class OverlayService extends Service implements Panel.Host {
                 android.util.Log.w("KenarPanel", "launch " + pkg, e);
             }
         }
+        requestClose();
     }
 
     @Override
     public void openSettings(boolean pickApps) {
-        closePanel();
         Intent i = new Intent(this, pickApps ? AppPickerActivity.class : MainActivity.class)
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         try {
@@ -326,6 +497,7 @@ public class OverlayService extends Service implements Panel.Host {
         } catch (RuntimeException ignored) {
             // refused from the background
         }
+        requestClose();
     }
 
     private Notification notification() {

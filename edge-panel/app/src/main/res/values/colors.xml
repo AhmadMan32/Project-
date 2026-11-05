@@ -16,11 +16,11 @@
     <color name="panel_bg">#F0141519</color>
     <color name="panel_stroke">#26FFFFFF</color>
     <color name="panel_key">#2A2C33</color>
-    <color name="panel_key_pressed">#4A4D57</color>
     <color name="panel_text">#F2F3F7</color>
     <color name="panel_text_dim">#9EA3AE</color>
     <color name="panel_accent">#3D8BFF</color>
     <color name="panel_power">#E5443A</color>
-    <color name="panel_power_pressed">#FF6B61</color>
-    <color name="panel_dim">#66000000</color>
+    <color name="panel_power_pressed">#FF7A70</color>
+    <color name="panel_dim">#73000000</color>
+    <color name="panel_ripple">#40FFFFFF</color>
 </resources>

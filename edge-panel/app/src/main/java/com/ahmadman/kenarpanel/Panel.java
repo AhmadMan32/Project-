@@ -10,28 +10,38 @@ import android.view.HapticFeedbackConstants;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.animation.DecelerateInterpolator;
+import android.view.animation.OvershootInterpolator;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.TextView;
 
+import com.ahmadman.kenarpanel.core.Motion;
 import com.ahmadman.kenarpanel.core.Remotes;
 
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * The panel: app shortcuts and the TV remote. Built once and kept in memory, so opening it is
- * just adding a window: no loading.
+ * The panel: app shortcuts and the LG remote (power, HDMI 1, HDMI 2). Built once and kept in
+ * memory. Everything on it is driven by one number, the open progress (0 = hidden at the edge,
+ * 1 = open), so it can follow the finger while pulling and animate the same way on its own.
  */
 final class Panel {
 
     interface Host {
-        void closePanel();
-
         void openApp(String pkg);
 
         void openSettings(boolean pickApps);
+
+        /** Back key or a tap on the dimmed area. */
+        void requestClose();
+
+        /** Background blur, 0..1 of the full radius. */
+        void blur(float fraction);
+
+        /** The edge handle fades out while the panel comes in. */
+        void handleAlpha(float alpha);
     }
 
     static final String[] DEFAULT_APPS = {"com.whatsapp", "com.google.android.youtube", "com.instagram.android",
@@ -45,7 +55,13 @@ final class Panel {
     private final LinearLayout content;
     private final View appsCard;
     private final View remoteCard;
-    private final List<View> keyViews = new ArrayList<>();
+    private final Drawable dim;
+    private final List<View> cascade = new ArrayList<>();
+    private final float dp;
+    private boolean right;
+    private int travel = 1;
+    private float progress;
+    private Tween tween;
 
     @SuppressLint("InflateParams") // window root
     Panel(Context c, Remote remote, Host host) {
@@ -53,65 +69,28 @@ final class Panel {
         this.remote = remote;
         this.host = host;
         this.prefs = new Prefs(c);
+        dp = c.getResources().getDisplayMetrics().density;
         root = (PanelRoot) LayoutInflater.from(c).inflate(R.layout.panel, null);
-        root.setOnClose(host::closePanel);
+        root.setOnClose(host::requestClose);
+        dim = root.getBackground().mutate();
         content = root.findViewById(R.id.content);
         appsCard = root.findViewById(R.id.apps_card);
         remoteCard = root.findViewById(R.id.remote_card);
-
         key(R.id.k_power, Remotes.Key.POWER);
-        key(R.id.k_input, Remotes.Key.INPUT);
-        key(R.id.k_mute, Remotes.Key.MUTE);
-        key(R.id.k_vol_up, Remotes.Key.VOL_UP);
-        key(R.id.k_vol_down, Remotes.Key.VOL_DOWN);
-        key(R.id.k_ch_up, Remotes.Key.CH_UP);
-        key(R.id.k_ch_down, Remotes.Key.CH_DOWN);
-        key(R.id.k_up, Remotes.Key.UP);
-        key(R.id.k_down, Remotes.Key.DOWN);
-        key(R.id.k_left, Remotes.Key.LEFT);
-        key(R.id.k_right, Remotes.Key.RIGHT);
-        key(R.id.k_ok, Remotes.Key.OK);
-        key(R.id.k_back, Remotes.Key.BACK);
-        key(R.id.k_home, Remotes.Key.HOME);
-        key(R.id.k_menu, Remotes.Key.MENU);
-        key(R.id.k_exit, Remotes.Key.EXIT);
-        int[] digitIds = {R.id.k_0, R.id.k_1, R.id.k_2, R.id.k_3, R.id.k_4, R.id.k_5, R.id.k_6, R.id.k_7, R.id.k_8,
-                R.id.k_9};
-        for (int d = 0; d < 10; d++) {
-            key(digitIds[d], Remotes.Key.digit(d));
-        }
-
-        root.findViewById(R.id.brand).setOnClickListener(v -> {
-            Remotes.Brand[] all = Remotes.ALL;
-            Remotes.Brand b = brand();
-            int i = 0;
-            while (i < all.length && all[i] != b) {
-                i++;
-            }
-            prefs.brand(all[(i + 1) % all.length].id);
-            haptic(v);
-            refreshRemote();
-        });
-        root.findViewById(R.id.digits_toggle).setOnClickListener(v -> {
-            prefs.digits(!prefs.digits());
-            refreshRemote();
-        });
+        key(R.id.k_hdmi1, Remotes.Key.HDMI1);
+        key(R.id.k_hdmi2, Remotes.Key.HDMI2);
         root.findViewById(R.id.settings).setOnClickListener(v -> host.openSettings(false));
         refresh();
     }
 
-    Remotes.Brand brand() {
-        return Remotes.byId(prefs.brand());
-    }
-
-    /** Re-reads settings (side, apps, brand); called when they change, not on open. */
+    /** Re-reads settings (side, apps); called when they change, not on open. */
     void refresh() {
-        boolean right = prefs.right();
+        right = prefs.right();
         content.removeAllViews();
         content.addView(right ? remoteCard : appsCard);
         content.addView(right ? appsCard : remoteCard);
         LinearLayout.LayoutParams gap = (LinearLayout.LayoutParams) remoteCard.getLayoutParams();
-        int g = Math.round(10 * context.getResources().getDisplayMetrics().density);
+        int g = Math.round(10 * dp);
         gap.setMarginStart(right ? 0 : g);
         gap.setMarginEnd(right ? g : 0);
         remoteCard.setLayoutParams(gap);
@@ -119,64 +98,105 @@ final class Panel {
         lp.gravity = (right ? Gravity.END : Gravity.START) | Gravity.CENTER_VERTICAL;
         content.setLayoutParams(lp);
         loadApps();
-        refreshRemote();
+        boolean ir = remote.available();
+        root.findViewById(R.id.ir_missing).setVisibility(ir ? View.GONE : View.VISIBLE);
+        for (int id : new int[]{R.id.k_power, R.id.k_hdmi1, R.id.k_hdmi2}) {
+            View v = root.findViewById(id);
+            v.setEnabled(ir);
+            v.setAlpha(ir ? 1f : 0.35f);
+        }
+        collectCascade();
         fit();
+        setProgress(progress);
     }
 
-    /** Sizes the remote to the screen width (phones are 320-480 dp wide); called on every open. */
+    /** Things that slide in one after the other: app icons, then the remote's rows. */
+    private void collectCascade() {
+        cascade.clear();
+        LinearLayout apps = root.findViewById(R.id.apps);
+        List<View> remoteRows = new ArrayList<>();
+        remoteRows.add(root.findViewById(R.id.remote_header));
+        remoteRows.add(root.findViewById(R.id.k_power));
+        remoteRows.add(root.findViewById(R.id.power_label));
+        remoteRows.add(root.findViewById(R.id.hdmi_row));
+        List<View> icons = new ArrayList<>();
+        for (int i = 0; i < apps.getChildCount(); i++) {
+            icons.add(apps.getChildAt(i));
+        }
+        // in the order they come into view: the remote card leads the slide on either side
+        cascade.addAll(remoteRows);
+        cascade.addAll(icons);
+    }
+
+    /** Sizes the remote to the screen and measures how far the panel travels. */
     void fit() {
-        float d = context.getResources().getDisplayMetrics().density;
-        int screen = context.getResources().getDisplayMetrics().widthPixels;
-        int width = Math.min(Math.round(300 * d), screen - Math.round((72 + 10 + 24 + 6) * d));
+        int screenW = context.getResources().getDisplayMetrics().widthPixels;
+        int screenH = context.getResources().getDisplayMetrics().heightPixels;
+        int width = Math.min(Math.round(236 * dp), screenW - Math.round((72 + 10 + 24 + 6) * dp));
         LinearLayout.LayoutParams rl = (LinearLayout.LayoutParams) remoteCard.getLayoutParams();
         if (rl.width != width) {
             rl.width = width;
             remoteCard.setLayoutParams(rl);
         }
-        // the arrow pad takes what is left between the volume and channel columns
-        int pad = Math.min(Math.round(150 * d), width - Math.round((28 + 2 * 54 + 8) * d));
-        View dpad = root.findViewById(R.id.dpad);
-        android.view.ViewGroup.LayoutParams dl = dpad.getLayoutParams();
-        if (dl.width != pad) {
-            dl.width = pad;
-            dl.height = pad;
-            dpad.setLayoutParams(dl);
-            View holder = (View) dpad.getParent();
-            android.view.ViewGroup.LayoutParams hl = holder.getLayoutParams();
-            hl.height = pad;
-            holder.setLayoutParams(hl);
-            int arrow = Math.round(pad * 0.32f);
-            for (int id : new int[]{R.id.k_up, R.id.k_down, R.id.k_left, R.id.k_right}) {
-                View a = root.findViewById(id);
-                android.view.ViewGroup.LayoutParams al = a.getLayoutParams();
-                al.width = arrow;
-                al.height = arrow;
-                a.setLayoutParams(al);
-                int p = Math.round(arrow * 0.22f);
-                a.setPadding(p, p, p, p);
-            }
-            View ok = root.findViewById(R.id.k_ok);
-            android.view.ViewGroup.LayoutParams ol = ok.getLayoutParams();
-            ol.width = Math.round(pad * 0.37f);
-            ol.height = ol.width;
-            ok.setLayoutParams(ol);
+        content.measure(View.MeasureSpec.makeMeasureSpec(screenW, View.MeasureSpec.AT_MOST),
+                View.MeasureSpec.makeMeasureSpec(screenH, View.MeasureSpec.AT_MOST));
+        travel = Math.max(1, content.getMeasuredWidth());
+    }
+
+    /** How far the finger has to pull for the panel to be fully open, in pixels. */
+    int travel() {
+        return travel;
+    }
+
+    float progress() {
+        return progress;
+    }
+
+    /** Places everything for this open progress (may go slightly above 1 while bouncing). */
+    void setProgress(float p) {
+        progress = p;
+        float c = Motion.clamp(p);
+        float off = (1f - p) * travel;
+        content.setTranslationX(right ? off : -off);
+        dim.setAlpha(Math.round(255 * c));
+        host.blur(c);
+        host.handleAlpha(1f - Motion.clamp(c * 3f));
+        float slide = 18 * dp * (right ? 1 : -1);
+        int n = cascade.size();
+        for (int i = 0; i < n; i++) {
+            float q = Motion.cascade(c, i, n);
+            View v = cascade.get(i);
+            v.setAlpha(v.isEnabled() || v.getId() == R.id.hdmi_row ? q : q * 0.35f);
+            v.setTranslationX((1f - q) * slide);
         }
     }
 
-    private void refreshRemote() {
-        Remotes.Brand b = brand();
-        ((TextView) root.findViewById(R.id.brand)).setText(context.getString(R.string.brand_chip, b.name));
-        boolean ir = remote.available();
-        root.findViewById(R.id.ir_missing).setVisibility(ir ? View.GONE : View.VISIBLE);
-        for (View v : keyViews) {
-            Remotes.Key k = (Remotes.Key) v.getTag(R.id.k_power);
-            boolean on = ir && b.has(k);
-            v.setAlpha(on ? 1f : 0.3f);
-            v.setEnabled(on);
+    boolean animating() {
+        return tween != null && tween.running();
+    }
+
+    void cancelAnimation() {
+        if (tween != null) {
+            tween.cancel();
+            tween = null;
         }
-        boolean digits = prefs.digits();
-        root.findViewById(R.id.digits).setVisibility(digits ? View.VISIBLE : View.GONE);
-        ((TextView) root.findViewById(R.id.digits_toggle)).setText(digits ? R.string.digits_hide : R.string.digits_show);
+    }
+
+    /** Opens with a spring (a small bounce) or closes quickly, from wherever the panel is now. */
+    void animateTo(float target, Motion.Speed speed, Runnable end) {
+        cancelAnimation();
+        if (speed == Motion.Speed.OFF || Math.abs(progress - target) < 0.001f) {
+            setProgress(target);
+            if (end != null) {
+                end.run();
+            }
+            return;
+        }
+        boolean opening = target > progress;
+        float distance = Math.max(0.35f, Math.abs(target - progress));
+        // the spring's motion is mostly in its first half: it feels as fast as the setting
+        long millis = Math.round(speed.millis * distance * (opening ? 2.0f : 0.9f));
+        tween = Tween.run(progress, target, millis, opening ? Motion::spring : f -> f * f, this::setProgress, end);
     }
 
     static List<String> appsOrDefault(Context c, Prefs prefs) {
@@ -205,9 +225,8 @@ final class Panel {
             } catch (PackageManager.NameNotFoundException e) {
                 continue; // uninstalled
             }
-            Drawable icon = icon(pm, pkg);
             ImageView v = (ImageView) inf.inflate(R.layout.item_app, box, false);
-            v.setImageDrawable(icon);
+            v.setImageDrawable(icon(pm, pkg));
             v.setContentDescription(label);
             v.setOnClickListener(x -> host.openApp(pkg));
             box.addView(v);
@@ -215,41 +234,60 @@ final class Panel {
         ImageView add = (ImageView) inf.inflate(R.layout.item_app, box, false);
         add.setImageResource(R.drawable.ic_add);
         add.setBackgroundResource(R.drawable.bg_key);
-        int pad = Math.round(14 * context.getResources().getDisplayMetrics().density);
+        int pad = Math.round(14 * dp);
         add.setPadding(pad, pad, pad, pad);
         add.setContentDescription(context.getString(R.string.apps_add));
         add.setOnClickListener(x -> host.openSettings(true));
         box.addView(add);
     }
 
-    @SuppressLint("ClickableViewAccessibility") // keys act on touch-down for zero delay; click is wired too
+    /** Keys act on touch-down (no waiting); they squeeze, bounce back and ripple from the finger. */
+    @SuppressLint("ClickableViewAccessibility") // click is wired too, for accessibility
     private void key(int id, Remotes.Key key) {
         View v = root.findViewById(id);
-        v.setTag(R.id.k_power, key);
-        keyViews.add(v);
         v.setOnTouchListener((view, e) -> {
+            Motion.Speed speed = prefs.speed();
             switch (e.getActionMasked()) {
                 case MotionEvent.ACTION_DOWN:
+                    view.drawableHotspotChanged(e.getX(), e.getY()); // ripple starts under the finger
                     view.setPressed(true);
-                    remote.press(brand(), key);
-                    haptic(view);
+                    remote.press(key);
+                    if (prefs.haptics()) {
+                        view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY);
+                    }
+                    if (speed != Motion.Speed.OFF) {
+                        scale(view, 0.9f, 70, new DecelerateInterpolator());
+                    }
+                    return true;
+                case MotionEvent.ACTION_MOVE:
+                    view.drawableHotspotChanged(e.getX(), e.getY());
                     return true;
                 case MotionEvent.ACTION_UP:
                 case MotionEvent.ACTION_CANCEL:
                     view.setPressed(false);
-                    remote.release();
+                    if (speed == Motion.Speed.OFF) {
+                        scale(view, 1f, 0, null);
+                    } else {
+                        scale(view, 1f, Math.round(speed.millis * 1.6f), new OvershootInterpolator(3f));
+                    }
                     return true;
                 default:
                     return true;
             }
         });
-        v.setOnClickListener(view -> remote.press(brand(), key)); // accessibility / keyboard
+        v.setOnClickListener(view -> remote.press(key));
     }
 
-    private void haptic(View v) {
-        if (prefs.haptics()) {
-            v.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY);
+    /** Squeeze / bounce of a key; starts on the next frame, no wait for a layout pass. */
+    private static void scale(View v, float to, long millis, android.animation.TimeInterpolator interpolator) {
+        Object old = v.getTag(R.id.k_hdmi1);
+        if (old instanceof Tween) {
+            ((Tween) old).cancel();
         }
+        v.setTag(R.id.k_hdmi1, Tween.run(v.getScaleX(), to, millis, interpolator, f -> {
+            v.setScaleX(f);
+            v.setScaleY(f);
+        }, null));
     }
 
     static Drawable icon(PackageManager pm, String pkg) {

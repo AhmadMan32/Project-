@@ -35,7 +35,7 @@
     <string name="apps_max">You can choose up to %1$d apps</string>
     <string name="apps_add">Add apps</string>
     <string name="back">Back</string>
-    <string name="tv_card">LG TV remote</string>
+    <string name="tv_card">Infrared remote: LG TV and Tivibu</string>
     <string name="ir_ok">This phone has an infrared emitter</string>
     <string name="ir_missing">This phone has no infrared emitter</string>
     <string name="ir_missing_panel">This phone has no infrared emitter; the TV remote cannot work.</string>
@@ -122,4 +122,16 @@
     <string name="opt_music">Music card in the panel</string>
     <string name="perm_music">Music control (notification access)</string>
     <string name="perm_music_desc">Shows the song playing in apps like YouTube Music, with its buttons, in the panel. Notifications are not read or stored. If the switch is greyed out: Settings → Apps → Kenar Panel → ⋮ → Allow restricted settings.</string>
+    <string name="key_menu">Menu</string>
+    <string name="key_guide">Guide</string>
+    <string name="key_numbers">Number keys</string>
+    <string name="key_ch_down">Channel down</string>
+    <string name="key_ch_up">Channel up</string>
+    <string name="key_info">Info</string>
+    <string name="key_last">Last channel</string>
+    <string name="key_last_short">Last</string>
+    <string name="tivibu_card">Tivibu (Airties box)</string>
+    <string name="tivibu_hint">Point the phone at the Tivibu box. It has to reach the infrared receiver on the front of the box.</string>
+    <string name="key_vol_up_short">Vol +</string>
+    <string name="key_numbers_hide">Show the arrows</string>
 </resources>

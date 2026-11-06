@@ -35,7 +35,7 @@
     <string name="apps_max">En fazla %1$d uygulama seçilebilir</string>
     <string name="apps_add">Uygulama ekle</string>
     <string name="back">Geri</string>
-    <string name="tv_card">LG TV kumandası</string>
+    <string name="tv_card">Kızılötesi kumanda: LG TV ve Tivibu</string>
     <string name="ir_ok">Bu telefonda kızılötesi verici var</string>
     <string name="ir_missing">Bu telefonda kızılötesi verici yok</string>
     <string name="ir_missing_panel">Bu telefonda kızılötesi verici yok; TV kumandası çalışmaz.</string>
@@ -131,4 +131,31 @@
     <string name="opt_music">Panelde müzik kartı</string>
     <string name="perm_music">Müzik kontrolü (bildirim erişimi)</string>
     <string name="perm_music_desc">YouTube Music gibi uygulamalarda çalan şarkıyı ve tuşlarını panelde gösterir. Bildirimler okunmaz, saklanmaz. Düğme gri ise: Ayarlar → Uygulamalar → Kenar Panel → ⋮ → Kısıtlanmış ayarlara izin ver.</string>
+    <string name="tab_tivibu" translatable="false">Tivibu</string>
+    <string name="key_numbers_short" translatable="false">123</string>
+    <string name="key_ch_down_short" translatable="false">P −</string>
+    <string name="key_ch_up_short" translatable="false">P +</string>
+    <string name="key_ok" translatable="false">OK</string>
+    <string name="d0" translatable="false">0</string>
+    <string name="d1" translatable="false">1</string>
+    <string name="d2" translatable="false">2</string>
+    <string name="d3" translatable="false">3</string>
+    <string name="d4" translatable="false">4</string>
+    <string name="d5" translatable="false">5</string>
+    <string name="d6" translatable="false">6</string>
+    <string name="d7" translatable="false">7</string>
+    <string name="d8" translatable="false">8</string>
+    <string name="d9" translatable="false">9</string>
+    <string name="key_menu">Menü</string>
+    <string name="key_guide">Rehber</string>
+    <string name="key_numbers">Rakam tuşları</string>
+    <string name="key_ch_down">Kanal aşağı</string>
+    <string name="key_ch_up">Kanal yukarı</string>
+    <string name="key_info">Bilgi</string>
+    <string name="key_last">Son kanal</string>
+    <string name="key_last_short">Son</string>
+    <string name="tivibu_card">Tivibu (Airties kutu)</string>
+    <string name="tivibu_hint">Telefonu Tivibu kutusuna doğrultun; sinyal kutunun önündeki kızılötesi alıcıya ulaşmalı.</string>
+    <string name="key_vol_up_short">Ses +</string>
+    <string name="key_numbers_hide">Okları göster</string>
 </resources>

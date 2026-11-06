@@ -23,14 +23,16 @@ import android.widget.TextView;
 import com.ahmadman.kenarpanel.core.Motion;
 import com.ahmadman.kenarpanel.core.Playback;
 import com.ahmadman.kenarpanel.core.Remotes;
+import com.ahmadman.kenarpanel.core.Tivibu;
 
 import java.util.ArrayList;
 import java.util.List;
 
 /**
  * The panel: app shortcuts, a music card (what is playing, with its buttons) and the TV remote:
- * LG over infrared (power, HDMI 1, HDMI 2) or an Android TV over Wi-Fi (touchpad, back, home,
- * volume, power). Built once and kept in
+ * LG over infrared (power, HDMI 1, HDMI 2), an Android TV over Wi-Fi (touchpad, back, home,
+ * volume, power) or a Tivibu box over infrared (numbers, channels, volume, arrows, menu, guide,
+ * back, power). Built once and kept in
  * memory. Everything on it is driven by one number, the open progress (0 = hidden at the edge,
  * 1 = open), so it can follow the finger while pulling and animate the same way on its own.
  */
@@ -76,6 +78,14 @@ final class Panel {
     private final View pageAtv;
     private final View tabLg;
     private final View tabAtv;
+    private final View pageTivibu;
+    private final View tabTivibu;
+    private final View tvNav;
+    private final View tvKeypad;
+    private final View tvNumbers;
+    private final Tivibu.Sender tivibu = new Tivibu.Sender();
+    private final List<View> tivibuKeys = new ArrayList<>();
+    private String shownPage = "lg";
     private final AtvRemote atv;
     private Tween pageTween;
     private final View foldButton;
@@ -176,6 +186,62 @@ final class Panel {
                 atv.key(com.ahmadman.kenarpanel.atv.Messages.KEY_DPAD_CENTER);
             }
         });
+        // Tivibu page (infrared, Airties box)
+        pageTivibu = root.findViewById(R.id.page_tivibu);
+        tabTivibu = root.findViewById(R.id.tab_tivibu);
+        tabTivibu.setOnClickListener(v -> select("tivibu", true));
+        tvNav = root.findViewById(R.id.tv_nav);
+        tvKeypad = root.findViewById(R.id.tv_keypad);
+        tvNumbers = root.findViewById(R.id.tv_numbers);
+        tvNumbers.setOnClickListener(v -> {
+            showNumbers(!numbersShown(), prefs.speed() != Motion.Speed.OFF);
+            if (prefs.haptics()) {
+                v.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY);
+            }
+        });
+        tvKey(R.id.tv_power, Tivibu.Key.POWER);
+        tvKey(R.id.tv_menu, Tivibu.Key.MENU);
+        tvKey(R.id.tv_guide, Tivibu.Key.GUIDE);
+        tvKey(R.id.tv_back, Tivibu.Key.BACK);
+        tvKey(R.id.tv_ch_down, Tivibu.Key.CHANNEL_DOWN);
+        tvKey(R.id.tv_info, Tivibu.Key.INFO);
+        tvKey(R.id.tv_ch_up, Tivibu.Key.CHANNEL_UP);
+        tvKey(R.id.tv_mute, Tivibu.Key.MUTE);
+        tvKey(R.id.tv_vol_down, Tivibu.Key.VOLUME_DOWN);
+        tvKey(R.id.tv_vol_up, Tivibu.Key.VOLUME_UP);
+        tvKey(R.id.tv_last, Tivibu.Key.LAST_CHANNEL);
+        tvKey(R.id.tv_ok, Tivibu.Key.OK);
+        int[] digits = {R.id.tv_d0, R.id.tv_d1, R.id.tv_d2, R.id.tv_d3, R.id.tv_d4, R.id.tv_d5, R.id.tv_d6,
+                R.id.tv_d7, R.id.tv_d8, R.id.tv_d9};
+        for (int d = 0; d < digits.length; d++) {
+            tvKey(digits[d], Tivibu.Key.digit(d));
+        }
+        TouchpadView tvPad = root.findViewById(R.id.tv_pad);
+        tvPad.setKeys(new TouchpadView.Keys() {
+            @Override
+            public void step(com.ahmadman.kenarpanel.atv.Touchpad.Step s) {
+                switch (s) {
+                    case UP:
+                        tivibu(Tivibu.Key.UP);
+                        break;
+                    case DOWN:
+                        tivibu(Tivibu.Key.DOWN);
+                        break;
+                    case LEFT:
+                        tivibu(Tivibu.Key.LEFT);
+                        break;
+                    default:
+                        tivibu(Tivibu.Key.RIGHT);
+                        break;
+                }
+            }
+
+            @Override
+            public void select() {
+                tivibu(Tivibu.Key.OK);
+            }
+        });
+
         root.findViewById(R.id.atv_pair).setOnClickListener(v -> host.openPair());
         root.findViewById(R.id.atv_chip).setOnClickListener(v -> {
             AtvRemote.State st = atv.state();
@@ -272,17 +338,20 @@ final class Panel {
         loadApps();
         showRemote(prefs.remoteOpen(), false);
         String mode = prefs.tvMode();
-        tabLg.setSelected(!"atv".equals(mode));
-        tabAtv.setSelected("atv".equals(mode));
-        showPage("atv".equals(mode), false);
+        selectTabs(mode);
+        showPage(mode, false);
         ((TouchpadView) root.findViewById(R.id.atv_pad)).setHaptics(prefs.haptics());
+        ((TouchpadView) root.findViewById(R.id.tv_pad)).setHaptics(prefs.haptics());
         renderAtv();
         followMusic();
         renderMusic();
         boolean ir = remote.available();
         root.findViewById(R.id.ir_missing).setVisibility(ir ? View.GONE : View.VISIBLE);
-        for (int id : new int[]{R.id.k_power, R.id.k_hdmi1, R.id.k_hdmi2}) {
-            View v = root.findViewById(id);
+        List<View> irKeys = new ArrayList<>(tivibuKeys);
+        for (int id : new int[]{R.id.k_power, R.id.k_hdmi1, R.id.k_hdmi2, R.id.tv_numbers}) {
+            irKeys.add(root.findViewById(id));
+        }
+        for (View v : irKeys) {
             v.setEnabled(ir);
             v.setAlpha(ir ? 1f : 0.35f);
         }
@@ -308,6 +377,8 @@ final class Panel {
         remoteRows.add((View) root.findViewById(R.id.atv_pad).getParent());
         remoteRows.add(root.findViewById(R.id.atv_row1));
         remoteRows.add(root.findViewById(R.id.atv_row2));
+        remoteRows.add(root.findViewById(R.id.tv_top));
+        remoteRows.add((View) tvNav.getParent());
         remoteRows.add(root.findViewById(R.id.remote_fold));
         List<View> icons = new ArrayList<>();
         for (int i = 0; i < apps.getChildCount(); i++) {
@@ -486,6 +557,9 @@ final class Panel {
     void shown(boolean on) {
         shown = on;
         followMusic();
+        if (!on && numbersShown()) {
+            showNumbers(false, false); // opens with the arrows next time
+        }
     }
 
     Music music() {
@@ -621,31 +695,58 @@ final class Panel {
         }
         prefs.tvMode(mode);
         boolean isAtv = "atv".equals(mode);
-        tabLg.setSelected(!isAtv);
-        tabAtv.setSelected(isAtv);
-        showPage(isAtv, animate && prefs.speed() != Motion.Speed.OFF);
+        selectTabs(mode);
+        showPage(mode, animate && prefs.speed() != Motion.Speed.OFF);
         if (isAtv) {
             atv.ensure(); // connect right away, without asking
         }
         if (prefs.haptics()) {
-            (isAtv ? tabAtv : tabLg).performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY);
+            tab(mode).performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY);
         }
     }
 
-    /** The LG page stays laid out (invisible) under the Android TV page, so the size never changes. */
-    private void showPage(boolean isAtv, boolean animate) {
+    private View tab(String mode) {
+        return "atv".equals(mode) ? tabAtv : "tivibu".equals(mode) ? tabTivibu : tabLg;
+    }
+
+    private View page(String mode) {
+        return "atv".equals(mode) ? pageAtv : "tivibu".equals(mode) ? pageTivibu : pageLg;
+    }
+
+    private static int order(String mode) {
+        return "atv".equals(mode) ? 1 : "tivibu".equals(mode) ? 2 : 0;
+    }
+
+    private void selectTabs(String mode) {
+        tabLg.setSelected(tab(mode) == tabLg);
+        tabAtv.setSelected(tab(mode) == tabAtv);
+        tabTivibu.setSelected(tab(mode) == tabTivibu);
+    }
+
+    /**
+     * The LG page stays laid out (invisible) under the other pages, so the size never changes.
+     * Pages slide in from the side of their tab.
+     */
+    private void showPage(String mode, boolean animate) {
         if (pageTween != null) {
             pageTween.cancel();
         }
-        View in = isAtv ? pageAtv : pageLg;
-        View out = isAtv ? pageLg : pageAtv;
-        float shift = 14 * dp * (isAtv ? 1 : -1);
+        View in = page(mode);
+        List<View> out = new ArrayList<>();
+        for (View v : new View[]{pageLg, pageAtv, pageTivibu}) {
+            if (v != in) {
+                out.add(v);
+            }
+        }
+        float shift = 14 * dp * (order(mode) >= order(shownPage) ? 1 : -1);
+        shownPage = mode;
         in.setVisibility(View.VISIBLE);
         if (!animate) {
             in.setAlpha(1f);
             in.setTranslationX(0);
-            out.setAlpha(0f);
-            out.setVisibility(isAtv ? View.INVISIBLE : View.GONE);
+            for (View v : out) {
+                hidePage(v);
+            }
             return;
         }
         in.setAlpha(0f);
@@ -653,12 +754,97 @@ final class Panel {
         pageTween = Tween.run(0f, 1f, Math.round(prefs.speed().millis * 1.3f), new DecelerateInterpolator(1.6f), f -> {
             in.setAlpha(f);
             in.setTranslationX(shift * (1f - f));
-            out.setAlpha(1f - f);
-            out.setTranslationX(-shift * f);
+            for (View v : out) {
+                if (v.getVisibility() == View.VISIBLE) {
+                    v.setAlpha(Math.min(v.getAlpha(), 1f - f));
+                    v.setTranslationX(-shift * f);
+                }
+            }
         }, () -> {
-            out.setVisibility(isAtv ? View.INVISIBLE : View.GONE);
-            out.setTranslationX(0);
+            for (View v : out) {
+                hidePage(v);
+            }
         });
+    }
+
+    private void hidePage(View v) {
+        v.setAlpha(0f);
+        v.setTranslationX(0);
+        v.setVisibility(v == pageLg ? View.INVISIBLE : View.GONE); // the LG page keeps the size
+    }
+
+    // ---------------------------------------------------------------------------------------
+    // Tivibu (Airties box, RC-5 infrared)
+
+    boolean numbersShown() {
+        return tvKeypad.getVisibility() == View.VISIBLE;
+    }
+
+    /** "123": the number keys take the place of the arrows and volume, in the same space. */
+    void showNumbers(boolean on, boolean animate) {
+        View in = on ? tvKeypad : tvNav;
+        View out = on ? tvNav : tvKeypad;
+        tvNumbers.setSelected(on);
+        tvNumbers.setContentDescription(context.getString(on ? R.string.key_numbers_hide : R.string.key_numbers));
+        in.setVisibility(View.VISIBLE);
+        out.setVisibility(View.GONE);
+        if (animate) {
+            in.setAlpha(0f);
+            Tween.run(0f, 1f, Math.round(prefs.speed().millis * 0.9f), new DecelerateInterpolator(), in::setAlpha, null);
+        } else {
+            in.setAlpha(1f);
+        }
+    }
+
+    private boolean tivibu(Tivibu.Key key) {
+        return remote.send(tivibu.press(key));
+    }
+
+    /**
+     * A Tivibu key: sent on touch-down. Volume, channels and arrows keep sending while held,
+     * like the original remote (the same frame every 114 ms, so the box sees one long press).
+     */
+    @SuppressLint("ClickableViewAccessibility") // click is wired too, for accessibility
+    private void tvKey(int id, Tivibu.Key key) {
+        View v = root.findViewById(id);
+        tivibuKeys.add(v);
+        Runnable[] hold = new Runnable[1];
+        hold[0] = () -> {
+            remote.send(tivibu.hold(key));
+            main.postDelayed(hold[0], Tivibu.REPEAT_MS);
+        };
+        v.setOnTouchListener((view, e) -> {
+            Motion.Speed speed = prefs.speed();
+            switch (e.getActionMasked()) {
+                case MotionEvent.ACTION_DOWN:
+                    view.drawableHotspotChanged(e.getX(), e.getY());
+                    view.setPressed(true);
+                    tivibu(key);
+                    if (key.repeats()) {
+                        main.postDelayed(hold[0], Tivibu.REPEAT_MS);
+                    }
+                    if (prefs.haptics()) {
+                        view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY);
+                    }
+                    if (speed != Motion.Speed.OFF) {
+                        scale(view, 0.9f, 70, new DecelerateInterpolator());
+                    }
+                    return true;
+                case MotionEvent.ACTION_MOVE:
+                    view.drawableHotspotChanged(e.getX(), e.getY());
+                    return true;
+                case MotionEvent.ACTION_UP:
+                case MotionEvent.ACTION_CANCEL:
+                    view.setPressed(false);
+                    main.removeCallbacks(hold[0]);
+                    scale(view, 1f, speed == Motion.Speed.OFF ? 0 : Math.round(speed.millis * 1.6f),
+                            new OvershootInterpolator(3f));
+                    return true;
+                default:
+                    return true;
+            }
+        });
+        v.setOnClickListener(view -> tivibu(key));
     }
 
     /** Connection status in the chip: green with the TV's name when connected. */

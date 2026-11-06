@@ -51,6 +51,7 @@ public class PanelTest {
         volatile int frequency;
         volatile int[] pattern;
         final java.util.concurrent.atomic.AtomicInteger count = new java.util.concurrent.atomic.AtomicInteger();
+        final List<int[]> frames = new java.util.concurrent.CopyOnWriteArrayList<>();
 
         @Override
         public boolean available() {
@@ -66,6 +67,7 @@ public class PanelTest {
         public void transmit(int f, int[] p) {
             frequency = f;
             pattern = p;
+            frames.add(p);
             count.incrementAndGet();
         }
 
@@ -899,5 +901,182 @@ public class PanelTest {
         OverlayService.settingsChanged();
         idle(100);
         assertEquals(withSong, root.findViewById(R.id.remote_body).getHeight()); // the remote is never squeezed
+    }
+
+    /** The RC-5 frames sent since the last call, as {command, toggle}; waits for the IR thread. */
+    private List<int[]> tivibuSent(int atLeast) throws InterruptedException {
+        waitFor(() -> assertTrue("frames " + ir.frames.size(), ir.frames.size() >= atLeast));
+        List<int[]> out = new java.util.ArrayList<>();
+        for (int[] p : ir.frames) {
+            int bits = com.ahmadman.kenarpanel.core.TivibuTest.decodeRc5(p);
+            assertEquals("Airties RC-5 system", 27, (bits >> 6) & 0x1F);
+            out.add(new int[]{bits & 0x3F, (bits >> 11) & 1});
+        }
+        ir.frames.clear();
+        return out;
+    }
+
+    private void tap(View v) {
+        touch(v, MotionEvent.ACTION_DOWN, 5, 5);
+        touch(v, MotionEvent.ACTION_UP, 5, 5);
+    }
+
+    /** Presses a key and returns the command that went out. */
+    private int press(View root, int id) throws InterruptedException {
+        tap(root.findViewById(id));
+        List<int[]> f = tivibuSent(1);
+        assertEquals(1, f.size());
+        return f.get(0)[0];
+    }
+
+    @Test
+    public void tivibuPageKeepsTheCardSizeAndSendsEveryKey() throws InterruptedException {
+        OverlayService s = service();
+        s.openPanel();
+        idle(600);
+        View root = s.panel.root;
+        View card = root.findViewById(R.id.remote_card);
+        int w = card.getWidth();
+        int h = card.getHeight();
+
+        root.findViewById(R.id.tab_tivibu).performClick();
+        idle(600);
+        assertEquals("tivibu", new Prefs(app).tvMode());
+        assertTrue(root.findViewById(R.id.tab_tivibu).isSelected());
+        assertFalse(root.findViewById(R.id.tab_lg).isSelected());
+        assertEquals(View.VISIBLE, root.findViewById(R.id.page_tivibu).getVisibility());
+        assertEquals(View.INVISIBLE, root.findViewById(R.id.page_lg).getVisibility());
+        assertEquals(View.GONE, root.findViewById(R.id.page_atv).getVisibility());
+        assertEquals(w, card.getWidth()); // same box as the LG page
+        assertEquals(h, card.getHeight());
+        ir.frames.clear();
+
+        // every key goes out as the Airties remote sends it (RC-5 system 27, 36 kHz)
+        assertEquals(19, press(root, R.id.tv_power));
+        assertEquals(36_000, ir.getTransmittedFrequency());
+        assertEquals(20, press(root, R.id.tv_menu));
+        assertEquals(23, press(root, R.id.tv_guide));
+        assertEquals(15, press(root, R.id.tv_back));
+        assertEquals(33, press(root, R.id.tv_ch_down));
+        assertEquals(25, press(root, R.id.tv_info));
+        assertEquals(32, press(root, R.id.tv_ch_up));
+        assertEquals(60, press(root, R.id.tv_mute));
+        assertEquals(61, press(root, R.id.tv_vol_down));
+        assertEquals(62, press(root, R.id.tv_vol_up));
+
+        // two presses of the same key: the toggle bit flips, so the box counts two
+        tap(root.findViewById(R.id.tv_ch_up));
+        tap(root.findViewById(R.id.tv_ch_up));
+        List<int[]> two = tivibuSent(2);
+        assertEquals(32, two.get(0)[0]);
+        assertEquals(32, two.get(1)[0]);
+        assertTrue(two.get(0)[1] != two.get(1)[1]);
+
+        // held volume: the same frame again every 114 ms, like the original remote, then stops
+        View volUp = root.findViewById(R.id.tv_vol_up);
+        touch(volUp, MotionEvent.ACTION_DOWN, 5, 5);
+        idle(700);
+        touch(volUp, MotionEvent.ACTION_UP, 5, 5);
+        List<int[]> held = tivibuSent(5);
+        assertTrue("frames " + held.size(), held.size() >= 5 && held.size() <= 8);
+        for (int[] f : held) {
+            assertEquals(62, f[0]);
+            assertEquals(held.get(0)[1], f[1]); // one long press
+        }
+        idle(500);
+        assertEquals(0, ir.frames.size());
+
+        // a held power key is sent once
+        View power = root.findViewById(R.id.tv_power);
+        touch(power, MotionEvent.ACTION_DOWN, 5, 5);
+        idle(700);
+        touch(power, MotionEvent.ACTION_UP, 5, 5);
+        assertEquals(1, tivibuSent(1).size());
+
+        // touchpad: swipe right three steps (three presses), tap = OK
+        TouchpadView pad = root.findViewById(R.id.tv_pad);
+        assertTrue(pad.getHeight() > 0);
+        float step = 26 * app.getResources().getDisplayMetrics().density;
+        touch(pad, MotionEvent.ACTION_DOWN, 20, 30);
+        touch(pad, MotionEvent.ACTION_MOVE, 20 + step * 1.5f, 31);
+        touch(pad, MotionEvent.ACTION_MOVE, 20 + step * 3.2f, 32);
+        touch(pad, MotionEvent.ACTION_UP, 20 + step * 3.2f, 32);
+        List<int[]> swipe = tivibuSent(3);
+        assertEquals(3, swipe.size());
+        for (int[] f : swipe) {
+            assertEquals(11, f[0]); // right
+        }
+        touch(pad, MotionEvent.ACTION_DOWN, 30, 30, 10);
+        touch(pad, MotionEvent.ACTION_UP, 31, 31, 80);
+        assertEquals(14, tivibuSent(1).get(0)[0]); // OK
+
+        // "123": the number keys in the same space; the card does not change size
+        View numbers = root.findViewById(R.id.tv_numbers);
+        numbers.performClick();
+        idle(400);
+        assertTrue(numbers.isSelected());
+        assertEquals(View.VISIBLE, root.findViewById(R.id.tv_keypad).getVisibility());
+        assertEquals(View.GONE, root.findViewById(R.id.tv_nav).getVisibility());
+        assertEquals(w, card.getWidth());
+        assertEquals(h, card.getHeight());
+        int[] digits = {R.id.tv_d0, R.id.tv_d1, R.id.tv_d2, R.id.tv_d3, R.id.tv_d4, R.id.tv_d5, R.id.tv_d6,
+                R.id.tv_d7, R.id.tv_d8, R.id.tv_d9};
+        for (int d = 0; d <= 9; d++) {
+            View key = root.findViewById(digits[d]);
+            assertTrue(key.getHeight() > 0 && key.getWidth() > 0);
+            assertEquals(String.valueOf(d), ((TextView) key).getText().toString());
+            assertEquals(d, press(root, digits[d]));
+        }
+        // channel 105: three digits in a row
+        for (int id : new int[]{R.id.tv_d1, R.id.tv_d0, R.id.tv_d5}) {
+            tap(root.findViewById(id));
+        }
+        List<int[]> ch = tivibuSent(3);
+        assertEquals(1, ch.get(0)[0]);
+        assertEquals(0, ch.get(1)[0]);
+        assertEquals(5, ch.get(2)[0]);
+        assertEquals(34, press(root, R.id.tv_last));
+        assertEquals(14, press(root, R.id.tv_ok));
+        numbers.performClick();
+        idle(400);
+        assertEquals(View.VISIBLE, root.findViewById(R.id.tv_nav).getVisibility());
+
+        // the choice stays; the number pad does not (arrows first when the panel opens again)
+        numbers.performClick();
+        idle(400);
+        s.requestClose();
+        idle(600);
+        assertEquals(View.GONE, root.findViewById(R.id.tv_keypad).getVisibility());
+        s.openPanel();
+        idle(600);
+        assertEquals(View.VISIBLE, root.findViewById(R.id.page_tivibu).getVisibility());
+
+        // switching pages never changes the card
+        root.findViewById(R.id.tab_atv).performClick();
+        idle(600);
+        assertEquals(View.GONE, root.findViewById(R.id.page_tivibu).getVisibility());
+        assertEquals(h, card.getHeight());
+        root.findViewById(R.id.tab_lg).performClick();
+        idle(600);
+        assertEquals(View.VISIBLE, root.findViewById(R.id.page_lg).getVisibility());
+        assertEquals(1f, root.findViewById(R.id.page_lg).getAlpha(), 0.01f);
+        assertEquals(h, card.getHeight());
+        assertEquals(w, card.getWidth());
+    }
+
+    @Test
+    public void tivibuKeysAreOffWithoutAnInfraredEmitter() {
+        ir.has = false;
+        new Prefs(app).tvMode("tivibu");
+        OverlayService s = service();
+        s.openPanel();
+        idle(600);
+        View root = s.panel.root;
+        for (int id : new int[]{R.id.tv_power, R.id.tv_vol_up, R.id.tv_d5, R.id.tv_numbers}) {
+            assertFalse(root.findViewById(id).isEnabled());
+        }
+        tap(root.findViewById(R.id.tv_power));
+        idle(200);
+        assertEquals(0, ir.frames.size());
     }
 }

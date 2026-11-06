@@ -14,7 +14,7 @@ public final class Ir {
         public final int frequency;
         public final int[] pattern;
 
-        Frame(int frequency, int[] pattern) {
+        public Frame(int frequency, int[] pattern) {
             this.frequency = frequency;
             this.pattern = pattern;
         }
@@ -51,6 +51,52 @@ public final class Ir {
         }
         p[i] = BIT_MARK;
         return new Frame(38_000, p);
+    }
+
+    /** RC-5 half-bit time: a bit lasts 1.778 ms (64 carrier cycles at 36 kHz per half). */
+    static final int RC5_HALF = 889;
+
+    /**
+     * Philips RC-5 (36 kHz), used by Airties set-top boxes: 14 bits in Manchester code (a 1 is
+     * "off then on", a 0 is "on then off"): two start bits (the second is cleared for commands
+     * 64-127), the toggle bit, the 5-bit system address and 6 command bits, MSB first.
+     *
+     * @param toggle flips on every new key press and stays the same while a key is held, so the
+     *               receiver can tell a second press from a held key
+     */
+    public static Frame rc5(int system, int command, boolean toggle) {
+        int bits = 1; // S1
+        bits = (bits << 1) | (command < 64 ? 1 : 0); // S2 (field bit)
+        bits = (bits << 1) | (toggle ? 1 : 0);
+        bits = (bits << 5) | (system & 0x1F);
+        bits = (bits << 6) | (command & 0x3F);
+        // half-bit levels, then runs of equal levels
+        boolean[] half = new boolean[28];
+        for (int i = 0; i < 14; i++) {
+            boolean one = ((bits >> (13 - i)) & 1) != 0;
+            half[2 * i] = !one;
+            half[2 * i + 1] = one;
+        }
+        int[] runs = new int[28];
+        int n = 0;
+        int start = half[0] ? 0 : 1; // the first start bit's leading "off" is not sent
+        boolean level = half[start];
+        int length = 0;
+        for (int i = start; i < 28; i++) {
+            if (half[i] == level) {
+                length += RC5_HALF;
+            } else {
+                runs[n++] = length;
+                level = half[i];
+                length = RC5_HALF;
+            }
+        }
+        if (level) {
+            runs[n++] = length; // ends "on"; a trailing "off" is the gap to the next frame
+        }
+        int[] p = new int[n];
+        System.arraycopy(runs, 0, p, 0, n);
+        return new Frame(36_000, p);
     }
 
     /** Picks the phone's supported carrier closest to the wanted one (some emitters have fixed ranges). */

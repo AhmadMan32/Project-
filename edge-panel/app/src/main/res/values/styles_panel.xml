@@ -56,4 +56,30 @@
         <item name="android:padding">6dp</item>
         <item name="android:tint">@color/panel_text</item>
     </style>
+
+    <style name="TvKey">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_height">match_parent</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:background">@drawable/bg_atv_key</item>
+        <item name="android:clickable">true</item>
+        <item name="android:focusable">true</item>
+        <item name="android:gravity">center</item>
+        <item name="android:maxLines">1</item>
+        <item name="android:textColor">@color/panel_text</item>
+        <item name="android:textSize">11.5sp</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="TvDigitRow">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">0dp</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:orientation">horizontal</item>
+    </style>
+
+    <style name="TvDigit" parent="TvKey">
+        <item name="android:layout_marginEnd">6dp</item>
+        <item name="android:textSize">16sp</item>
+    </style>
 </resources>

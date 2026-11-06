@@ -21,6 +21,7 @@ import android.widget.Toast;
 
 import com.ahmadman.kenarpanel.core.Motion;
 import com.ahmadman.kenarpanel.core.Remotes;
+import com.ahmadman.kenarpanel.core.Tivibu;
 
 import java.util.List;
 
@@ -83,6 +84,9 @@ public class MainActivity extends Activity {
         test(R.id.test_power, Remotes.Key.POWER);
         test(R.id.test_hdmi1, Remotes.Key.HDMI1);
         test(R.id.test_hdmi2, Remotes.Key.HDMI2);
+        testTivibu(R.id.test_tv_power, Tivibu.Key.POWER);
+        testTivibu(R.id.test_tv_ch_up, Tivibu.Key.CHANNEL_UP);
+        testTivibu(R.id.test_tv_vol_up, Tivibu.Key.VOLUME_UP);
         float max = OverlayService.maxRefreshRate(this);
         float fast = OverlayService.fastRefreshRate(this);
         ((TextView) findViewById(R.id.refresh_info)).setText(fast > 0
@@ -194,6 +198,16 @@ public class MainActivity extends Activity {
     private void test(int id, Remotes.Key key) {
         findViewById(id).setOnClickListener(v -> {
             if (!remote.press(key)) {
+                Toast.makeText(this, R.string.ir_missing, Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    private final Tivibu.Sender tivibu = new Tivibu.Sender();
+
+    private void testTivibu(int id, Tivibu.Key key) {
+        findViewById(id).setOnClickListener(v -> {
+            if (!remote.send(tivibu.press(key))) {
                 Toast.makeText(this, R.string.ir_missing, Toast.LENGTH_SHORT).show();
             }
         });

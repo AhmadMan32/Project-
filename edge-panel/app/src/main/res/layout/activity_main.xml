@@ -295,6 +295,47 @@
                     android:text="@string/key_hdmi2" />
             </LinearLayout>
 
+            <!-- Tivibu (Airties box): the same check, one tap per key -->
+            <TextView
+                style="@style/OptionTitle"
+                android:layout_marginTop="16dp"
+                android:text="@string/tivibu_card" />
+
+            <TextView
+                style="@style/OptionDesc"
+                android:text="@string/tivibu_hint" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/test_tv_power"
+                    style="@style/OutlineButton"
+                    android:layout_width="0dp"
+                    android:layout_marginEnd="6dp"
+                    android:layout_weight="1"
+                    android:text="@string/key_power" />
+
+                <TextView
+                    android:id="@+id/test_tv_ch_up"
+                    style="@style/OutlineButton"
+                    android:layout_width="0dp"
+                    android:layout_marginEnd="6dp"
+                    android:layout_weight="1"
+                    android:text="@string/key_ch_up_short" />
+
+                <TextView
+                    android:id="@+id/test_tv_vol_up"
+                    style="@style/OutlineButton"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:contentDescription="@string/key_vol_up"
+                    android:text="@string/key_vol_up_short" />
+            </LinearLayout>
+
             <Switch
                 android:id="@+id/opt_music"
                 style="@style/Option"

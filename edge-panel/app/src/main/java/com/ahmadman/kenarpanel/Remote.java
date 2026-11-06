@@ -11,7 +11,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 /**
- * Sends the LG codes through the phone's infrared emitter. Sending runs on its own thread, so
+ * Sends infrared codes (LG TV, Tivibu box) through the phone's infrared emitter. Sending runs on its own thread, so
  * a key press never waits and never stalls an animation.
  */
 final class Remote {
@@ -50,10 +50,14 @@ final class Remote {
 
     /** Sends the key at once (on finger down). */
     boolean press(Remotes.Key key) {
+        return send(key.frame());
+    }
+
+    /** Sends one infrared frame on the sending thread (in order, never blocking the caller). */
+    boolean send(Ir.Frame f) {
         if (!available()) {
             return false;
         }
-        Ir.Frame f = key.frame();
         sender.execute(() -> {
             try {
                 if (ranges == null) {

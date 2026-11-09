@@ -172,7 +172,7 @@
           <div id="profileSummary"></div>
           <div class="row wrap">
             <button class="btn primary" id="redoWizard">Soruları yeniden yanıtla</button>
-            <button class="btn" id="regenProgram">Programı yenile</button>
+            <button class="btn" id="regenProgram">Otomatik plan oluştur</button>
           </div>
           <hr />
           <label>Manuel protein hedefi (g, boş = otomatik) <input type="number" id="pProtein" /></label>
@@ -226,12 +226,24 @@
     </div>
   </div>
 
+  <!-- HAREKET SEÇİCİ -->
+  <div id="picker" class="sheet hidden">
+    <div class="sheet-box">
+      <div class="sheet-head"><h2 id="pickTitle">Hareket seç</h2><button class="btn" id="pickClose">Bitti</button></div>
+      <input type="search" id="pickSearch" placeholder="Hareket ya da kas ara…" />
+      <div class="chips" id="pickCats"></div>
+      <label class="check small"><input type="checkbox" id="pickAll" /> Ekipmanıma / sakatlığıma uymayanları da göster</label>
+      <div class="ex-list" id="pickList"></div>
+    </div>
+  </div>
+
   <div id="toast" class="toast"></div>
 
   <script src="js/data.js"></script>
   <script src="js/body.js"></script>
   <script src="js/analysis.js"></script>
   <script src="js/profile.js"></script>
+  <script src="js/planner.js"></script>
   <script src="js/coach.js"></script>
   <script src="js/app.js"></script>
 </body>

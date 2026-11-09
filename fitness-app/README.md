@@ -12,7 +12,27 @@ Hazır APK: [`release/FitAI-Koc.apk`](release/FitAI-Koc.apk)
 ## İlk açılış: soru-cevap ile kişiselleştirme
 Uygulama adım adım şunları sorar: ad, cinsiyet ve yaş, boy ve kilo, hedef (kas / yağ yakımı / güç / form),
 deneyim seviyesi, haftada kaç gün ve kaç dakika, ekipman (salon / evde dumbbell / ekipmansız),
-öncelikli kaslar (en fazla 3), sakatlıklar (omuz / bel / diz / bilek) ve kreatin kullanımı.
+**programın nasıl oluşturulacağı**, öncelikli kaslar (en fazla 3), sakatlıklar (omuz / bel / diz / bilek) ve kreatin kullanımı.
+
+### İki plan modu
+| | 🤖 Benim için oluştur | ✍️ Kendim seçeceğim |
+|---|---|---|
+| Hareketleri kim seçer | Uygulama | Kullanıcı |
+| Plan kontrolü | Plan, kendi kontrolünden geçene kadar otomatik dengelenir | Her değişiklikte eksik / fazla / riskli noktalar gösterilir |
+| Düzenleme | "Düzenle" ile kullanıcının planına dönüşür | Gün ekle/sil, hareket ekle/çıkar/sırala, set ve tekrar değiştir |
+
+Mod istenildiği zaman Program sekmesinin üstünden değiştirilebilir.
+
+### Plan kontrolü (iki modda da aynı kurallar)
+- Kas başına haftalık set: hedefe, seviyeye, önceliklere ve **haftalık süreye** göre kişisel aralık; ön/arka vücut haritasında renkli
+- Denge: itme/çekme, ön/arka omuz, quad/hamstring, üst vücut/bacak, core
+- Sakatlığı zorlayan ve ekipmanla yapılamayan hareketler
+- Seans süresi (set × ~2.5 dk) söylenen süreyi aşıyor mu, tek seansta bir kasa çok set var mı
+- 4+ günlük planlarda aynı kasın art arda iki gün yüklenmesi, büyük kasların haftada tek günde kalması
+- Her uyarının yanında tek dokunuşla düzeltme: "+ Barbell Row → 2. Gün", "− 1 set azalt", "Plandan çıkar"
+- Hareket seçicide "Eksiklerim" filtresi: hangi hareketin hangi eksiği kapattığını, hangisinin zaten fazla olan kası yüklediğini gösterir
+
+Analiz sekmesi ayrıca **plana uyumu** gösterir: bu hafta planlanan setlerin ne kadarı yapıldı, planda olup hiç yapılmayan kaslar.
 
 Cevaplara göre uygulama şekillenir:
 - **Program:** Gün sayısına göre bölünme seçilir (2-3 gün tüm vücut, 4 gün üst/alt, 5 gün PPL + üst/alt, 6 gün PPL×2). Hareketler ekipmanına göre seçilir, sakatlığını zorlayanlar çıkarılır, set/tekrar hedefe ve seviyeye göre ayarlanır, hareket sayısı süreye göre belirlenir. "Sıradaki" gün işaretlenir; "Kaydet" ile hareket set sayısı hazır şekilde açılır.

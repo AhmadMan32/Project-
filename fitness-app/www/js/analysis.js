@@ -47,7 +47,7 @@ function T(m) {
 
 function statusOf(m, v) {
   const { min, max } = T(m);
-  if (v === 0) return "none";
+  if (v === 0) return min === 0 ? "ok" : "none";
   if (v < min) return "low";
   if (v > max) return "high";
   return "ok";
@@ -122,29 +122,23 @@ function analyze(state) {
     });
   }
 
-  // Denge kontrolleri
-  const sum = (ms) => ms.reduce((a, m) => a + week.vol[m], 0);
-  const push = sum(["chest", "front_delt", "triceps"]);
-  const pull = sum(["lats", "upper_back", "rear_delt", "biceps"]);
-  if (push > 0 && pull > 0) {
-    const r = push / pull;
-    if (r > 1.3) insights.push({ type: "warn", title: "İtme / Çekme dengesizliği", text: `İtme hacmin çekmenin ${r.toFixed(1)} katı. Omuz sağlığı ve duruş için sırt çalışmasını artır (row, pulldown, face pull).` });
-    else if (r < 0.7) insights.push({ type: "warn", title: "Çekme / İtme dengesizliği", text: `Çekme hacmin itmenin ${(1 / r).toFixed(1)} katı. Göğüs ve triceps hacmini artırabilirsin.` });
-  } else if (push > 0 && pull === 0) {
-    insights.push({ type: "danger", title: "Sırt hiç çalışılmamış", text: "Sadece itme hareketleri yapılmış. Omuzun öne kapanmasını önlemek için mutlaka sırt hareketi ekle." });
-  }
-  const fd = week.vol.front_delt, rd = week.vol.rear_delt;
-  if (fd > 6 && fd > rd * 2.2) {
-    insights.push({ type: "warn", title: "Ön omuz arka omuza göre baskın", text: `Ön omuz ${fmt(fd)} set, arka omuz ${fmt(rd)} set. Face pull veya reverse fly ekleyerek dengele.` });
-  }
-  const q = week.vol.quads, h = week.vol.hamstrings;
-  if (q > 6 && q > h * 1.7) {
-    insights.push({ type: "warn", title: "Ön bacak / arka bacak dengesizliği", text: `Quad ${fmt(q)} set, hamstring ${fmt(h)} set. Diz sağlığı için RDL veya leg curl ekle.` });
-  }
-  const upper = sum(["chest", "lats", "upper_back", "front_delt", "side_delt", "biceps", "triceps"]);
-  const legs = sum(["quads", "hamstrings", "glutes", "calves"]);
-  if (upper > 20 && legs < upper * 0.35) {
-    insights.push({ type: "warn", title: "Bacak günü atlanıyor", text: `Üst vücut ${fmt(upper)} set, bacak sadece ${fmt(legs)} set. Haftada en az 1-2 bacak antrenmanı planla.` });
+  // Denge kontrolleri (plan analizinde de aynı kurallar kullanılır)
+  insights.push(...balanceInsights(week.vol, "done"));
+
+  // Plana uyum: plan en az bir haftalıksa, planlanan ile yapılanı karşılaştır
+  const prog = typeof state !== "undefined" && state.program;
+  if (prog && typeof planVolume === "function" && prog.days.some((d) => d.exercises.length) && dateToMs(prog.created) <= now - 6 * DAY) {
+    const pv = planVolume(prog, custom).vol;
+    const planned = prog.days.reduce((a, d) => a + d.exercises.reduce((b, e) => b + e.sets, 0), 0);
+    const doneSets = workouts.filter((w) => dateToMs(w.date) > now - 7 * DAY).reduce((a, w) => a + w.sets.length, 0);
+    const pct = Math.round(Math.min(1.5, doneSets / planned) * 100);
+    const skipped = Object.keys(MUSCLES).filter((m) => pv[m] >= 4 && week.vol[m] === 0);
+    insights.push({
+      type: pct >= 80 ? "good" : pct >= 50 ? "info" : "warn",
+      title: `Plana uyum %${pct}`,
+      text: `Bu hafta planındaki ${planned} setin ${doneSets} tanesini yaptın.` +
+        (skipped.length ? ` Planında olup hiç yapılmayan: ${skipped.map((m) => MUSCLES[m].name).join(", ")}.` : ""),
+    });
   }
 
   // Toparlanma: son 48 saatte yoğun çalışan kaslar
@@ -201,6 +195,35 @@ function analyze(state) {
   const order = { danger: 0, warn: 1, info: 2, good: 3 };
   insights.sort((a, b) => order[a.type] - order[b.type]);
   return { statuses, week, insights, score: Math.max(0, score) };
+}
+
+// Kas grupları arası denge kuralları. ctx: "done" (yapılan) veya "plan" (planlanan)
+// fix: dengeyi düzeltmek için hacim eklenmesi gereken kaslar
+function balanceInsights(vol, ctx = "done") {
+  const out = [];
+  const verb = ctx === "plan" ? "planlanmış" : "yapılmış";
+  const sum = (ms) => ms.reduce((a, m) => a + vol[m], 0);
+  const push = sum(["chest", "front_delt", "triceps"]);
+  const pull = sum(["lats", "upper_back", "rear_delt", "biceps"]);
+  if (push > 0 && pull > 0) {
+    const r = push / pull;
+    if (r > 1.3) out.push({ type: "warn", title: "İtme / Çekme dengesizliği", fix: ["upper_back", "lats", "rear_delt"], text: `İtme hacmi çekmenin ${r.toFixed(1)} katı. Omuz sağlığı ve duruş için sırt hacmini artır (row, pulldown, face pull).` });
+    else if (r < 0.7) out.push({ type: "warn", title: "Çekme / İtme dengesizliği", fix: ["chest", "triceps"], text: `Çekme hacmi itmenin ${(1 / r).toFixed(1)} katı. Göğüs ve triceps hacmini artır.` });
+  } else if (push > 0 && pull === 0) {
+    out.push({ type: "danger", title: "Sırt hiç yok", fix: ["upper_back", "lats"], text: `Sadece itme hareketleri ${verb}. Omzun öne kapanmaması için mutlaka sırt hareketi ekle.` });
+  } else if (pull > 0 && push === 0) {
+    out.push({ type: "warn", title: "İtme hareketi yok", fix: ["chest", "front_delt"], text: `Sadece çekme hareketleri ${verb}. Göğüs / omuz itme hareketi ekle.` });
+  }
+  const fd = vol.front_delt, rd = vol.rear_delt;
+  if (fd > 6 && fd > rd * 2.2) out.push({ type: "warn", title: "Ön omuz arka omuza göre baskın", fix: ["rear_delt"], text: `Ön omuz ${fmt(fd)} set, arka omuz ${fmt(rd)} set. Face pull veya reverse fly ile dengele.` });
+  const q = vol.quads, h = vol.hamstrings;
+  if (q > 6 && q > h * 1.7) out.push({ type: "warn", title: "Ön bacak / arka bacak dengesizliği", fix: ["hamstrings"], text: `Quad ${fmt(q)} set, hamstring ${fmt(h)} set. Diz sağlığı için RDL veya leg curl ekle.` });
+  const upper = sum(["chest", "lats", "upper_back", "front_delt", "side_delt", "biceps", "triceps"]);
+  const legs = sum(["quads", "hamstrings", "glutes", "calves"]);
+  if (upper > 20 && legs < upper * 0.35) out.push({ type: "warn", title: "Bacak ihmal ediliyor", fix: ["quads", "hamstrings", "glutes"], text: `Üst vücut ${fmt(upper)} set, bacak sadece ${fmt(legs)} set. Haftada en az 1-2 bacak günü olmalı.` });
+  const ab = vol.abs + vol.obliques;
+  if (upper + legs > 30 && ab === 0) out.push({ type: "info", title: "Karın / core yok", fix: ["abs"], text: "Core çalışması duruşu ve ağır kaldırışlardaki dengeyi destekler. Haftada birkaç set karın ekle." });
+  return out;
 }
 
 function suggest(m) {

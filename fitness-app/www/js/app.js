@@ -11,6 +11,7 @@ const defaultState = () => ({
 });
 
 let state = load();
+if (state.program && !state.program.mode) state.program.mode = "auto"; // eski kayıtlar
 function load() {
   try {
     const raw = localStorage.getItem(STORE_KEY);
@@ -445,6 +446,7 @@ $("#saveProfile").onclick = () => {
 };
 $("#redoWizard").onclick = () => openWizard();
 $("#regenProgram").onclick = () => {
+  if (state.program?.mode === "manual" && !confirm("Kendi planın silinip otomatik plan oluşturulacak. Emin misin?")) return;
   state.program = generateProgram(state.profile, state.customExercises);
   save(); toast("Program yeniden oluşturuldu"); $(`#tabs button[data-tab="plan"]`).click();
 };
@@ -524,51 +526,7 @@ function nextDayIndex() {
   const doneDates = new Set(state.workouts.filter((w) => w.date >= prog.created && w.date < todayStr()).map((w) => w.date));
   return doneDates.size % prog.days.length;
 }
-function renderPlan() {
-  const p = state.profile, prog = state.program;
-  $("#greet").textContent = p.name ? `Merhaba ${p.name} 👋` : "";
-  if (!prog) { $("#planBody").innerHTML = `<div class="card"><p>Henüz programın yok.</p><button class="btn primary" onclick="openWizard()">Soruları yanıtla</button></div>`; return; }
-  const done = weekWorkoutDays(), next = nextDayIndex();
-  const t = targets(), d = dayNut();
-  const pg = d.protein.reduce((a, x) => a + x.g, 0);
-  const todayDone = state.workouts.some((w) => w.date === todayStr());
-  const nextDay = prog.days[next];
-  $("#planBody").innerHTML = `
-    <div class="hello">
-      <h1>${timeGreeting()}${p.name ? ", " + esc(p.name) : ""}! 👋</h1>
-      <p class="muted">${todayDone ? "Bugünkü antrenmanını yaptın, harikasın. Şimdi dinlenme ve beslenme zamanı." : `Sıradaki antrenmanın: <b style="color:var(--text)">${esc(nextDay.name)}</b> · ${nextDay.exercises.length} hareket`}</p>
-    </div>
-    <div class="stat-row">
-      <div class="stat big"><b>${done}/${p.days}</b><span>Bu hafta antrenman</span><div class="mini"><div style="width:${Math.min(100, done / p.days * 100)}%;background:var(--accent)"></div></div></div>
-      <div class="stat big"><b>${pg}/${t.protein} g</b><span>Bugün protein</span><div class="mini"><div style="width:${Math.min(100, pg / t.protein * 100)}%;background:#4ade80"></div></div></div>
-      ${t.creatine ? `<div class="stat big"><b>${d.creatine}/${t.creatine} g</b><span>Bugün kreatin</span><div class="mini"><div style="width:${Math.min(100, d.creatine / t.creatine * 100)}%;background:#60a5fa"></div></div></div>` : ""}
-    </div>
-    <div class="card">
-      <h2>${esc(prog.split)} <span class="muted small">· ${GOALS[goalKey(p.goal)].name} · ${EQUIPMENT[p.equipment]?.name || ""}</span></h2>
-      ${todayDone ? `<div class="insight good"><b>Bugünkü antrenman kaydedildi ✓</b><p>Toparlanmak için protein hedefini tamamla.</p></div>` : ""}
-      ${prog.days.map((day, i) => `
-        <div class="plan-day ${i === next ? "next" : ""}">
-          <div class="plan-head"><b>${i + 1}. Gün · ${esc(day.name)}</b>${i === next ? `<span class="badge">Sıradaki</span>` : ""}</div>
-          ${day.exercises.map((e) => {
-            const last = [...state.workouts].reverse().find((w) => w.exerciseId === e.id);
-            const lastTxt = last ? `Son: ${Math.max(...last.sets.map((s) => s.kg || 0))} kg` : "Yeni";
-            return `<div class="plan-ex">
-              <div><div>${esc(exName(e.id))}</div><div class="muted small">${e.sets} set × ${e.reps} · ${lastTxt}</div></div>
-              <button class="btn small-btn" data-planex="${e.id}" data-sets="${e.sets}" data-reps="${e.reps}">Kaydet</button>
-            </div>`;
-          }).join("")}
-        </div>`).join("")}
-      <p class="muted small">İpucu: Tüm setlerde tekrar aralığının üst sınırına ulaşınca bir sonraki antrenmanda ağırlığı 2.5 kg (küçük kaslarda 1-2 kg) artır.</p>
-    </div>`;
-}
-$("#planBody").addEventListener("click", (e) => {
-  const b = e.target.closest("[data-planex]");
-  if (!b) return;
-  $(`#tabs button[data-tab="workout"]`).click();
-  $("#wDate").value = todayStr(); renderDayLog();
-  selectExercise(b.dataset.planex, { sets: +b.dataset.sets, reps: b.dataset.reps });
-  $("#setEditor").scrollIntoView({ behavior: "smooth", block: "center" });
-});
+// renderPlan, plan düzenleyici ve plan kontrolü: planner.js
 
 // ---------- Render ----------
 function render(tab) {
@@ -590,4 +548,5 @@ const startBtn = $(`#tabs button[data-tab="${startTab}"]`);
 if (startBtn) startBtn.click(); else render("workout");
 renderAll();
 initWizard();
+initPlanner();
 if (!state.profile.onboarded) openWizard();

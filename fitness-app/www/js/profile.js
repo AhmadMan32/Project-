@@ -23,7 +23,12 @@ const EQUIPMENT = {
 function muscleTarget(m, profile = {}) {
   const base = MUSCLES[m];
   const scale = (LEVELS[profile.level] || LEVELS.intermediate).scale;
-  let min = Math.max(2, Math.round(base.min * scale));
+  // Haftalık süre bütçesi: 4 gün × 60 dk (~96 set) tam hedefe yeter; daha az zamanda alt sınır orantılı düşer
+  const budget = ((+profile.days || 4) * (+profile.sessionMin || 60)) / 2.5;
+  const timeScale = Math.min(1, Math.max(0.6, budget / 96));
+  // Küçük yardımcı kaslar (ön kol, trapez, bel, yan karın, iç bacak) çoğunlukla bileşik hareketlerden çalışır;
+  // haftalık zaman kısıtlıysa zorunlu hedef sayılmaz
+  let min = base.minor && timeScale < 0.8 ? 0 : Math.max(2, Math.round(base.min * scale * timeScale));
   let max = Math.round(base.max * scale);
   if ((profile.priorities || []).includes(m)) { min += 3; max += 4; }
   return { min, max };
@@ -65,12 +70,12 @@ const PER_SESSION = { 30: 4, 45: 5, 60: 6, 90: 8 };
 const PREFERRED = {
   chest: ["bench", "incline_db", "db_bench", "incline_bench", "chest_press", "cable_fly", "pec_deck", "db_fly", "dips_chest", "pushup"],
   front_delt: ["ohp", "db_shoulder", "shoulder_machine", "arnold", "front_raise", "pushup", "pike_pushup"],
-  side_delt: ["lateral_raise", "cable_lateral", "upright_row", "arnold"],
+  side_delt: ["lateral_raise", "cable_lateral", "upright_row", "arnold", "bag_lateral"],
   rear_delt: ["face_pull", "reverse_pec", "rear_fly", "prone_yt"],
-  biceps: ["bb_curl", "incline_curl", "db_curl", "hammer", "cable_curl", "preacher", "concentration"],
+  biceps: ["bb_curl", "incline_curl", "db_curl", "hammer", "cable_curl", "preacher", "concentration", "bag_curl"],
   triceps: ["rope_pushdown", "oh_ext", "close_bench", "skullcrusher", "pushdown", "kickback", "dips_tri", "diamond_pushup"],
-  forearm: ["hammer", "wrist_curl", "farmer"],
-  traps: ["shrug", "farmer", "upright_row"],
+  forearm: ["hammer", "wrist_curl", "farmer", "towel_hang"],
+  traps: ["shrug", "farmer", "upright_row", "bag_shrug"],
   lats: ["pullup", "lat_pulldown", "db_row", "close_pulldown", "pullover", "chinup", "door_row"],
   upper_back: ["barbell_row", "cable_row", "db_row", "machine_row", "tbar_row", "rear_fly", "door_row", "prone_yt"],
   lower_back: ["hyperext", "rdl", "good_morning", "glute_bridge", "superman"],
@@ -117,7 +122,9 @@ function generateProgram(profile, custom = []) {
     });
     return { key, name: tpl.name, exercises };
   });
-  return { split: split.name, days, created: todayStr() };
+  const prog = { mode: "auto", split: split.name, days, created: todayStr() };
+  balanceProgram(prog, profile, custom); // planner.js: plan kontrolünden geçene kadar dengele
+  return prog;
 }
 
 function calorieTarget(p) {
@@ -152,6 +159,12 @@ const WIZARD_STEPS = [
     read: (p) => (!!p.days && !!p.sessionMin) || "Gün ve süre seç" },
   { id: "equipment", title: () => "Nerede antrenman yapıyorsun?", sub: (p) => `Haftada ${p.days} gün, ${p.sessionMin} dakika, not ettim. Sana sadece yapabileceğin hareketleri önereceğim.`,
     render: (p) => cards("equipment", EQUIPMENT, p.equipment), read: (p) => !!p.equipment || "Bir seçenek seç" },
+  { id: "planMode", title: (p) => `${p.name}, programını nasıl oluşturalım?`,
+    sub: () => "İki yol var. İstediğin zaman Program sekmesinden değiştirebilirsin.",
+    render: (p) => cards("planMode", {
+      auto: { name: "Benim için oluştur", icon: "🤖", desc: "Cevaplarına göre dengeli bir program hazırlarım. İstersen sonra düzenlersin." },
+      manual: { name: "Kendim seçeceğim", icon: "✍️", desc: "Hareketleri sen seçersin. Ben eksik, fazla ve riskli noktaları anında gösteririm." },
+    }, p.planMode), read: (p) => !!p.planMode || "Bir seçenek seç" },
   { id: "priorities", title: (p) => `${p.name}, özellikle geliştirmek istediğin bir bölge var mı?`, sub: () => "En fazla 3 tane seç, bu kaslara daha fazla hacim vereceğim. İstersen boş geçebilirsin.",
     render: (p) => `<div class="chips">${Object.entries(MUSCLES).map(([k, m]) => `<button class="chip ${(p.priorities || []).includes(k) ? "on" : ""}" data-multi="priorities" data-val="${k}">${m.name}</button>`).join("")}</div>`,
     read: () => true },
@@ -166,7 +179,7 @@ const WIZARD_STEPS = [
       start: { name: "Başlamak istiyorum", icon: "🚀", desc: "İlk hafta yükleme (0.3 g/kg), sonra 5 g" },
       no: { name: "Hayır", icon: "➖", desc: "Kreatin takibi gizlenir" },
     }, p.creatine), read: (p) => !!p.creatine || "Bir seçenek seç" },
-  { id: "summary", title: (p) => `${p.name}, planın hazır! 🎉`, sub: (p) => `${GOALS[p.goal].name} hedefin için cevaplarına göre hazırladığım plan:`, render: (p) => summaryHtml(p), read: () => true },
+  { id: "summary", title: (p) => p.planMode === "manual" ? `${p.name}, her şey hazır! 🎉` : `${p.name}, planın hazır! 🎉`, sub: (p) => p.planMode === "manual" ? `${GOALS[p.goal].name} hedefin için hedeflerini belirledim:` : `${GOALS[p.goal].name} hedefin için cevaplarına göre hazırladığım plan:`, render: (p) => summaryHtml(p), read: () => true },
 ];
 
 // "ali veli" -> "Ali Veli" (Türkçe büyük harf kurallarıyla: i -> İ)
@@ -183,15 +196,23 @@ function cards(field, opts, cur, compact) {
 }
 
 function summaryHtml(p) {
-  const prog = generateProgram(p, state.customExercises);
   const t = nutritionTargets(p);
   const kcal = calorieTarget(p);
-  return `<div class="sum-grid">
+  const statsHtml = `<div class="sum-grid">
       <div class="stat"><b>${t.protein} g</b><span>Günlük protein</span></div>
       ${p.creatine !== "no" ? `<div class="stat"><b>${t.creatine} g</b><span>Kreatin</span></div>` : ""}
       ${kcal ? `<div class="stat"><b>${kcal}</b><span>Kalori (kcal)</span></div>` : ""}
       <div class="stat"><b>${(t.water / 1000).toFixed(1)} L</b><span>Su</span></div>
-    </div>
+    </div>`;
+  if (p.planMode === "manual") {
+    const big = ["chest", "lats", "upper_back", "quads", "hamstrings", "glutes", "side_delt"];
+    return statsHtml + `<h3>Programını sen kuracaksın ✍️</h3>
+      <p class="muted small">Program sekmesinde ${p.days} günlük boş bir plan seni bekliyor. Her güne hareket ekledikçe kas haritası ve uyarılar güncellenecek.
+      Seviyene göre haftalık set hedeflerin (örnekler):</p>
+      ${big.map((m) => `<div class="kv"><span>${MUSCLES[m].name}${(p.priorities || []).includes(m) ? " ⭐" : ""}</span><b>${muscleTarget(m, p).min}-${muscleTarget(m, p).max} set</b></div>`).join("")}`;
+  }
+  const prog = generateProgram(p, state.customExercises);
+  return statsHtml + `
     <h3>${prog.split}</h3>
     ${prog.days.map((d, i) => `<div class="sum-day"><b>${i + 1}. Gün · ${d.name}</b><span class="muted small">${d.exercises.map((e) => exName(e.id)).join(", ")}</span></div>`).join("")}`;
 }
@@ -230,12 +251,18 @@ function finishWizard() {
   p.proteinOverride = state.profile.proteinOverride || "";
   state.profile = p;
   if (p.weight) state.bodyweight[todayStr()] ||= p.weight;
-  state.program = generateProgram(p, state.customExercises);
+  const prev = state.program;
+  if (p.planMode === "manual") {
+    // önceki kendi planını koru; yoksa seçilen gün sayısında boş plan aç
+    state.program = prev?.mode === "manual" && prev.days.some((d) => d.exercises.length) ? prev : emptyProgram(p.days);
+  } else {
+    state.program = generateProgram(p, state.customExercises);
+  }
   save();
   $("#wizard").classList.add("hidden");
   renderAll();
   $(`#tabs button[data-tab="plan"]`).click();
-  toast(`Hoş geldin ${p.name}! Programın hazır, hadi başlayalım 💪`);
+  toast(p.planMode === "manual" ? `Hoş geldin ${p.name}! Şimdi programını kur, ben kontrol edeceğim ✍️` : `Hoş geldin ${p.name}! Programın hazır, hadi başlayalım 💪`);
 }
 
 function initWizard() {

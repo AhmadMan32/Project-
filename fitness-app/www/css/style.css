@@ -161,3 +161,29 @@ body { padding-bottom: env(safe-area-inset-bottom); }
 .hello { margin: 4px 0 14px; }
 .hello h1 { font-size: 24px; margin: 0 0 4px; }
 .hello p { margin: 0; }
+
+/* ---- Plan modu & düzenleyici ---- */
+.seg { display: flex; background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 4px; gap: 4px; margin-bottom: 6px; }
+.seg button { flex: 1; background: none; border: 0; color: var(--muted); padding: 10px 6px; border-radius: 9px; font-size: 14px; font-weight: 600; cursor: pointer; }
+.seg button.on { background: var(--accent2); color: #06210f; }
+.mode-desc { margin: 4px 2px 14px; }
+.plan-grid { align-items: start; }
+.plan-head { gap: 8px; flex-wrap: wrap; }
+.plan-head b, .plan-head .day-name { flex: 1; }
+.day-name { margin: 0; padding: 6px 8px; font-weight: 700; font-size: 14px; min-width: 120px; }
+.plan-ex .grow { flex: 1; min-width: 0; }
+.stepper { display: flex; align-items: center; gap: 6px; margin-top: 6px; font-size: 13px; }
+.stepper button:not(.icon-btn) { width: 30px; height: 30px; border-radius: 8px; border: 1px solid var(--line); background: var(--card2); color: var(--text); font-size: 16px; cursor: pointer; }
+.stepper .reps-in { width: 74px; margin: 0; padding: 5px 8px; font-size: 13px; }
+.score-chip { float: right; font-size: 13px; background: var(--card2); padding: 4px 10px; border-radius: 99px; }
+.small-map .body-svg { max-width: 160px; }
+.plan-insights { margin-top: 12px; }
+.act-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.btn.act { padding: 6px 10px; font-size: 12px; background: var(--card); white-space: normal; text-align: left; }
+.tag-good { display: inline-block; font-size: 11px; color: var(--accent); margin-left: 4px; }
+.tag-bad { display: inline-block; font-size: 11px; color: var(--danger); margin-left: 4px; }
+.sheet { position: fixed; inset: 0; background: rgba(0,0,0,.6); z-index: 15; display: flex; align-items: flex-end; justify-content: center; }
+.sheet-box { background: var(--bg); border: 1px solid var(--line); border-radius: 18px 18px 0 0; width: 100%; max-width: 640px; max-height: 88vh; display: flex; flex-direction: column; padding: 16px 16px max(16px, env(safe-area-inset-bottom)); }
+.sheet-box .ex-list { max-height: none; flex: 1; }
+.sheet-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.sheet-head h2 { margin: 0; font-size: 16px; }

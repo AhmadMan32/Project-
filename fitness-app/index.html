@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>FitAI Koç</title>
+  <meta name="theme-color" content="#0f1115" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">🏋️ FitAI <span>Koç</span></div>
+    <div class="score-pill" id="scorePill" title="Haftalık denge skoru">Denge: –</div>
+  </header>
+
+  <nav class="tabs" id="tabs">
+    <button data-tab="workout" class="active">🏋️ Antrenman</button>
+    <button data-tab="analysis">🧠 Analiz</button>
+    <button data-tab="progress">📈 Gelişim</button>
+    <button data-tab="nutrition">🥩 Beslenme</button>
+    <button data-tab="settings">⚙️ Ayarlar</button>
+  </nav>
+
+  <main>
+    <!-- ANTRENMAN -->
+    <section id="tab-workout" class="tab active">
+      <div class="grid two">
+        <div class="card">
+          <h2>Hareket Ekle</h2>
+          <label>Tarih <input type="date" id="wDate" /></label>
+          <input type="search" id="exSearch" placeholder="Hareket ara… (örn. bench, squat, curl)" />
+          <div class="chips" id="catChips"></div>
+          <div class="ex-list" id="exList"></div>
+        </div>
+
+        <div class="card">
+          <h2 id="selExTitle">Hareket seç</h2>
+          <div id="selExMuscles" class="muted small"></div>
+          <div id="setEditor" class="hidden">
+            <table class="sets">
+              <thead><tr><th>#</th><th>Kilo (kg)</th><th>Tekrar</th><th></th></tr></thead>
+              <tbody id="setRows"></tbody>
+            </table>
+            <div class="row">
+              <button class="btn ghost" id="addSet">+ Set</button>
+              <button class="btn ghost" id="copySet">Son seti kopyala</button>
+            </div>
+            <div id="lastTime" class="muted small"></div>
+            <button class="btn primary full" id="saveEx">Kaydet</button>
+          </div>
+          <hr />
+          <h3>Bu günün antrenmanı</h3>
+          <div id="dayLog"></div>
+        </div>
+      </div>
+      <div class="card">
+        <h2>Geçmiş</h2>
+        <div id="history"></div>
+      </div>
+    </section>
+
+    <!-- ANALİZ -->
+    <section id="tab-analysis" class="tab">
+      <div class="grid two">
+        <div class="card">
+          <h2>Kas Haritası <span class="muted small">(son 7 gün)</span></h2>
+          <div class="body-wrap" id="bodyWrap"></div>
+          <div class="legend">
+            <span><i style="background:var(--m-none)"></i>Çalışmadı</span>
+            <span><i style="background:var(--m-low)"></i>Yetersiz</span>
+            <span><i style="background:var(--m-ok)"></i>İdeal</span>
+            <span><i style="background:var(--m-high)"></i>Fazla</span>
+          </div>
+          <div id="muscleInfo" class="muscle-info muted small">Detay için bir kasa dokun.</div>
+        </div>
+        <div class="card">
+          <h2>AI Koç Kararları</h2>
+          <div id="insights"></div>
+          <hr />
+          <h3>Claude ile detaylı değerlendirme</h3>
+          <p class="muted small">Ayarlar'a Anthropic API anahtarını girersen, verilerin Claude'a gönderilip kişisel program önerisi alınır.</p>
+          <button class="btn primary" id="askClaude">Claude'a sor</button>
+          <div id="claudeOut" class="claude-out"></div>
+        </div>
+      </div>
+      <div class="card">
+        <h2>Haftalık Set Dağılımı</h2>
+        <div id="volBars"></div>
+      </div>
+    </section>
+
+    <!-- GELİŞİM -->
+    <section id="tab-progress" class="tab">
+      <div class="card">
+        <h2>Hareket Gelişimi</h2>
+        <select id="progEx"></select>
+        <div class="row small muted">
+          <label><input type="radio" name="metric" value="best1rm" checked /> Tahmini 1RM</label>
+          <label><input type="radio" name="metric" value="top" /> En ağır set</label>
+          <label><input type="radio" name="metric" value="volume" /> Toplam hacim</label>
+        </div>
+        <div id="chart" class="chart"></div>
+        <div id="prStats" class="stats"></div>
+      </div>
+      <div class="card">
+        <h2>Kişisel Rekorlar (PR)</h2>
+        <div id="prTable"></div>
+      </div>
+      <div class="card">
+        <h2>Vücut Ağırlığı</h2>
+        <div class="row">
+          <input type="number" step="0.1" id="bwInput" placeholder="kg" />
+          <button class="btn primary" id="bwSave">Bugünü kaydet</button>
+        </div>
+        <div id="bwChart" class="chart"></div>
+      </div>
+    </section>
+
+    <!-- BESLENME -->
+    <section id="tab-nutrition" class="tab">
+      <div class="grid three">
+        <div class="card ring-card">
+          <h2>Protein</h2>
+          <div id="ringProtein"></div>
+          <div class="chips" id="foodChips"></div>
+          <div class="row">
+            <input type="number" id="customProtein" placeholder="gram" />
+            <button class="btn primary" id="addProtein">Ekle</button>
+          </div>
+          <div id="proteinLog" class="small"></div>
+        </div>
+        <div class="card ring-card">
+          <h2>Kreatin</h2>
+          <div id="ringCreatine"></div>
+          <div class="row">
+            <button class="btn" data-cr="3">+3 g</button>
+            <button class="btn" data-cr="5">+5 g</button>
+            <button class="btn ghost" id="resetCr">Sıfırla</button>
+          </div>
+          <div id="crStreak" class="small muted"></div>
+        </div>
+        <div class="card ring-card">
+          <h2>Su</h2>
+          <div id="ringWater"></div>
+          <div class="row">
+            <button class="btn" data-water="250">+250 ml</button>
+            <button class="btn" data-water="500">+500 ml</button>
+            <button class="btn ghost" id="resetWater">Sıfırla</button>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <h2>Son 7 Gün</h2>
+        <div id="nutHistory"></div>
+      </div>
+    </section>
+
+    <!-- AYARLAR -->
+    <section id="tab-settings" class="tab">
+      <div class="grid two">
+        <div class="card">
+          <h2>Profil & Hedefler</h2>
+          <label>Kilo (kg) <input type="number" step="0.1" id="pWeight" /></label>
+          <label>Hedef
+            <select id="pGoal">
+              <option value="bulk">Kas kazanımı (bulk) – 2.0 g/kg</option>
+              <option value="maintain">Koruma – 1.8 g/kg</option>
+              <option value="cut">Yağ yakımı (cut) – 2.2 g/kg</option>
+            </select>
+          </label>
+          <label class="check"><input type="checkbox" id="pLoading" /> Kreatin yükleme fazı (0.3 g/kg, 5-7 gün)</label>
+          <label>Manuel protein hedefi (boş = otomatik) <input type="number" id="pProtein" /></label>
+          <div id="targetsPreview" class="muted small"></div>
+          <button class="btn primary" id="saveProfile">Kaydet</button>
+        </div>
+        <div class="card">
+          <h2>Özel Hareket Ekle</h2>
+          <label>Ad <input id="cxName" placeholder="örn. Landmine Press" /></label>
+          <div class="muted small">Birincil kaslar</div>
+          <div class="chips" id="cxPrimary"></div>
+          <div class="muted small">İkincil kaslar</div>
+          <div class="chips" id="cxSecondary"></div>
+          <button class="btn primary" id="cxSave">Hareketi ekle</button>
+        </div>
+        <div class="card">
+          <h2>Claude API</h2>
+          <p class="muted small">Anahtar sadece bu tarayıcıda (localStorage) saklanır ve doğrudan api.anthropic.com'a gönderilir.</p>
+          <input type="password" id="apiKey" placeholder="sk-ant-..." />
+          <button class="btn primary" id="saveKey">Kaydet</button>
+        </div>
+        <div class="card">
+          <h2>Veri</h2>
+          <div class="row wrap">
+            <button class="btn" id="demo">Örnek veri yükle</button>
+            <button class="btn" id="export">Dışa aktar (JSON)</button>
+            <label class="btn">İçe aktar <input type="file" id="import" accept=".json" hidden /></label>
+            <button class="btn danger" id="reset">Tümünü sil</button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div id="toast" class="toast"></div>
+
+  <script src="js/data.js"></script>
+  <script src="js/body.js"></script>
+  <script src="js/analysis.js"></script>
+  <script src="js/coach.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

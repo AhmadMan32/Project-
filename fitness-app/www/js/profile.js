@@ -1,9 +1,9 @@
 // Kişiselleştirme: başlangıç soruları, kişisel hedefler ve otomatik program
 const GOALS = {
-  muscle:   { name: "Kas kazanmak", icon: "💪", desc: "Hacim ve kas kütlesi", protein: 2.0, kcal: 300, reps: "8-12", sets: 3 },
-  fat:      { name: "Yağ yakmak", icon: "🔥", desc: "Kasları koruyup yağ kaybetmek", protein: 2.2, kcal: -450, reps: "10-15", sets: 3 },
-  strength: { name: "Güçlenmek", icon: "🏋️", desc: "Daha ağır kaldırmak", protein: 1.8, kcal: 200, reps: "4-6", sets: 4 },
-  fit:      { name: "Formda kalmak", icon: "🏃", desc: "Genel sağlık ve kondisyon", protein: 1.6, kcal: 0, reps: "10-12", sets: 3 },
+  muscle:   { name: "Kas kazanmak", icon: "💪", desc: "Hacim ve kas kütlesi", protein: 2.0, kcal: 300, reps: "8-12", sets: 3 , cheer: "Kas kazanmak için doğru yerdesin" },
+  fat:      { name: "Yağ yakmak", icon: "🔥", desc: "Kasları koruyup yağ kaybetmek", protein: 2.2, kcal: -450, reps: "10-15", sets: 3 , cheer: "Yağ yakarken kaslarını koruyacağız" },
+  strength: { name: "Güçlenmek", icon: "🏋️", desc: "Daha ağır kaldırmak", protein: 1.8, kcal: 200, reps: "4-6", sets: 4 , cheer: "Ağırlıkları birlikte artıracağız" },
+  fit:      { name: "Formda kalmak", icon: "🏃", desc: "Genel sağlık ve kondisyon", protein: 1.6, kcal: 0, reps: "10-12", sets: 3 , cheer: "Sağlıklı ve formda kalman için plan yapacağız" },
 };
 const LEGACY_GOAL = { bulk: "muscle", cut: "fat", maintain: "fit" };
 const goalKey = (g) => LEGACY_GOAL[g] || (GOALS[g] ? g : "muscle");
@@ -130,44 +130,50 @@ function calorieTarget(p) {
 
 // ---------- Başlangıç sihirbazı ----------
 const WIZARD_STEPS = [
-  { id: "name", title: "Merhaba! 👋", sub: "Sana özel bir program hazırlamak için birkaç soru soracağım. Adın ne?",
-    render: (p) => `<input id="wz_name" placeholder="Adın" value="${esc(p.name || "")}" autofocus />`,
-    read: (p) => { p.name = $("#wz_name").value.trim(); return !!p.name || "Adını yaz"; } },
-  { id: "body1", title: "Seni biraz tanıyalım", sub: "Kalori ve su hedefini hesaplamak için.",
+  { id: "name", title: () => "Merhaba! 👋", sub: () => "Ben senin FitAI koçunum. Sana özel bir program hazırlamak için birkaç soru soracağım. Önce tanışalım: adın ne?",
+    render: (p) => `<input id="wz_name" placeholder="Adını yaz" autocomplete="given-name" value="${esc(p.name || "")}" autofocus />`,
+    read: (p) => { p.name = niceName($("#wz_name").value); return !!p.name || "Sana nasıl hitap edeyim? Adını yaz"; } },
+  { id: "body1", title: (p) => `Memnun oldum ${p.name}! 🤝`, sub: () => "Seni biraz tanıyalım. Kalori ve su hedefini hesaplamak için cinsiyetin ve yaşın lazım.",
     render: (p) => `${cards("sex", { m: { name: "Erkek", icon: "♂️" }, f: { name: "Kadın", icon: "♀️" } }, p.sex, true)}
       <label>Yaş <input type="number" id="wz_age" inputmode="numeric" value="${p.age || ""}" placeholder="örn. 25" /></label>`,
     read: (p) => { p.age = +$("#wz_age").value; return (!!p.sex && p.age >= 12 && p.age < 100) || "Cinsiyet ve yaşını gir"; } },
-  { id: "body2", title: "Boy ve kilo", sub: "Protein hedefin kilona göre belirlenir.",
+  { id: "body2", title: (p) => `${p.name}, boyun ve kilon kaç?`, sub: (p) => `${p.age} yaşındasın, güzel. Protein hedefini kilona göre belirleyeceğim.`,
     render: (p) => `<label>Boy (cm) <input type="number" id="wz_h" inputmode="numeric" value="${p.height || ""}" placeholder="örn. 178" /></label>
       <label>Kilo (kg) <input type="number" step="0.1" id="wz_w" inputmode="decimal" value="${p.weight || ""}" placeholder="örn. 75" /></label>`,
     read: (p) => { p.height = +$("#wz_h").value; p.weight = +$("#wz_w").value; return (p.height > 100 && p.weight > 30) || "Boy ve kilonu gir"; } },
-  { id: "goal", title: "Ana hedefin ne?", sub: "Set, tekrar ve beslenme hedefleri buna göre ayarlanır.",
+  { id: "goal", title: (p) => `${p.name}, ana hedefin ne?`, sub: () => "Set, tekrar ve beslenme hedeflerini buna göre ayarlayacağım.",
     render: (p) => cards("goal", GOALS, goalKey(p.goal)), read: (p) => !!p.goal || "Bir hedef seç" },
-  { id: "level", title: "Ne kadar süredir spor yapıyorsun?", sub: "Antrenman hacmini seviyene göre ayarlarım.",
+  { id: "level", title: () => "Ne kadar süredir spor yapıyorsun?", sub: (p) => `${GOALS[p.goal].cheer}, ${p.name}. Şimdi antrenman hacmini seviyene göre ayarlayalım.`,
     render: (p) => cards("level", LEVELS, p.level), read: (p) => !!p.level || "Seviyeni seç" },
-  { id: "days", title: "Haftada kaç gün antrenman yapabilirsin?", sub: "Gün sayısına göre program bölünmesi seçilir.",
+  { id: "days", title: (p) => `${p.name}, haftada kaç gün ayırabilirsin?`, sub: (p) => p.level === "beginner" ? "Yeni başlıyorsan 3 gün harika bir başlangıç. Programın bölünmesini buna göre seçeceğim." : "Programın bölünmesini gün sayısına göre seçeceğim.",
     render: (p) => `<div class="num-pick">${[2, 3, 4, 5, 6].map((d) => `<button class="opt ${p.days === d ? "on" : ""}" data-set="days" data-val="${d}">${d}</button>`).join("")}</div>
       <div class="muted small" style="margin:14px 0 6px">Bir antrenman ne kadar sürsün?</div>
       <div class="num-pick">${[30, 45, 60, 90].map((d) => `<button class="opt ${p.sessionMin === d ? "on" : ""}" data-set="sessionMin" data-val="${d}">${d} dk</button>`).join("")}</div>`,
     read: (p) => (!!p.days && !!p.sessionMin) || "Gün ve süre seç" },
-  { id: "equipment", title: "Nerede antrenman yapıyorsun?", sub: "Sadece yapabileceğin hareketleri öneririm.",
+  { id: "equipment", title: () => "Nerede antrenman yapıyorsun?", sub: (p) => `Haftada ${p.days} gün, ${p.sessionMin} dakika, not ettim. Sana sadece yapabileceğin hareketleri önereceğim.`,
     render: (p) => cards("equipment", EQUIPMENT, p.equipment), read: (p) => !!p.equipment || "Bir seçenek seç" },
-  { id: "priorities", title: "Özellikle geliştirmek istediğin bölge var mı?", sub: "En fazla 3 tane seç. Bu kaslara daha fazla hacim verilir. (İsteğe bağlı)",
+  { id: "priorities", title: (p) => `${p.name}, özellikle geliştirmek istediğin bir bölge var mı?`, sub: () => "En fazla 3 tane seç, bu kaslara daha fazla hacim vereceğim. İstersen boş geçebilirsin.",
     render: (p) => `<div class="chips">${Object.entries(MUSCLES).map(([k, m]) => `<button class="chip ${(p.priorities || []).includes(k) ? "on" : ""}" data-multi="priorities" data-val="${k}">${m.name}</button>`).join("")}</div>`,
     read: () => true },
-  { id: "injuries", title: "Sakatlık ya da ağrın var mı?", sub: "Seçtiğin bölgeyi zorlayan hareketleri programdan çıkarırım.",
+  { id: "injuries", title: () => "Sakatlık ya da ağrın var mı?", sub: (p) => `${p.name}, seçtiğin bölgeyi zorlayan hareketleri programına koymayacağım.`,
     render: (p) => `<div class="chips">${Object.entries(INJURY_RISK).map(([k, v]) => `<button class="chip ${(p.injuries || []).includes(k) ? "on" : ""}" data-multi="injuries" data-val="${k}">${v.name}</button>`).join("")}
       <button class="chip ${p.injuries && !p.injuries.length ? "on" : ""}" data-none="injuries">Yok</button></div>
       <p class="muted small">Ağrın devam ediyorsa bir doktora veya fizyoterapiste danış.</p>`,
     read: (p) => { p.injuries ||= []; return true; } },
-  { id: "creatine", title: "Kreatin kullanıyor musun?", sub: "Günlük kreatin takibini buna göre ayarlarım.",
+  { id: "creatine", title: () => "Son soru: kreatin kullanıyor musun?", sub: () => "Günlük kreatin takibini buna göre ayarlayacağım.",
     render: (p) => cards("creatine", {
       yes: { name: "Evet, kullanıyorum", icon: "✅", desc: "Günde 5 g takip" },
       start: { name: "Başlamak istiyorum", icon: "🚀", desc: "İlk hafta yükleme (0.3 g/kg), sonra 5 g" },
       no: { name: "Hayır", icon: "➖", desc: "Kreatin takibi gizlenir" },
     }, p.creatine), read: (p) => !!p.creatine || "Bir seçenek seç" },
-  { id: "summary", title: "Planın hazır! 🎉", sub: "Cevaplarına göre hazırladığım plan:", render: (p) => summaryHtml(p), read: () => true },
+  { id: "summary", title: (p) => `${p.name}, planın hazır! 🎉`, sub: (p) => `${GOALS[p.goal].name} hedefin için cevaplarına göre hazırladığım plan:`, render: (p) => summaryHtml(p), read: () => true },
 ];
+
+// "ali veli" -> "Ali Veli" (Türkçe büyük harf kurallarıyla: i -> İ)
+function niceName(v) {
+  return v.trim().replace(/\s+/g, " ").slice(0, 30)
+    .split(" ").map((w) => w.charAt(0).toLocaleUpperCase("tr") + w.slice(1).toLocaleLowerCase("tr")).join(" ");
+}
 
 function cards(field, opts, cur, compact) {
   return `<div class="opt-cards ${compact ? "compact" : ""}">${Object.entries(opts).map(([k, o]) => `
@@ -201,8 +207,8 @@ function renderWizard() {
   const s = WIZARD_STEPS[wz.i];
   $("#wzBar").style.width = ((wz.i + 1) / WIZARD_STEPS.length) * 100 + "%";
   $("#wzStep").textContent = `${wz.i + 1} / ${WIZARD_STEPS.length}`;
-  $("#wzTitle").textContent = s.title.replace("Merhaba!", wz.p.name && wz.i > 0 ? `${wz.p.name},` : "Merhaba!");
-  $("#wzSub").textContent = s.sub;
+  $("#wzTitle").textContent = s.title(wz.p);
+  $("#wzSub").textContent = s.sub(wz.p);
   $("#wzBody").innerHTML = s.render(wz.p);
   $("#wzBack").style.visibility = wz.i ? "visible" : "hidden";
   $("#wzNext").textContent = wz.i === WIZARD_STEPS.length - 1 ? "Başlayalım 🚀" : "Devam";
@@ -229,7 +235,7 @@ function finishWizard() {
   $("#wizard").classList.add("hidden");
   renderAll();
   $(`#tabs button[data-tab="plan"]`).click();
-  toast(`Hoş geldin ${p.name}! Programın hazır 💪`);
+  toast(`Hoş geldin ${p.name}! Programın hazır, hadi başlayalım 💪`);
 }
 
 function initWizard() {

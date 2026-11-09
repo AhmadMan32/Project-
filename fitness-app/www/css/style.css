@@ -158,3 +158,6 @@ body { padding-bottom: env(safe-area-inset-bottom); }
 @media (max-width: 500px) { .greet { display: none; } }
 .stat-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(90px, 1fr)); gap: 10px; margin-bottom: 16px; }
 @media (max-width: 500px) { .stat.big b { font-size: 17px; } .stat.big span { font-size: 11px; } }
+.hello { margin: 4px 0 14px; }
+.hello h1 { font-size: 24px; margin: 0 0 4px; }
+.hello p { margin: 0; }

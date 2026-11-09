@@ -25,6 +25,12 @@ const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
 const uid = () => Math.random().toString(36).slice(2, 10);
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const userName = () => state.profile.name || "";
+const hey = (txt) => (userName() ? `${userName()}, ${txt.charAt(0).toLocaleLowerCase("tr")}${txt.slice(1)}` : txt);
+function timeGreeting() {
+  const h = new Date().getHours();
+  return h < 6 ? "İyi geceler" : h < 12 ? "Günaydın" : h < 18 ? "İyi günler" : "İyi akşamlar";
+}
 const allExercises = () => [...EXERCISES, ...state.customExercises];
 const exName = (id) => (findExercise(id, state.customExercises) || { name: id }).name;
 const fmtDate = (d) => new Date(d + "T12:00:00").toLocaleDateString("tr-TR", { day: "numeric", month: "short", weekday: "short" });
@@ -150,7 +156,7 @@ $("#saveEx").onclick = () => {
   state.workouts.push({ id: uid(), date, exerciseId: selectedEx.id, sets });
   save();
   const newBest = Math.max(...sets.map((s) => e1rm(s.kg, s.reps)));
-  toast(prevBest && newBest > prevBest ? `🏆 Yeni rekor! ~${newBest.toFixed(1)} kg 1RM` : "Kaydedildi ✓");
+  toast(prevBest && newBest > prevBest ? `🏆 Helal ${userName() || "olsun"}! Yeni rekor: ~${newBest.toFixed(1)} kg 1RM` : `Kaydedildi ✓${userName() ? " Devam " + userName() + "!" : ""}`);
   renderDayLog(); renderHistory(); updateScore(); renderPlan();
 };
 
@@ -203,7 +209,7 @@ function renderAnalysis() {
   $("#bodyWrap").innerHTML = buildBodySVG("front", color) + buildBodySVG("back", color);
   if (focusMuscle) showMuscle(focusMuscle);
 
-  $("#insights").innerHTML = r.insights.map((i) => `
+  $("#insights").innerHTML = (userName() ? `<p class="muted small" style="margin-top:0">${esc(userName())}, son 7 günün verilerine göre kararlarım:</p>` : "") + r.insights.map((i) => `
     <div class="insight ${i.type}"><b>${esc(i.title)}</b><p>${esc(i.text)}</p></div>`).join("");
 
   const order = Object.keys(MUSCLES).sort((a, b) => r.week.vol[b] - r.week.vol[a]);
@@ -348,7 +354,9 @@ function renderNutrition() {
   $("#ringProtein").innerHTML = ring(p, t.protein, "Protein", "g", "#4ade80");
   $("#creatineCard").classList.toggle("hidden", state.profile.creatine === "no");
   const kcal = calorieTarget(state.profile);
-  $("#kcalNote").textContent = kcal ? `Günlük kalori hedefin: ~${kcal} kcal (${GOALS[goalKey(state.profile.goal)].name})` : "";
+  const left = Math.max(0, targets().protein - dayNut().protein.reduce((a, x) => a + x.g, 0));
+  $("#kcalNote").textContent = (left ? hey(`Bugün ${left} g protein daha almalısın.`) : hey("Bugünkü protein hedefini tamamladın! 🎉")) +
+    (kcal ? ` Günlük kalori hedefin ~${kcal} kcal.` : "");
   $("#ringCreatine").innerHTML = ring(d.creatine, t.creatine, "Kreatin", "g", "#60a5fa");
   $("#ringWater").innerHTML = ring(+(d.water / 1000).toFixed(2), t.water / 1000, "Su", "L", "#38bdf8");
   $("#foodChips").innerHTML = PROTEIN_FOODS.map((f, i) => `<button class="chip" data-food="${i}">${esc(f.name)} · ${f.g}g</button>`).join("");
@@ -524,7 +532,12 @@ function renderPlan() {
   const t = targets(), d = dayNut();
   const pg = d.protein.reduce((a, x) => a + x.g, 0);
   const todayDone = state.workouts.some((w) => w.date === todayStr());
+  const nextDay = prog.days[next];
   $("#planBody").innerHTML = `
+    <div class="hello">
+      <h1>${timeGreeting()}${p.name ? ", " + esc(p.name) : ""}! 👋</h1>
+      <p class="muted">${todayDone ? "Bugünkü antrenmanını yaptın, harikasın. Şimdi dinlenme ve beslenme zamanı." : `Sıradaki antrenmanın: <b style="color:var(--text)">${esc(nextDay.name)}</b> · ${nextDay.exercises.length} hareket`}</p>
+    </div>
     <div class="stat-row">
       <div class="stat big"><b>${done}/${p.days}</b><span>Bu hafta antrenman</span><div class="mini"><div style="width:${Math.min(100, done / p.days * 100)}%;background:var(--accent)"></div></div></div>
       <div class="stat big"><b>${pg}/${t.protein} g</b><span>Bugün protein</span><div class="mini"><div style="width:${Math.min(100, pg / t.protein * 100)}%;background:#4ade80"></div></div></div>

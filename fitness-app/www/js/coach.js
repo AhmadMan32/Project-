@@ -44,7 +44,7 @@ async function askClaudeCoach(state, result) {
     system:
       "Sen deneyimli bir fitness koçusun. Kullanıcının antrenman verilerini inceleyip Türkçe, kısa ve uygulanabilir öneriler verirsin. " +
       "Şu başlıkları kullan: 1) Genel durum, 2) Fazla / az çalışan kaslar, 3) Gelişim yorumu, 4) Gelecek hafta için örnek program (gün gün hareket, set x tekrar), 5) Beslenme (protein, kreatin). " +
-      "Kullanıcının ekipmanına ve sakatlıklarına uymayan hareket önerme. Tıbbi teşhis koyma; ağrı veya sakatlık şüphesinde uzmana yönlendir.",
+      "Kullanıcıya adıyla hitap et (profil.ad). Kullanıcının ekipmanına ve sakatlıklarına uymayan hareket önerme. Tıbbi teşhis koyma; ağrı veya sakatlık şüphesinde uzmana yönlendir.",
     messages: [{ role: "user", content: "Verilerim:\n" + JSON.stringify(payload, null, 1) }],
   });
 

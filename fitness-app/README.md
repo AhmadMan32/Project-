@@ -2,6 +2,26 @@
 
 Tarayıcıda çalışan, kurulum gerektirmeyen fitness takip uygulaması. `index.html` dosyasını açman yeterli.
 
+## 📱 Android uygulaması (APK)
+Hazır APK: [`release/FitAI-Koc.apk`](release/FitAI-Koc.apk)
+
+1. APK'yı telefona indir.
+2. Aç; Android "bilinmeyen kaynaklardan yükleme" izni isterse tarayıcına / dosya yöneticine izin ver.
+3. Yükle ve aç. İlk açılışta uygulama seni tanımak için 11 soru sorar.
+
+## İlk açılış: soru-cevap ile kişiselleştirme
+Uygulama adım adım şunları sorar: ad, cinsiyet ve yaş, boy ve kilo, hedef (kas / yağ yakımı / güç / form),
+deneyim seviyesi, haftada kaç gün ve kaç dakika, ekipman (salon / evde dumbbell / ekipmansız),
+öncelikli kaslar (en fazla 3), sakatlıklar (omuz / bel / diz / bilek) ve kreatin kullanımı.
+
+Cevaplara göre uygulama şekillenir:
+- **Program:** Gün sayısına göre bölünme seçilir (2-3 gün tüm vücut, 4 gün üst/alt, 5 gün PPL + üst/alt, 6 gün PPL×2). Hareketler ekipmanına göre seçilir, sakatlığını zorlayanlar çıkarılır, set/tekrar hedefe ve seviyeye göre ayarlanır, hareket sayısı süreye göre belirlenir. "Sıradaki" gün işaretlenir; "Kaydet" ile hareket set sayısı hazır şekilde açılır.
+- **Kas hedefleri:** Haftalık set aralıkları seviyene göre ölçeklenir, öncelikli kaslara ek hacim verilir; analiz ve kas haritası bu kişisel hedeflere göre renklenir.
+- **Beslenme:** Protein hedefe göre (kas 2.0, yağ yakımı 2.2, güç 1.8, form 1.6 g/kg), kalori Mifflin-St Jeor ile, kreatin seçimine göre (başlıyorsan ilk hafta yükleme). Kreatin kullanmıyorsan takibi gizlenir.
+- **Hareket listesi:** Varsayılan olarak sadece sana uygun hareketler gösterilir; riskli olanlar ⚠️ ile işaretlenir.
+
+Ayarlar > "Soruları yeniden yanıtla" ile her şeyi tekrar şekillendirebilirsin.
+
 ## Özellikler
 - **Antrenman kaydı:** 80+ hazır hareket (göğüs, sırt, omuz, kol, bacak, karın, tüm vücut), arama ve kategori filtresi, set başına kilo × tekrar. Son seferin ağırlıkları otomatik dolar, yeni rekorda bildirim çıkar. Kendi hareketini kas seçerek ekleyebilirsin.
 - **AI analiz ve kas haritası:** Ön/arka vücut modelinde her kas son 7 günün set sayısına göre renklenir (gri: çalışmadı, turuncu: yetersiz, yeşil: ideal, kırmızı: fazla). Analiz motoru şunları söyler:
@@ -14,8 +34,15 @@ Tarayıcıda çalışan, kurulum gerektirmeyen fitness takip uygulaması. `index
 - **Beslenme:** Kilo ve hedefe göre günlük protein (bulk 2.0, koruma 1.8, cut 2.2 g/kg), kreatin (5 g veya yükleme fazında 0.3 g/kg) ve su hedefi. Hızlı yiyecek butonları, kreatin serisi, son 7 gün geçmişi.
 - **Veri:** Her şey tarayıcıda (localStorage) saklanır. JSON olarak dışa/içe aktarılabilir. Denemek için "Örnek veri yükle" butonu var.
 
-## Çalıştırma
+## Geliştirme
+Web dosyaları `www/` içinde; tarayıcıda denemek için `www/index.html` dosyasını açman yeterli.
+
+APK'yı yeniden derlemek için Node 22+, JDK 21 ve Android SDK (platform 36) gerekir:
 ```bash
 cd fitness-app
-python3 -m http.server 8000   # ya da index.html'i doğrudan aç
+npm install
+npx cap sync android
+cd android && ./gradlew assembleDebug
+# çıktı: android/app/build/outputs/apk/debug/app-debug.apk
 ```
+GitHub'a her push'ta `.github/workflows/android-apk.yml` APK'yı otomatik derler; Actions sekmesindeki çalıştırmanın "Artifacts" bölümünden indirilebilir.

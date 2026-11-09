@@ -15,12 +15,19 @@ async function askClaudeCoach(state, result) {
       setler: w.sets.map((s) => `${s.kg || 0}kg x ${s.reps}`).join(", "),
     }));
   const weekly = Object.fromEntries(
-    Object.keys(MUSCLES).map((m) => [MUSCLES[m].name, { set: result.week.vol[m], hedef: `${MUSCLES[m].min}-${MUSCLES[m].max}` }])
+    Object.keys(MUSCLES).map((m) => [MUSCLES[m].name, { set: result.week.vol[m], hedef: `${T(m).min}-${T(m).max}` }])
   );
   const targets = nutritionTargets(state.profile);
 
   const payload = {
-    profil: { kilo: state.profile.weight, hedef: state.profile.goal },
+    profil: {
+      ad: state.profile.name, yas: state.profile.age, cinsiyet: state.profile.sex, boy: state.profile.height, kilo: state.profile.weight,
+      hedef: GOALS[goalKey(state.profile.goal)].name, seviye: (LEVELS[state.profile.level] || {}).name,
+      haftalik_gun: state.profile.days, seans_dk: state.profile.sessionMin, ekipman: (EQUIPMENT[state.profile.equipment] || {}).name,
+      oncelikli_kaslar: (state.profile.priorities || []).map((m) => MUSCLES[m].name),
+      sakatliklar: (state.profile.injuries || []).map((k) => INJURY_RISK[k].name),
+    },
+    mevcut_program: state.program ? state.program.days.map((d) => ({ gun: d.name, hareketler: d.exercises.map((e) => `${exName(e.id)} ${e.sets}x${e.reps}`) })) : null,
     beslenme_hedefleri: targets,
     son_7_gun_kas_hacmi: weekly,
     son_4_hafta_antrenmanlar: recent,
@@ -37,7 +44,7 @@ async function askClaudeCoach(state, result) {
     system:
       "Sen deneyimli bir fitness koçusun. Kullanıcının antrenman verilerini inceleyip Türkçe, kısa ve uygulanabilir öneriler verirsin. " +
       "Şu başlıkları kullan: 1) Genel durum, 2) Fazla / az çalışan kaslar, 3) Gelişim yorumu, 4) Gelecek hafta için örnek program (gün gün hareket, set x tekrar), 5) Beslenme (protein, kreatin). " +
-      "Tıbbi teşhis koyma; ağrı veya sakatlık şüphesinde uzmana yönlendir.",
+      "Kullanıcının ekipmanına ve sakatlıklarına uymayan hareket önerme. Tıbbi teşhis koyma; ağrı veya sakatlık şüphesinde uzmana yönlendir.",
     messages: [{ role: "user", content: "Verilerim:\n" + JSON.stringify(payload, null, 1) }],
   });
 

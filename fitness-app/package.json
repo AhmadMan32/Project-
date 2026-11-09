@@ -1,0 +1,17 @@
+{
+  "name": "fitai-koc",
+  "version": "1.0.0",
+  "private": true,
+  "description": "FitAI Koç - kişisel fitness takip ve AI koç uygulaması",
+  "scripts": {
+    "sync": "cap sync android",
+    "apk": "cap sync android && cd android && ./gradlew assembleDebug"
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.6.0",
+    "@capacitor/core": "^8.6.0"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^8.6.0"
+  }
+}

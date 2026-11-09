@@ -5,7 +5,8 @@ const defaultState = () => ({
   customExercises: [],   // {id, name, cat, p:[], s:[]}
   nutrition: {},         // "YYYY-MM-DD": {protein:[{name,g}], creatine:0, water:0}
   bodyweight: {},        // "YYYY-MM-DD": kg
-  profile: { weight: 75, goal: "bulk", creatineLoading: false, proteinOverride: "" },
+  profile: { weight: 75, goal: "muscle", creatineLoading: false, proteinOverride: "", onboarded: false },
+  program: null,         // generateProgram() çıktısı
   apiKey: "",
 });
 
@@ -63,6 +64,7 @@ let editRows = [];
 $("#wDate").value = todayStr();
 $("#wDate").addEventListener("change", renderDayLog);
 $("#exSearch").addEventListener("input", renderExList);
+$("#showAllEx").addEventListener("change", renderExList);
 
 function renderCats() {
   const cats = ["Tümü", ...new Set(allExercises().map((e) => e.cat))];
@@ -77,13 +79,15 @@ $("#catChips").addEventListener("click", (e) => {
 
 function renderExList() {
   const q = $("#exSearch").value.trim().toLocaleLowerCase("tr");
-  const list = allExercises().filter((e) =>
+  const showAll = $("#showAllEx").checked;
+  const ok = new Set(allowedExercises(state.profile, state.customExercises).map((e) => e.id));
+  const list = allExercises().filter((e) => (showAll || ok.has(e.id)) &&
     (selectedCat === "Tümü" || e.cat === selectedCat) &&
     (!q || e.name.toLocaleLowerCase("tr").includes(q) || e.p.some((m) => MUSCLES[m].name.toLocaleLowerCase("tr").includes(q)))
   );
   $("#exList").innerHTML = list.map((e) => `
     <div class="ex-item ${selectedEx?.id === e.id ? "sel" : ""}" data-id="${e.id}">
-      <span>${esc(e.name)}</span>
+      <span>${esc(e.name)}${riskyFor(e.id, state.profile).length ? ` <span class="risk" title="Sakatlık riski">⚠️ ${riskyFor(e.id, state.profile).join(", ")}</span>` : ""}</span>
       <span class="tags">${e.p.map((m) => MUSCLES[m].name).join(", ")}</span>
     </div>`).join("") || `<div class="muted small">Sonuç yok. Ayarlar'dan özel hareket ekleyebilirsin.</div>`;
 }
@@ -93,10 +97,15 @@ $("#exList").addEventListener("click", (e) => {
   selectExercise(it.dataset.id);
 });
 
-function selectExercise(id) {
+function selectExercise(id, plan) {
   selectedEx = findExercise(id, state.customExercises);
   const last = [...state.workouts].reverse().find((w) => w.exerciseId === id);
   editRows = last ? last.sets.map((s) => ({ ...s })) : [{ kg: "", reps: "" }, { kg: "", reps: "" }, { kg: "", reps: "" }];
+  if (plan) {
+    const r = parseInt(plan.reps) || "";
+    const kg = last ? Math.max(...last.sets.map((s) => s.kg || 0)) || "" : "";
+    editRows = Array.from({ length: plan.sets }, (_, i) => ({ kg: last?.sets[i]?.kg ?? kg, reps: r }));
+  }
   $("#selExTitle").textContent = selectedEx.name;
   $("#selExMuscles").innerHTML =
     `<b>Birincil:</b> ${selectedEx.p.map((m) => MUSCLES[m].name).join(", ")}` +
@@ -142,7 +151,7 @@ $("#saveEx").onclick = () => {
   save();
   const newBest = Math.max(...sets.map((s) => e1rm(s.kg, s.reps)));
   toast(prevBest && newBest > prevBest ? `🏆 Yeni rekor! ~${newBest.toFixed(1)} kg 1RM` : "Kaydedildi ✓");
-  renderDayLog(); renderHistory(); updateScore();
+  renderDayLog(); renderHistory(); updateScore(); renderPlan();
 };
 
 function workoutItem(w, withDate) {
@@ -200,7 +209,7 @@ function renderAnalysis() {
   const order = Object.keys(MUSCLES).sort((a, b) => r.week.vol[b] - r.week.vol[a]);
   const maxV = Math.max(24, ...order.map((m) => r.week.vol[m]));
   $("#volBars").innerHTML = order.map((m) => {
-    const v = r.week.vol[m], M = MUSCLES[m];
+    const v = r.week.vol[m], M = { ...MUSCLES[m], ...T(m) };
     return `<div class="vbar" data-m="${m}">
       <span>${M.name}</span>
       <div class="track">
@@ -215,7 +224,7 @@ function renderAnalysis() {
 function showMuscle(m) {
   focusMuscle = m;
   $$(".muscle").forEach((p) => p.classList.toggle("focus", p.dataset.muscle === m));
-  const r = lastResult, M = MUSCLES[m];
+  const r = lastResult, M = { ...MUSCLES[m], ...T(m) };
   const last = r.week.lastHit[m];
   const ago = last ? Math.max(0, Math.round((Date.now() - last) / 86400000)) : null;
   const exs = [...new Set(state.workouts
@@ -337,6 +346,9 @@ function renderNutrition() {
   const t = targets(), d = dayNut();
   const p = d.protein.reduce((a, x) => a + x.g, 0);
   $("#ringProtein").innerHTML = ring(p, t.protein, "Protein", "g", "#4ade80");
+  $("#creatineCard").classList.toggle("hidden", state.profile.creatine === "no");
+  const kcal = calorieTarget(state.profile);
+  $("#kcalNote").textContent = kcal ? `Günlük kalori hedefin: ~${kcal} kcal (${GOALS[goalKey(state.profile.goal)].name})` : "";
   $("#ringCreatine").innerHTML = ring(d.creatine, t.creatine, "Kreatin", "g", "#60a5fa");
   $("#ringWater").innerHTML = ring(+(d.water / 1000).toFixed(2), t.water / 1000, "Su", "L", "#38bdf8");
   $("#foodChips").innerHTML = PROTEIN_FOODS.map((f, i) => `<button class="chip" data-food="${i}">${esc(f.name)} · ${f.g}g</button>`).join("");
@@ -392,13 +404,20 @@ $("#resetWater").onclick = () => { dayNut().water = 0; save(); renderNutrition()
 // ---------- AYARLAR ----------
 let cxP = new Set(), cxS = new Set();
 function renderSettings() {
-  $("#pWeight").value = state.profile.weight;
-  $("#pGoal").value = state.profile.goal;
-  $("#pLoading").checked = !!state.profile.creatineLoading;
-  $("#pProtein").value = state.profile.proteinOverride || "";
+  const p = state.profile;
+  $("#pProtein").value = p.proteinOverride || "";
   $("#apiKey").value = state.apiKey || "";
-  const t = targets();
-  $("#targetsPreview").textContent = `Günlük hedef: ${t.protein} g protein · ${t.creatine} g kreatin · ${(t.water / 1000).toFixed(1)} L su`;
+  const t = targets(), kcal = calorieTarget(p);
+  $("#profileSummary").innerHTML = p.onboarded ? `
+    <div class="kv"><span>Ad</span><b>${esc(p.name)}</b></div>
+    <div class="kv"><span>Yaş / Boy / Kilo</span><b>${p.age} · ${p.height} cm · ${p.weight} kg</b></div>
+    <div class="kv"><span>Hedef</span><b>${GOALS[goalKey(p.goal)].icon} ${GOALS[goalKey(p.goal)].name}</b></div>
+    <div class="kv"><span>Seviye</span><b>${LEVELS[p.level]?.name || "-"}</b></div>
+    <div class="kv"><span>Program</span><b>Haftada ${p.days} gün · ${p.sessionMin} dk</b></div>
+    <div class="kv"><span>Ekipman</span><b>${EQUIPMENT[p.equipment]?.name || "-"}</b></div>
+    <div class="kv"><span>Öncelik</span><b>${(p.priorities || []).map((m) => MUSCLES[m].name).join(", ") || "Yok"}</b></div>
+    <div class="kv"><span>Sakatlık</span><b>${(p.injuries || []).map((k) => INJURY_RISK[k].name).join(", ") || "Yok"}</b></div>` : `<p class="muted">Henüz soruları yanıtlamadın.</p>`;
+  $("#targetsPreview").textContent = `Günlük hedef: ${t.protein} g protein${t.creatine ? ` · ${t.creatine} g kreatin` : ""}${kcal ? ` · ${kcal} kcal` : ""} · ${(t.water / 1000).toFixed(1)} L su`;
   const chips = (set, id) => Object.entries(MUSCLES).map(([k, m]) => `<button class="chip ${set.has(k) ? "on" : ""}" data-k="${k}">${m.name}</button>`).join("");
   $("#cxPrimary").innerHTML = chips(cxP);
   $("#cxSecondary").innerHTML = chips(cxS);
@@ -413,26 +432,38 @@ $("#cxSave").onclick = () => {
   save(); renderSettings(); renderCats(); renderExList(); toast("Hareket eklendi");
 };
 $("#saveProfile").onclick = () => {
-  state.profile = {
-    weight: parseFloat($("#pWeight").value) || state.profile.weight,
-    goal: $("#pGoal").value,
-    creatineLoading: $("#pLoading").checked,
-    proteinOverride: $("#pProtein").value,
-  };
-  save(); renderSettings(); toast("Profil kaydedildi");
+  state.profile.proteinOverride = $("#pProtein").value;
+  save(); renderSettings(); toast("Kaydedildi");
 };
-["#pWeight", "#pGoal", "#pLoading", "#pProtein"].forEach((s) => $(s).addEventListener("input", () => {
-  const t = nutritionTargets({ weight: $("#pWeight").value, goal: $("#pGoal").value, creatineLoading: $("#pLoading").checked });
-  if (Number($("#pProtein").value) > 0) t.protein = Number($("#pProtein").value);
-  $("#targetsPreview").textContent = `Günlük hedef: ${t.protein} g protein · ${t.creatine} g kreatin · ${(t.water / 1000).toFixed(1)} L su`;
-}));
+$("#redoWizard").onclick = () => openWizard();
+$("#regenProgram").onclick = () => {
+  state.program = generateProgram(state.profile, state.customExercises);
+  save(); toast("Program yeniden oluşturuldu"); $(`#tabs button[data-tab="plan"]`).click();
+};
 $("#saveKey").onclick = () => { state.apiKey = $("#apiKey").value.trim(); save(); toast("API anahtarı kaydedildi"); };
 $("#export").onclick = () => {
   const data = { ...state, apiKey: "" };
+  if (window.Capacitor?.isNativePlatform?.()) {
+    // Android uygulamasında indirme bağlantısı çalışmaz: yedeği panoya kopyala
+    navigator.clipboard.writeText(JSON.stringify(data)).then(
+      () => toast("Yedek panoya kopyalandı. Bir nota yapıştırıp sakla."),
+      () => toast("Kopyalanamadı"));
+    return;
+  }
   const a = document.createElement("a");
   a.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }));
   a.download = `fitai-yedek-${todayStr()}.json`;
   a.click();
+};
+function importJson(text) {
+  const data = JSON.parse(text);
+  state = { ...defaultState(), ...data, apiKey: state.apiKey };
+  save(); renderAll(); toast("Veriler içe aktarıldı");
+}
+$("#importText").onclick = () => {
+  const t = prompt("Yedek metnini (JSON) buraya yapıştır:");
+  if (!t) return;
+  try { importJson(t); } catch { toast("Geçersiz yedek"); }
 };
 $("#import").onchange = async (e) => {
   const f = e.target.files[0];
@@ -446,7 +477,7 @@ $("#import").onchange = async (e) => {
 $("#reset").onclick = () => {
   if (!confirm("Tüm antrenman ve beslenme verileri silinecek. Emin misin?")) return;
   state = { ...defaultState(), apiKey: state.apiKey };
-  save(); renderAll(); toast("Veriler silindi");
+  save(); renderAll(); toast("Veriler silindi"); openWizard();
 };
 $("#demo").onclick = () => {
   if (state.workouts.length && !confirm("Mevcut verilerin üzerine örnek veri eklensin mi?")) return;
@@ -476,8 +507,59 @@ function loadDemo() {
   for (let i = 28; i >= 0; i -= 4) state.bodyweight[todayStr(new Date(Date.now() - i * DAY))] = +(76 - i * 0.03).toFixed(1);
 }
 
+// ---------- PROGRAM ----------
+function weekWorkoutDays() {
+  return new Set(state.workouts.filter((w) => dateToMs(w.date) > Date.now() - 7 * DAY).map((w) => w.date)).size;
+}
+function nextDayIndex() {
+  const prog = state.program;
+  const doneDates = new Set(state.workouts.filter((w) => w.date >= prog.created && w.date < todayStr()).map((w) => w.date));
+  return doneDates.size % prog.days.length;
+}
+function renderPlan() {
+  const p = state.profile, prog = state.program;
+  $("#greet").textContent = p.name ? `Merhaba ${p.name} 👋` : "";
+  if (!prog) { $("#planBody").innerHTML = `<div class="card"><p>Henüz programın yok.</p><button class="btn primary" onclick="openWizard()">Soruları yanıtla</button></div>`; return; }
+  const done = weekWorkoutDays(), next = nextDayIndex();
+  const t = targets(), d = dayNut();
+  const pg = d.protein.reduce((a, x) => a + x.g, 0);
+  const todayDone = state.workouts.some((w) => w.date === todayStr());
+  $("#planBody").innerHTML = `
+    <div class="stat-row">
+      <div class="stat big"><b>${done}/${p.days}</b><span>Bu hafta antrenman</span><div class="mini"><div style="width:${Math.min(100, done / p.days * 100)}%;background:var(--accent)"></div></div></div>
+      <div class="stat big"><b>${pg}/${t.protein} g</b><span>Bugün protein</span><div class="mini"><div style="width:${Math.min(100, pg / t.protein * 100)}%;background:#4ade80"></div></div></div>
+      ${t.creatine ? `<div class="stat big"><b>${d.creatine}/${t.creatine} g</b><span>Bugün kreatin</span><div class="mini"><div style="width:${Math.min(100, d.creatine / t.creatine * 100)}%;background:#60a5fa"></div></div></div>` : ""}
+    </div>
+    <div class="card">
+      <h2>${esc(prog.split)} <span class="muted small">· ${GOALS[goalKey(p.goal)].name} · ${EQUIPMENT[p.equipment]?.name || ""}</span></h2>
+      ${todayDone ? `<div class="insight good"><b>Bugünkü antrenman kaydedildi ✓</b><p>Toparlanmak için protein hedefini tamamla.</p></div>` : ""}
+      ${prog.days.map((day, i) => `
+        <div class="plan-day ${i === next ? "next" : ""}">
+          <div class="plan-head"><b>${i + 1}. Gün · ${esc(day.name)}</b>${i === next ? `<span class="badge">Sıradaki</span>` : ""}</div>
+          ${day.exercises.map((e) => {
+            const last = [...state.workouts].reverse().find((w) => w.exerciseId === e.id);
+            const lastTxt = last ? `Son: ${Math.max(...last.sets.map((s) => s.kg || 0))} kg` : "Yeni";
+            return `<div class="plan-ex">
+              <div><div>${esc(exName(e.id))}</div><div class="muted small">${e.sets} set × ${e.reps} · ${lastTxt}</div></div>
+              <button class="btn small-btn" data-planex="${e.id}" data-sets="${e.sets}" data-reps="${e.reps}">Kaydet</button>
+            </div>`;
+          }).join("")}
+        </div>`).join("")}
+      <p class="muted small">İpucu: Tüm setlerde tekrar aralığının üst sınırına ulaşınca bir sonraki antrenmanda ağırlığı 2.5 kg (küçük kaslarda 1-2 kg) artır.</p>
+    </div>`;
+}
+$("#planBody").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-planex]");
+  if (!b) return;
+  $(`#tabs button[data-tab="workout"]`).click();
+  $("#wDate").value = todayStr(); renderDayLog();
+  selectExercise(b.dataset.planex, { sets: +b.dataset.sets, reps: b.dataset.reps });
+  $("#setEditor").scrollIntoView({ behavior: "smooth", block: "center" });
+});
+
 // ---------- Render ----------
 function render(tab) {
+  if (tab === "plan") renderPlan();
   if (tab === "workout") { renderCats(); renderExList(); renderDayLog(); renderHistory(); }
   if (tab === "analysis") renderAnalysis();
   if (tab === "progress") renderProgress();
@@ -489,8 +571,10 @@ function renderAll() {
   render("workout"); render(active); updateScore();
 }
 
-let startTab = "workout";
-try { startTab = sessionStorage.getItem("fitai-tab") || "workout"; } catch {}
+let startTab = "plan";
+try { startTab = sessionStorage.getItem("fitai-tab") || "plan"; } catch {}
 const startBtn = $(`#tabs button[data-tab="${startTab}"]`);
 if (startBtn) startBtn.click(); else render("workout");
 renderAll();
+initWizard();
+if (!state.profile.onboarded) openWizard();

@@ -119,6 +119,20 @@ const EXERCISES = [
   { id: "clean", name: "Power Clean", cat: "Tüm Vücut", p: ["traps", "glutes", "quads"], s: ["hamstrings", "lower_back", "upper_back", "side_delt"] },
   { id: "kb_swing", name: "Kettlebell Swing", cat: "Tüm Vücut", p: ["glutes", "hamstrings"], s: ["lower_back", "abs", "front_delt"] },
   { id: "thruster", name: "Thruster", cat: "Tüm Vücut", p: ["quads", "front_delt"], s: ["glutes", "triceps", "abs"] },
+  // EKİPMANSIZ (evde)
+  { id: "bw_squat", name: "Vücut Ağırlığı Squat", cat: "Ekipmansız", p: ["quads", "glutes"], s: ["adductors"], bw: true },
+  { id: "split_squat_bw", name: "Split Squat (ağırlıksız)", cat: "Ekipmansız", p: ["quads", "glutes"], s: ["adductors", "hamstrings"], bw: true },
+  { id: "wall_sit", name: "Wall Sit (saniye = tekrar)", cat: "Ekipmansız", p: ["quads"], s: ["glutes"], bw: true },
+  { id: "sl_rdl_bw", name: "Tek Bacak RDL (ağırlıksız)", cat: "Ekipmansız", p: ["hamstrings", "glutes"], s: ["lower_back"], bw: true },
+  { id: "nordic", name: "Nordic Hamstring Curl", cat: "Ekipmansız", p: ["hamstrings"], s: ["glutes"], bw: true },
+  { id: "pike_pushup", name: "Pike Push-up", cat: "Ekipmansız", p: ["front_delt"], s: ["triceps", "side_delt"], bw: true },
+  { id: "diamond_pushup", name: "Diamond Şınav", cat: "Ekipmansız", p: ["triceps"], s: ["chest", "front_delt"], bw: true },
+  { id: "door_row", name: "Inverted Row (masa / kapı)", cat: "Ekipmansız", p: ["upper_back", "lats"], s: ["biceps", "rear_delt"], bw: true },
+  { id: "superman", name: "Superman", cat: "Ekipmansız", p: ["lower_back"], s: ["glutes", "upper_back"], bw: true },
+  { id: "prone_yt", name: "Prone Y-T Raise", cat: "Ekipmansız", p: ["rear_delt"], s: ["upper_back", "traps"], bw: true },
+  { id: "bw_calf", name: "Calf Raise (ağırlıksız)", cat: "Ekipmansız", p: ["calves"], s: [], bw: true },
+  { id: "mountain_climber", name: "Mountain Climber", cat: "Ekipmansız", p: ["abs"], s: ["obliques", "front_delt"], bw: true },
+  { id: "bicycle", name: "Bicycle Crunch", cat: "Ekipmansız", p: ["obliques"], s: ["abs"], bw: true },
   { id: "burpee", name: "Burpee", cat: "Tüm Vücut", p: ["quads", "chest"], s: ["front_delt", "triceps", "abs"], bw: true },
 ];
 
@@ -134,3 +148,21 @@ const PROTEIN_FOODS = [
   { name: "Mercimek (1 kase)", g: 18 },
   { name: "Beyaz peynir (50g)", g: 8 },
 ];
+
+// Ekipman: bw = vücut ağırlığı, db = evde dumbbell/kettlebell, gym = tam salon
+const DB_IDS = ["db_bench", "incline_db", "db_fly", "db_row", "db_shoulder", "arnold", "lateral_raise", "front_raise", "rear_fly",
+  "db_curl", "hammer", "incline_curl", "concentration", "oh_ext", "kickback", "wrist_curl", "farmer", "goblet", "lunge",
+  "bulgarian", "rdl", "kb_swing", "step_up", "shrug", "calf_raise", "thruster", "russian_twist", "glute_bridge", "hip_thrust"];
+for (const e of EXERCISES) e.eq = e.bw ? "bw" : DB_IDS.includes(e.id) ? "db" : "gym";
+// Evde barfiks barı olduğunu varsayma
+for (const id of ["pullup", "chinup", "leg_raise", "dips_chest"]) EXERCISES.find((e) => e.id === id).eq = "gym";
+
+// Sakatlık durumunda kaçınılacak hareketler
+const INJURY_RISK = {
+  shoulder: { name: "Omuz", avoid: ["pike_pushup", "ohp", "upright_row", "dips_chest", "dips_tri", "skullcrusher", "arnold", "front_raise", "decline_bench", "bench", "thruster"] },
+  back:     { name: "Bel",  avoid: ["rdl", "sl_rdl_bw", "deadlift", "good_morning", "barbell_row", "rack_pull", "tbar_row", "squat", "clean", "kb_swing", "hyperext"] },
+  knee:     { name: "Diz",  avoid: ["split_squat_bw", "wall_sit", "leg_ext", "lunge", "bulgarian", "hack_squat", "front_squat", "step_up", "burpee", "thruster"] },
+  wrist:    { name: "Bilek", avoid: ["diamond_pushup", "pike_pushup", "mountain_climber", "pushup", "front_squat", "clean", "wrist_curl", "skullcrusher", "bb_curl"] },
+};
+
+const EQ_LEVEL = { bw: 0, db: 1, gym: 2 };

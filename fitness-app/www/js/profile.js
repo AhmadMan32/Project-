@@ -1,0 +1,262 @@
+// Kişiselleştirme: başlangıç soruları, kişisel hedefler ve otomatik program
+const GOALS = {
+  muscle:   { name: "Kas kazanmak", icon: "💪", desc: "Hacim ve kas kütlesi", protein: 2.0, kcal: 300, reps: "8-12", sets: 3 },
+  fat:      { name: "Yağ yakmak", icon: "🔥", desc: "Kasları koruyup yağ kaybetmek", protein: 2.2, kcal: -450, reps: "10-15", sets: 3 },
+  strength: { name: "Güçlenmek", icon: "🏋️", desc: "Daha ağır kaldırmak", protein: 1.8, kcal: 200, reps: "4-6", sets: 4 },
+  fit:      { name: "Formda kalmak", icon: "🏃", desc: "Genel sağlık ve kondisyon", protein: 1.6, kcal: 0, reps: "10-12", sets: 3 },
+};
+const LEGACY_GOAL = { bulk: "muscle", cut: "fat", maintain: "fit" };
+const goalKey = (g) => LEGACY_GOAL[g] || (GOALS[g] ? g : "muscle");
+
+const LEVELS = {
+  beginner:     { name: "Yeni başlıyorum", desc: "0-6 ay", scale: 0.7 },
+  intermediate: { name: "Orta seviye", desc: "6 ay - 2 yıl", scale: 1.0 },
+  advanced:     { name: "İleri seviye", desc: "2 yıldan fazla", scale: 1.2 },
+};
+const EQUIPMENT = {
+  gym: { name: "Spor salonu", icon: "🏢", desc: "Halter, makineler, kablolar" },
+  db:  { name: "Evde dumbbell", icon: "🏠", desc: "Dumbbell / kettlebell" },
+  bw:  { name: "Ekipmansız", icon: "🤸", desc: "Sadece vücut ağırlığı" },
+};
+
+// Kişiye göre haftalık set hedefi
+function muscleTarget(m, profile = {}) {
+  const base = MUSCLES[m];
+  const scale = (LEVELS[profile.level] || LEVELS.intermediate).scale;
+  let min = Math.max(2, Math.round(base.min * scale));
+  let max = Math.round(base.max * scale);
+  if ((profile.priorities || []).includes(m)) { min += 3; max += 4; }
+  return { min, max };
+}
+
+// Ekipmana ve sakatlıklara göre yapılabilir hareketler
+function allowedExercises(profile = {}, custom = []) {
+  const eq = EQ_LEVEL[profile.equipment] ?? 2;
+  const avoid = new Set((profile.injuries || []).flatMap((k) => INJURY_RISK[k]?.avoid || []));
+  return [...EXERCISES, ...custom].filter((e) => (EQ_LEVEL[e.eq] ?? 2) <= eq && !avoid.has(e.id));
+}
+function riskyFor(exId, profile = {}) {
+  return (profile.injuries || []).filter((k) => INJURY_RISK[k]?.avoid.includes(exId)).map((k) => INJURY_RISK[k].name);
+}
+
+// ---------- Program üretici ----------
+const DAY_TEMPLATES = {
+  fullA:  { name: "Tüm Vücut A", m: ["quads", "chest", "lats", "hamstrings", "side_delt", "abs", "biceps", "calves"] },
+  fullB:  { name: "Tüm Vücut B", m: ["hamstrings", "upper_back", "front_delt", "quads", "triceps", "biceps", "obliques", "rear_delt"] },
+  fullC:  { name: "Tüm Vücut C", m: ["glutes", "chest", "lats", "rear_delt", "quads", "calves", "abs", "triceps"] },
+  upperA: { name: "Üst Vücut A", m: ["chest", "lats", "front_delt", "upper_back", "side_delt", "biceps", "triceps", "rear_delt"] },
+  upperB: { name: "Üst Vücut B", m: ["upper_back", "chest", "lats", "side_delt", "rear_delt", "triceps", "biceps", "traps"] },
+  lowerA: { name: "Alt Vücut A", m: ["quads", "hamstrings", "glutes", "calves", "abs", "adductors", "quads", "obliques"] },
+  lowerB: { name: "Alt Vücut B", m: ["hamstrings", "quads", "glutes", "adductors", "calves", "obliques", "lower_back", "abs"] },
+  push:   { name: "İtme (Push)", m: ["chest", "front_delt", "chest", "side_delt", "triceps", "triceps", "side_delt", "abs"] },
+  pull:   { name: "Çekme (Pull)", m: ["lats", "upper_back", "lats", "rear_delt", "biceps", "biceps", "traps", "forearm"] },
+  legs:   { name: "Bacak (Legs)", m: ["quads", "hamstrings", "glutes", "quads", "calves", "abs", "adductors", "obliques"] },
+};
+const SPLITS = {
+  2: { name: "2 Gün Tüm Vücut", days: ["fullA", "fullB"] },
+  3: { name: "3 Gün Tüm Vücut", days: ["fullA", "fullB", "fullC"] },
+  4: { name: "Üst / Alt (4 gün)", days: ["upperA", "lowerA", "upperB", "lowerB"] },
+  5: { name: "PPL + Üst/Alt (5 gün)", days: ["push", "pull", "legs", "upperA", "lowerA"] },
+  6: { name: "Push / Pull / Legs ×2", days: ["push", "pull", "legs", "push", "pull", "legs"] },
+};
+const PER_SESSION = { 30: 4, 45: 5, 60: 6, 90: 8 };
+
+// Her kas için en verimliden başlayarak tercih sırası (uygun olmayanlar elenir)
+const PREFERRED = {
+  chest: ["bench", "incline_db", "db_bench", "incline_bench", "chest_press", "cable_fly", "pec_deck", "db_fly", "dips_chest", "pushup"],
+  front_delt: ["ohp", "db_shoulder", "shoulder_machine", "arnold", "front_raise", "pushup", "pike_pushup"],
+  side_delt: ["lateral_raise", "cable_lateral", "upright_row", "arnold"],
+  rear_delt: ["face_pull", "reverse_pec", "rear_fly", "prone_yt"],
+  biceps: ["bb_curl", "incline_curl", "db_curl", "hammer", "cable_curl", "preacher", "concentration"],
+  triceps: ["rope_pushdown", "oh_ext", "close_bench", "skullcrusher", "pushdown", "kickback", "dips_tri", "diamond_pushup"],
+  forearm: ["hammer", "wrist_curl", "farmer"],
+  traps: ["shrug", "farmer", "upright_row"],
+  lats: ["pullup", "lat_pulldown", "db_row", "close_pulldown", "pullover", "chinup", "door_row"],
+  upper_back: ["barbell_row", "cable_row", "db_row", "machine_row", "tbar_row", "rear_fly", "door_row", "prone_yt"],
+  lower_back: ["hyperext", "rdl", "good_morning", "glute_bridge", "superman"],
+  abs: ["cable_crunch", "leg_raise", "ab_wheel", "plank", "crunch", "mountain_climber"],
+  obliques: ["woodchop", "russian_twist", "side_plank", "bicycle"],
+  glutes: ["hip_thrust", "bulgarian", "rdl", "glute_bridge", "abductor", "kb_swing", "split_squat_bw"],
+  quads: ["squat", "leg_press", "hack_squat", "goblet", "bulgarian", "front_squat", "lunge", "leg_ext", "step_up", "split_squat_bw", "bw_squat", "wall_sit"],
+  hamstrings: ["rdl", "leg_curl", "seated_curl", "good_morning", "kb_swing", "sl_rdl_bw", "nordic", "glute_bridge"],
+  adductors: ["adductor_m", "goblet", "lunge", "bw_squat"],
+  calves: ["calf_raise", "seated_calf", "bw_calf"],
+};
+
+function generateProgram(profile, custom = []) {
+  const split = SPLITS[profile.days] || SPLITS[3];
+  const goal = GOALS[goalKey(profile.goal)];
+  const pool = allowedExercises(profile, custom);
+  const count = PER_SESSION[profile.sessionMin] || 6;
+  const prio = profile.priorities || [];
+  const lvlSets = profile.level === "beginner" ? -1 : profile.level === "advanced" ? 1 : 0;
+
+  const days = split.days.map((key, di) => {
+    const tpl = DAY_TEMPLATES[key];
+    const repeat = split.days.slice(0, di).filter((k) => k === key).length; // PPL×2'de ikinci tur farklı olsun
+    let slots = [...tpl.m];
+    // Öncelikli kaslar: bu günde varsa öne al ve bir slot daha ekle
+    for (const p of prio) if (slots.includes(p)) slots.splice(2, 0, p);
+    slots = slots.slice(0, count);
+
+    const used = new Set();
+    const exercises = [];
+    slots.forEach((m, si) => {
+      const ok = new Map(pool.map((e) => [e.id, e]));
+      let cands = (PREFERRED[m] || []).filter((id) => ok.has(id) && !used.has(id)).map((id) => ok.get(id));
+      for (const e of pool) if (e.p[0] === m && !used.has(e.id) && !cands.includes(e)) cands.push(e);
+      if (!cands.length) return;
+      // aynı kas günde ikinci kez geliyorsa veya farklı günlerde çeşitlilik için sırayı kaydır
+      const seen = slots.slice(0, si).filter((x) => x === m).length;
+      const ex = cands[(seen + repeat) % Math.min(cands.length, 3)];
+      used.add(ex.id);
+      const compound = ex.p.length + ex.s.length >= 3;
+      let sets = Math.max(2, goal.sets + lvlSets + (si === 0 ? 1 : 0) - (goal === GOALS.strength && !compound ? 1 : 0));
+      const reps = goal === GOALS.strength && !compound ? "8-10" : ex.id === "plank" || ex.id === "side_plank" ? "30-60 sn" : goal.reps;
+      exercises.push({ id: ex.id, sets, reps, muscle: m });
+    });
+    return { key, name: tpl.name, exercises };
+  });
+  return { split: split.name, days, created: todayStr() };
+}
+
+function calorieTarget(p) {
+  const w = +p.weight, h = +p.height, a = +p.age;
+  if (!w || !h || !a) return null;
+  const bmr = 10 * w + 6.25 * h - 5 * a + (p.sex === "f" ? -161 : 5);
+  const tdee = bmr * (1.2 + 0.075 * (+p.days || 3));
+  return Math.round((tdee + GOALS[goalKey(p.goal)].kcal) / 10) * 10;
+}
+
+// ---------- Başlangıç sihirbazı ----------
+const WIZARD_STEPS = [
+  { id: "name", title: "Merhaba! 👋", sub: "Sana özel bir program hazırlamak için birkaç soru soracağım. Adın ne?",
+    render: (p) => `<input id="wz_name" placeholder="Adın" value="${esc(p.name || "")}" autofocus />`,
+    read: (p) => { p.name = $("#wz_name").value.trim(); return !!p.name || "Adını yaz"; } },
+  { id: "body1", title: "Seni biraz tanıyalım", sub: "Kalori ve su hedefini hesaplamak için.",
+    render: (p) => `${cards("sex", { m: { name: "Erkek", icon: "♂️" }, f: { name: "Kadın", icon: "♀️" } }, p.sex, true)}
+      <label>Yaş <input type="number" id="wz_age" inputmode="numeric" value="${p.age || ""}" placeholder="örn. 25" /></label>`,
+    read: (p) => { p.age = +$("#wz_age").value; return (!!p.sex && p.age >= 12 && p.age < 100) || "Cinsiyet ve yaşını gir"; } },
+  { id: "body2", title: "Boy ve kilo", sub: "Protein hedefin kilona göre belirlenir.",
+    render: (p) => `<label>Boy (cm) <input type="number" id="wz_h" inputmode="numeric" value="${p.height || ""}" placeholder="örn. 178" /></label>
+      <label>Kilo (kg) <input type="number" step="0.1" id="wz_w" inputmode="decimal" value="${p.weight || ""}" placeholder="örn. 75" /></label>`,
+    read: (p) => { p.height = +$("#wz_h").value; p.weight = +$("#wz_w").value; return (p.height > 100 && p.weight > 30) || "Boy ve kilonu gir"; } },
+  { id: "goal", title: "Ana hedefin ne?", sub: "Set, tekrar ve beslenme hedefleri buna göre ayarlanır.",
+    render: (p) => cards("goal", GOALS, goalKey(p.goal)), read: (p) => !!p.goal || "Bir hedef seç" },
+  { id: "level", title: "Ne kadar süredir spor yapıyorsun?", sub: "Antrenman hacmini seviyene göre ayarlarım.",
+    render: (p) => cards("level", LEVELS, p.level), read: (p) => !!p.level || "Seviyeni seç" },
+  { id: "days", title: "Haftada kaç gün antrenman yapabilirsin?", sub: "Gün sayısına göre program bölünmesi seçilir.",
+    render: (p) => `<div class="num-pick">${[2, 3, 4, 5, 6].map((d) => `<button class="opt ${p.days === d ? "on" : ""}" data-set="days" data-val="${d}">${d}</button>`).join("")}</div>
+      <div class="muted small" style="margin:14px 0 6px">Bir antrenman ne kadar sürsün?</div>
+      <div class="num-pick">${[30, 45, 60, 90].map((d) => `<button class="opt ${p.sessionMin === d ? "on" : ""}" data-set="sessionMin" data-val="${d}">${d} dk</button>`).join("")}</div>`,
+    read: (p) => (!!p.days && !!p.sessionMin) || "Gün ve süre seç" },
+  { id: "equipment", title: "Nerede antrenman yapıyorsun?", sub: "Sadece yapabileceğin hareketleri öneririm.",
+    render: (p) => cards("equipment", EQUIPMENT, p.equipment), read: (p) => !!p.equipment || "Bir seçenek seç" },
+  { id: "priorities", title: "Özellikle geliştirmek istediğin bölge var mı?", sub: "En fazla 3 tane seç. Bu kaslara daha fazla hacim verilir. (İsteğe bağlı)",
+    render: (p) => `<div class="chips">${Object.entries(MUSCLES).map(([k, m]) => `<button class="chip ${(p.priorities || []).includes(k) ? "on" : ""}" data-multi="priorities" data-val="${k}">${m.name}</button>`).join("")}</div>`,
+    read: () => true },
+  { id: "injuries", title: "Sakatlık ya da ağrın var mı?", sub: "Seçtiğin bölgeyi zorlayan hareketleri programdan çıkarırım.",
+    render: (p) => `<div class="chips">${Object.entries(INJURY_RISK).map(([k, v]) => `<button class="chip ${(p.injuries || []).includes(k) ? "on" : ""}" data-multi="injuries" data-val="${k}">${v.name}</button>`).join("")}
+      <button class="chip ${p.injuries && !p.injuries.length ? "on" : ""}" data-none="injuries">Yok</button></div>
+      <p class="muted small">Ağrın devam ediyorsa bir doktora veya fizyoterapiste danış.</p>`,
+    read: (p) => { p.injuries ||= []; return true; } },
+  { id: "creatine", title: "Kreatin kullanıyor musun?", sub: "Günlük kreatin takibini buna göre ayarlarım.",
+    render: (p) => cards("creatine", {
+      yes: { name: "Evet, kullanıyorum", icon: "✅", desc: "Günde 5 g takip" },
+      start: { name: "Başlamak istiyorum", icon: "🚀", desc: "İlk hafta yükleme (0.3 g/kg), sonra 5 g" },
+      no: { name: "Hayır", icon: "➖", desc: "Kreatin takibi gizlenir" },
+    }, p.creatine), read: (p) => !!p.creatine || "Bir seçenek seç" },
+  { id: "summary", title: "Planın hazır! 🎉", sub: "Cevaplarına göre hazırladığım plan:", render: (p) => summaryHtml(p), read: () => true },
+];
+
+function cards(field, opts, cur, compact) {
+  return `<div class="opt-cards ${compact ? "compact" : ""}">${Object.entries(opts).map(([k, o]) => `
+    <button class="opt-card ${cur === k ? "on" : ""}" data-set="${field}" data-val="${k}">
+      ${o.icon ? `<span class="oi">${o.icon}</span>` : ""}<span><b>${o.name}</b>${o.desc ? `<small>${o.desc}</small>` : ""}</span>
+    </button>`).join("")}</div>`;
+}
+
+function summaryHtml(p) {
+  const prog = generateProgram(p, state.customExercises);
+  const t = nutritionTargets(p);
+  const kcal = calorieTarget(p);
+  return `<div class="sum-grid">
+      <div class="stat"><b>${t.protein} g</b><span>Günlük protein</span></div>
+      ${p.creatine !== "no" ? `<div class="stat"><b>${t.creatine} g</b><span>Kreatin</span></div>` : ""}
+      ${kcal ? `<div class="stat"><b>${kcal}</b><span>Kalori (kcal)</span></div>` : ""}
+      <div class="stat"><b>${(t.water / 1000).toFixed(1)} L</b><span>Su</span></div>
+    </div>
+    <h3>${prog.split}</h3>
+    ${prog.days.map((d, i) => `<div class="sum-day"><b>${i + 1}. Gün · ${d.name}</b><span class="muted small">${d.exercises.map((e) => exName(e.id)).join(", ")}</span></div>`).join("")}`;
+}
+
+let wz = null;
+function openWizard() {
+  wz = { i: 0, p: JSON.parse(JSON.stringify(state.profile.onboarded ? state.profile : {})) };
+  if (wz.p.goal) wz.p.goal = goalKey(wz.p.goal);
+  $("#wizard").classList.remove("hidden");
+  renderWizard();
+}
+function renderWizard() {
+  const s = WIZARD_STEPS[wz.i];
+  $("#wzBar").style.width = ((wz.i + 1) / WIZARD_STEPS.length) * 100 + "%";
+  $("#wzStep").textContent = `${wz.i + 1} / ${WIZARD_STEPS.length}`;
+  $("#wzTitle").textContent = s.title.replace("Merhaba!", wz.p.name && wz.i > 0 ? `${wz.p.name},` : "Merhaba!");
+  $("#wzSub").textContent = s.sub;
+  $("#wzBody").innerHTML = s.render(wz.p);
+  $("#wzBack").style.visibility = wz.i ? "visible" : "hidden";
+  $("#wzNext").textContent = wz.i === WIZARD_STEPS.length - 1 ? "Başlayalım 🚀" : "Devam";
+  $("#wzErr").textContent = "";
+  $("#wzBody").querySelector("input")?.focus();
+}
+function wizardNext() {
+  const s = WIZARD_STEPS[wz.i];
+  const ok = s.read(wz.p);
+  if (ok !== true) { $("#wzErr").textContent = ok; return; }
+  if (wz.i < WIZARD_STEPS.length - 1) { wz.i++; renderWizard(); return; }
+  finishWizard();
+}
+function finishWizard() {
+  const p = wz.p;
+  p.onboarded = true;
+  p.creatineLoading = p.creatine === "start";
+  p.loadingUntil = p.creatine === "start" ? todayStr(new Date(Date.now() + 7 * 86400000)) : null;
+  p.proteinOverride = state.profile.proteinOverride || "";
+  state.profile = p;
+  if (p.weight) state.bodyweight[todayStr()] ||= p.weight;
+  state.program = generateProgram(p, state.customExercises);
+  save();
+  $("#wizard").classList.add("hidden");
+  renderAll();
+  $(`#tabs button[data-tab="plan"]`).click();
+  toast(`Hoş geldin ${p.name}! Programın hazır 💪`);
+}
+
+function initWizard() {
+  $("#wzNext").onclick = wizardNext;
+  $("#wzBack").onclick = () => { if (wz.i) { wz.i--; renderWizard(); } };
+  $("#wzBody").addEventListener("keydown", (e) => { if (e.key === "Enter") wizardNext(); });
+  $("#wzBody").addEventListener("click", (e) => {
+    const b = e.target.closest("button");
+    if (!b) return;
+    const p = wz.p;
+    if (b.dataset.set) {
+      const v = b.dataset.val;
+      p[b.dataset.set] = /^\d+$/.test(v) ? +v : v;
+      // girilmiş alanları kaybetmeden yeniden çiz
+      const inputs = [...$("#wzBody").querySelectorAll("input")].map((i) => [i.id, i.value]);
+      renderWizard();
+      for (const [id, val] of inputs) if ($("#" + id)) $("#" + id).value = val;
+    } else if (b.dataset.multi) {
+      const arr = (p[b.dataset.multi] ||= []);
+      const k = b.dataset.val, ix = arr.indexOf(k);
+      if (ix >= 0) arr.splice(ix, 1);
+      else if (b.dataset.multi !== "priorities" || arr.length < 3) arr.push(k);
+      else return toast("En fazla 3 bölge seçebilirsin");
+      renderWizard();
+    } else if (b.dataset.none) {
+      p[b.dataset.none] = [];
+      renderWizard();
+    }
+  });
+}

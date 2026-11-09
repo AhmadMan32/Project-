@@ -40,8 +40,13 @@ function muscleVolume(workouts, custom, fromMs, toMs) {
   return { vol, lastHit, days };
 }
 
+// Kişisel hedef (profile.js) – profil yoksa varsayılan
+function T(m) {
+  return typeof muscleTarget === "function" ? muscleTarget(m, (typeof state !== "undefined" && state.profile) || {}) : MUSCLES[m];
+}
+
 function statusOf(m, v) {
-  const { min, max } = MUSCLES[m];
+  const { min, max } = T(m);
   if (v === 0) return "none";
   if (v < min) return "low";
   if (v > max) return "high";
@@ -93,7 +98,7 @@ function analyze(state) {
     insights.push({
       type: "danger", muscle: m,
       title: `${MUSCLES[m].name} fazla çalıştı`,
-      text: `Son 7 günde ${fmt(week.vol[m])} set (önerilen en fazla ${MUSCLES[m].max}). Toparlanma bozulabilir, sakatlık riski artar. Bu hafta ${MUSCLES[m].name.toLowerCase()} hacmini %20-30 azalt.`,
+      text: `Son 7 günde ${fmt(week.vol[m])} set (sana önerilen en fazla ${T(m).max}). Toparlanma bozulabilir, sakatlık riski artar. Bu hafta ${MUSCLES[m].name.toLowerCase()} hacmini %20-30 azalt.`,
     });
   }
 
@@ -113,7 +118,7 @@ function analyze(state) {
     insights.push({
       type: "warn", muscle: m,
       title: `${MUSCLES[m].name} yetersiz`,
-      text: `Son 7 günde ${fmt(week.vol[m])} set, hedef ${MUSCLES[m].min}-${MUSCLES[m].max}. ${Math.ceil(MUSCLES[m].min - week.vol[m])} set daha ekle. Öneri: ${suggest(m).join(", ")}.`,
+      text: `Son 7 günde ${fmt(week.vol[m])} set, hedefin ${T(m).min}-${T(m).max}. ${Math.ceil(T(m).min - week.vol[m])} set daha ekle. Öneri: ${suggest(m).join(", ")}.`,
     });
   }
 
@@ -199,7 +204,9 @@ function analyze(state) {
 }
 
 function suggest(m) {
-  return EXERCISES.filter((e) => e.p[0] === m).slice(0, 2).map((e) => e.name);
+  const pool = typeof allowedExercises === "function" && typeof state !== "undefined"
+    ? allowedExercises(state.profile, state.customExercises) : EXERCISES;
+  return pool.filter((e) => e.p[0] === m).slice(0, 2).map((e) => e.name);
 }
 
 function fmt(n) {
@@ -208,10 +215,11 @@ function fmt(n) {
 
 function nutritionTargets(profile) {
   const w = Number(profile.weight) || 0;
-  const factor = { cut: 2.2, maintain: 1.8, bulk: 2.0 }[profile.goal] || 1.8;
+  const g = typeof goalKey === "function" ? GOALS[goalKey(profile.goal)] : { protein: 1.8 };
+  const loading = profile.creatineLoading && (!profile.loadingUntil || todayStr() <= profile.loadingUntil);
   return {
-    protein: Math.round(w * factor),
-    creatine: profile.creatineLoading ? Math.min(20, Math.round(w * 0.3)) : 5,
+    protein: Math.round(w * g.protein),
+    creatine: profile.creatine === "no" ? 0 : loading ? Math.min(20, Math.round(w * 0.3)) : 5,
     water: Math.round(w * 35 / 100) * 100 || 2500,
   };
 }

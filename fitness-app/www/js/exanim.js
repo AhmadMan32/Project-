@@ -42,7 +42,8 @@ function solveFront(P) {
     return [knee, ank];
   };
   const [elbL, wrL] = arm(shoL, -1), [elbR, wrR] = arm(shoR, 1);
-  const [kneeL, ankL] = leg(hipL, -1), [kneeR, ankR] = leg(hipR, 1);
+  const [kneeL, ankL] = leg(hipL, -1);
+  const [kneeR, ankR] = P.gR != null ? (() => { const k = [hipR[0] + Math.sin(rad(P.gR)) * RIG.th, hipR[1] + Math.cos(rad(P.gR)) * RIG.th]; return [k, [k[0] + Math.sin(rad(P.gR)) * RIG.sh, k[1] + Math.cos(rad(P.gR)) * RIG.sh]]; })() : leg(hipR, 1);
   return { front: true, head: [60, sy - 10], neck: [60, sy - 3], shoL, shoR, hipL, hipR, elbL, wrL, elbR, wrR, kneeL, ankL, kneeR, ankR, pel: [60, py], chest: [60, sy] };
 }
 
@@ -57,6 +58,18 @@ const kettle = (p) => `<path d="M${(p[0] - 3).toFixed(1)} ${(p[1] + 1).toFixed(1
 const cable = (p, anchor) => seg(anchor, p, 1.2, C.prop) + dot(anchor, 2.5, C.dark, `stroke="${C.prop}" stroke-width="1"`) + rect(p[0] - 3, p[1] - 1.5, 6, 3, C.plate, 1);
 const bag = (p) => rect(p[0] - 5, p[1], 10, 11, C.plate, 3) + seg([p[0] - 2, p[1]], [p[0] + 2, p[1]], 1.5, C.prop);
 const floor = () => seg([4, FLOOR + 3], [116, FLOOR + 3], 1.5, C.dark);
+const handle = (p) => rect(p[0] - 1.5, p[1] - 5, 3, 10, C.plate, 1);
+const pad = (p, w = 10, h = 4) => rect(p[0] - w / 2, p[1] - h / 2, w, h, C.prop, 1.5);
+const smithRails = () => rect(22, -8, 3, 104, C.dark, 1) + rect(95, -8, 3, 104, C.dark, 1);
+// mevcut bir kalıbı farklı ekipmanla kullan: props birleştirilir (back/front sırası korunur)
+function variant(base, extra = {}, over = {}) {
+  const b = PATTERNS[base];
+  const props = { ...b.props };
+  if (extra.back) { const ob = b.props.back; props.back = (J, P) => (extra.back(J, P) + (ob ? ob(J, P) : "")); }
+  if (extra.front) props.front = extra.front;
+  if (extra.addFront) { const of = b.props.front; props.front = (J, P) => ((of ? of(J, P) : "") + extra.addFront(J, P)); }
+  return { ...b, ...over, props };
+}
 
 // ---- figürü çiz ----
 function drawSide(J, hl, props, P) {
@@ -85,7 +98,9 @@ function drawFront(J, hl, props, P) {
   let s = props.back ? props.back(J, P) : "";
   const legC = isHL("th") ? C.hl : C.body;
   for (const [hip, knee, ank] of [[J.hipL, J.kneeL, J.ankL], [J.hipR, J.kneeR, J.ankR]]) s += seg(hip, knee, 6, legC) + seg(knee, ank, 5.5, C.body);
-  s += seg(J.hipL, J.hipR, 7, C.body) + seg(J.pel, J.chest, 10, isHL("torso") || isHL("chest") ? C.hl : C.body) + seg(J.shoL, J.shoR, 7, isHL("traps") ? C.hl : C.body);
+  s += seg(J.hipL, J.hipR, 7, C.body);
+  if (P.tiltDeg) s += `<g transform="rotate(${P.tiltDeg.toFixed(1)} 60 ${J.pel[1]})">`;
+  s += seg(J.pel, J.chest, 10, isHL("torso") || isHL("chest") ? C.hl : C.body) + seg(J.shoL, J.shoR, 7, isHL("traps") ? C.hl : C.body);
   if (isHL("traps")) s += seg([55, J.shoL[1] - 2], [65, J.shoR[1] - 2], 5, C.hl);
   s += seg(J.neck, J.chest, 4, C.body) + dot(J.head, RIG.head, C.body);
   const armC = isHL("ua") ? C.hl : C.body;
@@ -94,6 +109,7 @@ function drawFront(J, hl, props, P) {
     s += seg(sho, elb, 5, armC) + seg(elb, wr, 4.5, C.body);
   }
   if (props.front) s += props.front(J, P);
+  if (P.tiltDeg) s += "</g>";
   return s;
 }
 
@@ -230,6 +246,96 @@ const PATTERNS = {
   farmer: { hl: ["fa", "traps"], A: { hip: [60, 53], t: 2, th: 160, sh: 185, th2: 198, sh2: 175, ua: 180, fa: 180 }, B: { hip: [60, 51], t: 2, th: 198, sh: 175, th2: 160, sh2: 185, ua: 180, fa: 180 }, props: { front: both(dumbbell) } },
 };
 
+// ---- makine / kablo kalıpları ----
+Object.assign(PATTERNS, {
+  crossover_mid: { hl: ["chest"], view: "front", A: { a: 92, b: 96 }, B: { a: 22, b: -12 },
+    props: { back: () => dot([6, 26], 2.5, C.dark) + dot([114, 26], 2.5, C.dark), front: (J) => seg([6, 26], J.wrL, 1.1, C.prop) + seg([114, 26], J.wrR, 1.1, C.prop) } },
+  crossover_low: { hl: ["chest", "delt"], A: { ank: [62, FLOOR], su: 4, tu: -4, t: 8, ua: 205, fa: 200 }, B: { ank: [62, FLOOR], su: 4, tu: -4, t: 8, ua: 50, fa: 45 },
+    props: { front: (J) => cable(J.wr, [28, FLOOR]) } },
+  cable_press: { hl: ["chest", "ua"], A: { ank: [62, FLOOR], su: 6, tu: -6, t: 10, ua: 205, fa: 80 }, B: { ank: [62, FLOOR], su: 6, tu: -6, t: 10, ua: 92, fa: 90 },
+    props: { front: (J) => cable(J.wr, [8, 28]) } },
+  high_row: { hl: ["torso", "ua"], A: { hip: [46, 70], t: 4, th: 88, sh: 180, ft: 90, ua: 38, fa: 38 }, B: { hip: [46, 70], t: -4, th: 88, sh: 180, ft: 90, ua: 205, fa: 70 },
+    props: { back: () => seat(32, 74) + rect(84, 10, 4, 86, C.dark, 1), front: (J) => handle(J.wr) + pad([J.knee[0] - 2, J.knee[1] - 5], 8) } },
+  chest_sup_row: { hl: ["torso", "ua"], A: { ank: [64, FLOOR], su: 10, tu: -20, t: 52, ua: 180, fa: 180 }, B: { ank: [64, FLOOR], su: 10, tu: -20, t: 52, ua: 245, fa: 175 },
+    props: { back: (J) => seg(step(step(J.hip, 52, 8), 142, 6), step(step(J.hip, 52, 26), 142, 6), 6, C.dark) + rect(80, 62, 4, 34, C.dark, 1), front: atWrist(handle) } },
+  back_ext_seated: { hl: ["torso", "glute"], A: { hip: [48, 66], t: 40, th: 90, sh: 180, ft: 90, ua: 150, fa: 30 }, B: { hip: [48, 66], t: -12, th: 90, sh: 180, ft: 90, ua: 160, fa: 20 },
+    props: { back: (J) => seat(34, 70) + pad(step(J.hip, -35, 20), 4, 12) } },
+  reverse_hyper: { hl: ["glute", "torso"], A: { hip: [56, 56], t: -90, th: 182, sh: 182, ft: 90, ua: 182, fa: 182 }, B: { hip: [56, 56], t: -90, th: 98, sh: 98, ft: 0, ua: 182, fa: 182 },
+    props: { back: () => rect(18, 59, 40, 5, C.dark) + rect(34, 64, 4, 32, C.dark, 1), front: (J) => dot(J.ank, 3, C.prop) } },
+  lateral_machine: { hl: ["delt"], view: "front", A: { a: 14, b: 40, py: 64 }, B: { a: 88, b: 120, py: 64 },
+    props: { back: () => rect(44, 66, 32, 5, C.dark) + rect(57, 71, 6, 25, C.dark, 1), front: (J) => pad(J.elbL, 6, 6) + pad(J.elbR, 6, 6) } },
+  cable_y: { hl: ["delt", "traps"], view: "front", A: { a: -14, b: -14 }, B: { a: 145, b: 148 },
+    props: { back: () => dot([104, FLOOR], 2.5, C.dark), front: (J) => seg([104, FLOOR], J.wrL, 1.1, C.prop) + rect(J.wrL[0] - 2, J.wrL[1] - 1.5, 4, 3, C.plate, 1) } },
+  cable_front_raise: { hl: ["delt"], A: { ...STAND, ua: 172, fa: 172 }, B: { ...STAND, ua: 92, fa: 92 }, props: { front: (J) => cable(J.wr, [40, FLOOR]) } },
+  cable_rear: { hl: ["delt"], view: "front", A: { a: -20, b: -30 }, B: { a: 92, b: 92 },
+    props: { back: () => dot([10, 26], 2.5, C.dark) + dot([110, 26], 2.5, C.dark), front: (J) => seg([110, 26], J.wrL, 1.1, C.prop) + seg([10, 26], J.wrR, 1.1, C.prop) } },
+  rear_delt_row: { hl: ["delt", "torso"], A: { ...STAND, ua: 88, fa: 88 }, B: { ...STAND, ua: 280, fa: 95 }, props: { front: (J) => cable(J.wr, [114, 26]) } },
+  high_cable_curl: { hl: ["ua"], view: "front", A: { a: 88, b: 90 }, B: { a: 88, b: 172 },
+    props: { back: () => dot([6, 20], 2.5, C.dark) + dot([114, 20], 2.5, C.dark), front: (J) => seg([6, 20], J.wrL, 1.1, C.prop) + seg([114, 20], J.wrR, 1.1, C.prop) } },
+  bayesian: { hl: ["ua"], A: { ank: [64, FLOOR], su: 4, tu: -4, t: 8, ua: 205, fa: 205 }, B: { ank: [64, FLOOR], su: 4, tu: -4, t: 8, ua: 205, fa: 40 }, props: { front: (J) => cable(J.wr, [18, FLOOR]) } },
+  tri_machine: { hl: ["ua"], A: { hip: [48, 66], t: 4, th: 90, sh: 180, ft: 90, ua: 125, fa: 22 }, B: { hip: [48, 66], t: 4, th: 90, sh: 180, ft: 90, ua: 125, fa: 128 },
+    props: { back: () => seat(34, 70) + seg([56, 44], [72, 58], 6, C.dark), front: atWrist(handle) } },
+  seated_dip: { hl: ["ua"], A: { hip: [50, 66], t: 0, th: 90, sh: 180, ft: 90, ua: 210, fa: 25 }, B: { hip: [50, 66], t: 0, th: 90, sh: 180, ft: 90, ua: 182, fa: 182 },
+    props: { back: () => seat(36, 70) + backPad(44, 68, 42, 34), front: atWrist(handle) } },
+  belt_squat: { hl: ["th", "glute"], A: { ...STAND, ua: 160, fa: 140 }, B: { ...STAND, su: 30, tu: -78, t: 22, ua: 150, fa: 120 },
+    props: { front: (J) => seg(J.hip, [J.hip[0], J.hip[1] + 8], 1.5, C.prop) + plate([J.hip[0], J.hip[1] + 13], 6) } },
+  standing_leg_curl: { hl: ["th"], A: { hip: [60, 52], t: 10, th: 182, sh: 182, th2: 180, sh2: 180, ft: 90, ft2: 90, ua: 150, fa: 110 },
+    B: { hip: [60, 52], t: 10, th: 172, sh: 292, th2: 180, sh2: 180, ft: 200, ft2: 90, ua: 150, fa: 110 },
+    props: { back: () => rect(70, 22, 4, 74, C.dark, 1), front: (J) => pad([J.ank[0] - 2, J.ank[1] - 3], 8) + pad([J.knee[0] + 4, J.knee[1] - 6], 4, 8) } },
+  glute_kick: { hl: ["glute"], A: { hip: [62, 56], t: 48, th: 140, sh: 205, th2: 178, sh2: 182, ft: 180, ft2: 90, ua: 130, fa: 110 },
+    B: { hip: [62, 56], t: 48, th: 272, sh: 258, th2: 178, sh2: 182, ft: 200, ft2: 90, ua: 130, fa: 110 },
+    props: { back: (J) => seg(step(J.hip, 48, 10), step(J.hip, 48, 26), 6, C.dark) + rect(84, 40, 4, 56, C.dark, 1) } },
+  pull_through: { hl: ["glute", "th"], A: { ank: [62, FLOOR], su: 8, tu: -32, t: 72, ua: 205, fa: 210 }, B: { ...STAND, ank: [62, FLOOR], ua: 182, fa: 186 }, props: { front: (J) => cable(J.wr, [14, FLOOR]) } },
+  cable_abd: { hl: ["glute"], view: "front", A: { a: 30, b: 20, gR: 4 }, B: { a: 30, b: 20, gR: 34 },
+    props: { back: () => rect(28, 10, 4, 86, C.dark, 1), front: (J) => seg([30, FLOOR], J.ankR, 1.1, C.prop) } },
+  cable_add: { hl: ["th"], view: "front", A: { a: 10, b: 10, gR: 30 }, B: { a: 10, b: 10, gR: -6 },
+    props: { back: () => rect(108, 10, 4, 86, C.dark, 1), front: (J) => seg([110, FLOOR], J.ankR, 1.1, C.prop) } },
+  leg_press_calf: { hl: ["sh"], A: { hip: [44, 70], t: -58, th: 68, sh: 78, ua: 150, fa: 100, ft: 345 }, B: { hip: [44, 70], t: -58, th: 68, sh: 78, ua: 150, fa: 100, ft: 300 },
+    props: { back: (J) => backPad(36, 76, 16, 50) + seg([J.toe[0] + 3, J.toe[1] - 12], [J.toe[0] + 9, J.toe[1] + 10], 5, C.prop) } },
+  donkey_calf: { hl: ["sh"], A: { ank: [62, FLOOR], su: 0, tu: -2, t: 82, ua: 172, fa: 172 }, B: { ank: [62, FLOOR - 5], su: 0, tu: -2, t: 82, ua: 172, fa: 172, ft: 135 },
+    props: { back: (J) => rect(52, FLOOR - 1, 26, 4, C.dark, 1) + seg(step(J.hip, 82, 8), step(J.hip, 82, 22), 6, C.dark) } },
+  ab_machine: { hl: ["abs"], A: { hip: [50, 66], t: -4, th: 90, sh: 180, ft: 90, ua: 10, fa: 150 }, B: { hip: [50, 66], t: 42, th: 90, sh: 180, ft: 90, ua: 60, fa: 190 },
+    props: { back: () => seat(36, 70), front: atWrist(handle) } },
+  captain_chair: { hl: ["abs"], A: { hip: [56, 54], t: 0, th: 180, sh: 180, ft: 90, ua: 120, fa: 90 }, B: { hip: [56, 54], t: -4, th: 88, sh: 182, ft: 90, ua: 120, fa: 90 },
+    props: { back: (J) => backPad(J.sho[0] - 7, J.sho[1] - 4, J.hip[0] - 7, J.hip[1] + 6) + rect(46, 34, 26, 4, C.dark, 1) + rect(40, 34, 4, 62, C.dark, 1) } },
+  pallof: { hl: ["abs"], A: { ...STAND, ua: 165, fa: 30 }, B: { ...STAND, ua: 92, fa: 92 }, props: { front: (J) => cable(J.wr, [114, 40]) } },
+  side_bend: { hl: ["abs"], view: "front", A: { a: 6, b: 6, lift: 0 }, B: { a: 6, b: 6, lift: 0 },
+    props: { back: (J, P) => { // kablo, eğilmiş gövdedeki ele bağlanır (grubun dışında çizilir)
+      const r = rad(P.tiltDeg || 0), c = [60, J.pel[1]], d = [J.wrR[0] - c[0], J.wrR[1] - c[1]];
+      const w = [c[0] + d[0] * Math.cos(r) - d[1] * Math.sin(r), c[1] + d[0] * Math.sin(r) + d[1] * Math.cos(r)];
+      return dot([110, FLOOR], 2.5, C.dark) + seg([110, FLOOR], w, 1.1, C.prop);
+    } } },
+});
+// yan eğilme: gövde ön görünümde yana yatar
+PATTERNS.side_bend.tilt = -16; // kablonun tersine eğilir
+
+// varyantlar: aynı hareket, farklı ekipman
+Object.assign(PATTERNS, {
+  incline_machine: variant("incline", { front: atWrist(handle) }),
+  decline_machine: variant("decline", { front: atWrist(handle) }),
+  bench_smith: variant("bench", { back: smithRails }),
+  incline_smith: variant("incline", { back: smithRails, front: atWrist((p) => plate(p, 7)) }),
+  dips_assist: variant("dips", { addFront: (J) => pad([J.knee[0], J.knee[1] + 4], 12) }),
+  pullup_assist: variant("pullup", { addFront: (J) => pad([J.knee[0], J.knee[1] + 4], 12) }),
+  row_machine: variant("row_seated", { front: atWrist(handle) }),
+  row_smith: variant("row_bent", { back: smithRails }),
+  squat_smith: variant("squat_bar", { back: smithRails }),
+  ohp_smith: variant("ohp", { back: smithRails }),
+  lunge_smith: variant("lunge", { back: smithRails, front: (J, P) => plate(step(step(J.sho, P.t + 180, 4), P.t - 90, 3), 7) }),
+  rdl_smith: variant("rdl", { back: smithRails }),
+  calf_smith: variant("calf", { back: smithRails, front: (J, P) => plate(step(step(J.sho, P.t + 180, 4), P.t - 90, 3), 7) }),
+  shrug_cable: variant("shrug", { back: () => dot([60, FLOOR], 2.5, C.dark), front: (J) => seg([60, FLOOR], J.wrL, 1.1, C.prop) + seg([60, FLOOR], J.wrR, 1.1, C.prop) }),
+  shrug_smith: variant("shrug", { back: smithRails, front: (J) => seg([J.wrL[0] - 6, J.wrL[1]], [J.wrR[0] + 6, J.wrR[1]], 2.5, C.prop) }),
+  upright_cable: variant("upright_row", { back: () => dot([60, FLOOR], 2.5, C.dark), front: (J) => seg([60, FLOOR], mid(J.wrL, J.wrR), 1.1, C.prop) + seg(J.wrL, J.wrR, 2.5, C.prop) }),
+  curl_machine: variant("preacher", { front: atWrist(handle) }),
+  kickback_cable: variant("kickback", { front: (J) => cable(J.wr, [104, FLOOR]) }),
+  oh_ext_cable: variant("oh_ext", { front: (J) => cable(J.wr, [40, FLOOR]) }),
+  wrist_curl_cable: variant("wrist_curl", { front: (J) => cable(J.wr, [72, FLOOR]) }),
+  rope_pullover: variant("straight_pulldown", { front: (J) => cable(J.wr, [104, 2]) + seg([J.wr[0] - 3, J.wr[1] + 2], [J.wr[0] + 3, J.wr[1] + 5], 2, C.plate) }),
+  kick_cable: variant("glute_kick", { front: (J) => cable(J.ank, [110, FLOOR]) }),
+  torso_rotation: variant("twist", { back: () => seat(30, 84) }),
+});
+
 // Hareket -> kalıp
 const EX_ANIM = {
   bench: "bench", db_bench: "bench_db", close_bench: "bench", incline_bench: "incline", incline_db: "incline", decline_bench: "decline",
@@ -252,6 +358,24 @@ const EX_ANIM = {
   calf_raise: "calf", bw_calf: "calf", seated_calf: "calf_seated",
   crunch: "crunch", cable_crunch: "crunch_cable", bicycle: "bicycle", russian_twist: "twist", plank: "plank", side_plank: "plank",
   ab_wheel: "ab_wheel", mountain_climber: "mountain", woodchop: "twist", burpee: "burpee",
+  // makine / kablo / Smith
+  cable_fly_mid: "crossover_mid", cable_fly_high: "crossover", cable_fly_low: "crossover_low", single_cable_fly: "crossover_mid",
+  cable_chest_press: "cable_press", incline_chest_press: "incline_machine", decline_chest_press: "decline_machine", hammer_chest: "chest_press",
+  smith_bench: "bench_smith", smith_incline: "incline_smith", assisted_dip: "dips_assist",
+  assisted_pullup: "pullup_assist", machine_pulldown: "pulldown", reverse_pulldown: "pulldown", single_pulldown: "pulldown",
+  hammer_row: "row_machine", low_row: "row_machine", high_row: "high_row", chest_sup_row: "chest_sup_row", single_cable_row: "row_seated",
+  smith_row: "row_smith", rope_pullover: "rope_pullover", back_ext_machine: "back_ext_seated", reverse_hyper: "reverse_hyper",
+  cable_shrug: "shrug_cable", smith_shrug: "shrug_smith",
+  lateral_machine: "lateral_machine", cable_y_raise: "cable_y", cable_front_raise: "cable_front_raise", cable_rear_fly: "cable_rear",
+  cable_upright_row: "upright_cable", smith_ohp: "ohp_smith", rear_delt_row: "rear_delt_row",
+  cable_hammer: "curl_cable", biceps_machine: "curl_machine", preacher_machine: "curl_machine", high_cable_curl: "high_cable_curl",
+  bayesian_curl: "bayesian", triceps_machine: "tri_machine", dip_machine: "seated_dip", cable_kickback: "kickback_cable",
+  single_pushdown: "pushdown", cable_oh_ext: "oh_ext_cable", cable_wrist_curl: "wrist_curl_cable",
+  smith_squat: "squat_smith", pendulum_squat: "hack_squat", belt_squat: "belt_squat", single_leg_press: "leg_press",
+  smith_lunge: "lunge_smith", smith_rdl: "rdl_smith", standing_leg_curl: "standing_leg_curl", glute_ham: "nordic",
+  glute_kick_machine: "glute_kick", cable_glute_kick: "kick_cable", hip_thrust_machine: "hip_thrust", cable_pull_through: "pull_through",
+  cable_abduction: "cable_abd", cable_adduction: "cable_add", leg_press_calf: "leg_press_calf", smith_calf: "calf_smith", donkey_calf: "donkey_calf",
+  ab_machine: "ab_machine", torso_rotation: "torso_rotation", captain_chair: "captain_chair", pallof_press: "pallof", cable_side_bend: "side_bend",
 };
 
 // Özel (kullanıcının eklediği) hareketler için birincil kasa göre kalıp
@@ -279,6 +403,7 @@ function lerpPose(A, B, k) {
 function animFrame(key, k) {
   const pat = PATTERNS[key] || PATTERNS.squat_bw;
   const P = lerpPose(pat.A, pat.B, k);
+  if (pat.tilt) P.tiltDeg = pat.tilt * k;
   const J = pat.view === "front" ? solveFront(P) : solveSide(P);
   const props = pat.props || {};
   return (pat.view === "front" ? drawFront(J, pat.hl || [], props, P) : drawSide(J, pat.hl || [], props, P)) + (props.back === floor ? "" : floor());

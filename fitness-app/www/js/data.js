@@ -119,6 +119,85 @@ const EXERCISES = [
   { id: "clean", name: "Power Clean", cat: "Tüm Vücut", p: ["traps", "glutes", "quads"], s: ["hamstrings", "lower_back", "upper_back", "side_delt"] },
   { id: "kb_swing", name: "Kettlebell Swing", cat: "Tüm Vücut", p: ["glutes", "hamstrings"], s: ["lower_back", "abs", "front_delt"] },
   { id: "thruster", name: "Thruster", cat: "Tüm Vücut", p: ["quads", "front_delt"], s: ["glutes", "triceps", "abs"] },
+  // MAKİNE, KABLO VE SMITH MACHINE
+  // Göğüs
+  { id: "cable_fly_mid", name: "Cable Fly (orta)", cat: "Göğüs", p: ["chest"], s: ["front_delt"] },
+  { id: "cable_fly_high", name: "Cable Fly (yukarıdan aşağı)", cat: "Göğüs", p: ["chest"], s: ["front_delt"] },
+  { id: "cable_fly_low", name: "Cable Fly (aşağıdan yukarı)", cat: "Göğüs", p: ["chest", "front_delt"], s: [] },
+  { id: "single_cable_fly", name: "Tek Kol Cable Fly", cat: "Göğüs", p: ["chest"], s: ["front_delt", "obliques"] },
+  { id: "cable_chest_press", name: "Cable Chest Press", cat: "Göğüs", p: ["chest"], s: ["front_delt", "triceps", "abs"] },
+  { id: "incline_chest_press", name: "Incline Chest Press Makinesi", cat: "Göğüs", p: ["chest", "front_delt"], s: ["triceps"] },
+  { id: "decline_chest_press", name: "Decline Chest Press Makinesi", cat: "Göğüs", p: ["chest"], s: ["triceps"] },
+  { id: "hammer_chest", name: "Hammer Strength Chest Press", cat: "Göğüs", p: ["chest"], s: ["front_delt", "triceps"] },
+  { id: "smith_bench", name: "Smith Machine Bench Press", cat: "Göğüs", p: ["chest"], s: ["front_delt", "triceps"] },
+  { id: "smith_incline", name: "Smith Machine Incline Press", cat: "Göğüs", p: ["chest", "front_delt"], s: ["triceps"] },
+  { id: "assisted_dip", name: "Assisted Dip Makinesi", cat: "Göğüs", p: ["chest", "triceps"], s: ["front_delt"] },
+
+  // Sırt
+  { id: "assisted_pullup", name: "Assisted Pull-up Makinesi", cat: "Sırt", p: ["lats"], s: ["biceps", "upper_back", "rear_delt"] },
+  { id: "machine_pulldown", name: "Pulldown Makinesi (plaka)", cat: "Sırt", p: ["lats"], s: ["biceps", "upper_back"] },
+  { id: "reverse_pulldown", name: "Ters Tutuş Lat Pulldown", cat: "Sırt", p: ["lats", "biceps"], s: ["upper_back"] },
+  { id: "single_pulldown", name: "Tek Kol Cable Pulldown", cat: "Sırt", p: ["lats"], s: ["biceps", "obliques"] },
+  { id: "hammer_row", name: "Hammer Strength Row", cat: "Sırt", p: ["upper_back", "lats"], s: ["rear_delt", "biceps"] },
+  { id: "low_row", name: "Low Row Makinesi", cat: "Sırt", p: ["lats", "upper_back"], s: ["biceps", "rear_delt"] },
+  { id: "high_row", name: "High Row Makinesi", cat: "Sırt", p: ["lats", "upper_back"], s: ["rear_delt", "biceps"] },
+  { id: "chest_sup_row", name: "Göğüs Destekli T-Bar Row", cat: "Sırt", p: ["upper_back", "lats"], s: ["rear_delt", "biceps"] },
+  { id: "single_cable_row", name: "Tek Kol Cable Row", cat: "Sırt", p: ["lats", "upper_back"], s: ["biceps", "rear_delt", "obliques"] },
+  { id: "smith_row", name: "Smith Machine Row", cat: "Sırt", p: ["upper_back", "lats"], s: ["rear_delt", "biceps", "lower_back"] },
+  { id: "rope_pullover", name: "Rope Pullover (kablo)", cat: "Sırt", p: ["lats"], s: ["triceps", "abs"] },
+  { id: "back_ext_machine", name: "Back Extension Makinesi", cat: "Sırt", p: ["lower_back"], s: ["glutes"] },
+  { id: "reverse_hyper", name: "Reverse Hyper Makinesi", cat: "Sırt", p: ["lower_back", "glutes"], s: ["hamstrings"] },
+  { id: "cable_shrug", name: "Cable Shrug", cat: "Sırt", p: ["traps"], s: ["forearm"] },
+  { id: "smith_shrug", name: "Smith Machine Shrug", cat: "Sırt", p: ["traps"], s: ["forearm"] },
+
+  // Omuz
+  { id: "lateral_machine", name: "Lateral Raise Makinesi", cat: "Omuz", p: ["side_delt"], s: [] },
+  { id: "cable_y_raise", name: "Cable Y-Raise", cat: "Omuz", p: ["side_delt", "traps"], s: ["rear_delt"] },
+  { id: "cable_front_raise", name: "Cable Front Raise", cat: "Omuz", p: ["front_delt"], s: [] },
+  { id: "cable_rear_fly", name: "Cable Reverse Fly (arka omuz)", cat: "Omuz", p: ["rear_delt"], s: ["upper_back"] },
+  { id: "cable_upright_row", name: "Cable Upright Row", cat: "Omuz", p: ["side_delt", "traps"], s: ["biceps"] },
+  { id: "smith_ohp", name: "Smith Machine Shoulder Press", cat: "Omuz", p: ["front_delt"], s: ["side_delt", "triceps"] },
+  { id: "rear_delt_row", name: "Rear Delt Row (kablo)", cat: "Omuz", p: ["rear_delt", "upper_back"], s: ["biceps"] },
+
+  // Kol
+  { id: "cable_hammer", name: "Rope Hammer Curl (kablo)", cat: "Kol", p: ["biceps", "forearm"], s: [] },
+  { id: "biceps_machine", name: "Biceps Curl Makinesi", cat: "Kol", p: ["biceps"], s: [] },
+  { id: "preacher_machine", name: "Preacher Curl Makinesi", cat: "Kol", p: ["biceps"], s: [] },
+  { id: "high_cable_curl", name: "Yüksek Kablo Curl (çift kol)", cat: "Kol", p: ["biceps"], s: [] },
+  { id: "bayesian_curl", name: "Bayesian Cable Curl", cat: "Kol", p: ["biceps"], s: ["forearm"] },
+  { id: "triceps_machine", name: "Triceps Extension Makinesi", cat: "Kol", p: ["triceps"], s: [] },
+  { id: "dip_machine", name: "Seated Dip Makinesi", cat: "Kol", p: ["triceps"], s: ["chest", "front_delt"] },
+  { id: "cable_kickback", name: "Cable Triceps Kickback", cat: "Kol", p: ["triceps"], s: [] },
+  { id: "single_pushdown", name: "Tek Kol Ters Tutuş Pushdown", cat: "Kol", p: ["triceps"], s: ["forearm"] },
+  { id: "cable_oh_ext", name: "Cable Overhead Triceps Extension (rope)", cat: "Kol", p: ["triceps"], s: [] },
+  { id: "cable_wrist_curl", name: "Cable Wrist Curl", cat: "Kol", p: ["forearm"], s: [] },
+
+  // Bacak ve kalça
+  { id: "smith_squat", name: "Smith Machine Squat", cat: "Bacak", p: ["quads", "glutes"], s: ["adductors", "hamstrings"] },
+  { id: "pendulum_squat", name: "Pendulum Squat", cat: "Bacak", p: ["quads"], s: ["glutes", "adductors"] },
+  { id: "belt_squat", name: "Belt Squat", cat: "Bacak", p: ["quads", "glutes"], s: ["adductors"] },
+  { id: "single_leg_press", name: "Tek Bacak Leg Press", cat: "Bacak", p: ["quads", "glutes"], s: ["adductors", "hamstrings"] },
+  { id: "smith_lunge", name: "Smith Machine Split Squat", cat: "Bacak", p: ["quads", "glutes"], s: ["adductors", "hamstrings"] },
+  { id: "smith_rdl", name: "Smith Machine Romanian Deadlift", cat: "Bacak", p: ["hamstrings", "glutes"], s: ["lower_back"] },
+  { id: "standing_leg_curl", name: "Ayakta Leg Curl Makinesi", cat: "Bacak", p: ["hamstrings"], s: ["calves"] },
+  { id: "glute_ham", name: "Glute Ham Raise (GHR)", cat: "Bacak", p: ["hamstrings", "glutes"], s: ["calves", "lower_back"] },
+  { id: "glute_kick_machine", name: "Glute Kickback Makinesi", cat: "Bacak", p: ["glutes"], s: ["hamstrings"] },
+  { id: "cable_glute_kick", name: "Cable Glute Kickback", cat: "Bacak", p: ["glutes"], s: ["hamstrings"] },
+  { id: "hip_thrust_machine", name: "Hip Thrust Makinesi", cat: "Bacak", p: ["glutes"], s: ["hamstrings"] },
+  { id: "cable_pull_through", name: "Cable Pull-Through", cat: "Bacak", p: ["glutes", "hamstrings"], s: ["lower_back"] },
+  { id: "cable_abduction", name: "Cable Hip Abduction (ayakta)", cat: "Bacak", p: ["glutes"], s: [] },
+  { id: "cable_adduction", name: "Cable Hip Adduction (ayakta)", cat: "Bacak", p: ["adductors"], s: [] },
+  { id: "leg_press_calf", name: "Leg Press'te Calf Raise", cat: "Bacak", p: ["calves"], s: [] },
+  { id: "smith_calf", name: "Smith Machine Calf Raise", cat: "Bacak", p: ["calves"], s: [] },
+  { id: "donkey_calf", name: "Donkey Calf Raise Makinesi", cat: "Bacak", p: ["calves"], s: [] },
+
+  // Karın
+  { id: "ab_machine", name: "Ab Crunch Makinesi", cat: "Karın", p: ["abs"], s: ["obliques"] },
+  { id: "torso_rotation", name: "Torso Rotation Makinesi", cat: "Karın", p: ["obliques"], s: ["abs"] },
+  { id: "captain_chair", name: "Captain's Chair Diz Çekme", cat: "Karın", p: ["abs"], s: ["obliques"] },
+  { id: "pallof_press", name: "Pallof Press (kablo)", cat: "Karın", p: ["obliques", "abs"], s: [] },
+  { id: "cable_side_bend", name: "Cable Side Bend", cat: "Karın", p: ["obliques"], s: ["abs"] },
+
   // EKİPMANSIZ (evde)
   { id: "bw_squat", name: "Vücut Ağırlığı Squat", cat: "Ekipmansız", p: ["quads", "glutes"], s: ["adductors"], bw: true },
   { id: "split_squat_bw", name: "Split Squat (ağırlıksız)", cat: "Ekipmansız", p: ["quads", "glutes"], s: ["adductors", "hamstrings"], bw: true },
@@ -163,9 +242,9 @@ for (const id of ["pullup", "chinup", "leg_raise", "dips_chest"]) EXERCISES.find
 
 // Sakatlık durumunda kaçınılacak hareketler
 const INJURY_RISK = {
-  shoulder: { name: "Omuz", avoid: ["pike_pushup", "ohp", "upright_row", "dips_chest", "dips_tri", "skullcrusher", "arnold", "front_raise", "decline_bench", "bench", "thruster"] },
-  back:     { name: "Bel",  avoid: ["rdl", "sl_rdl_bw", "deadlift", "good_morning", "barbell_row", "rack_pull", "tbar_row", "squat", "clean", "kb_swing", "hyperext"] },
-  knee:     { name: "Diz",  avoid: ["split_squat_bw", "wall_sit", "leg_ext", "lunge", "bulgarian", "hack_squat", "front_squat", "step_up", "burpee", "thruster"] },
+  shoulder: { name: "Omuz", avoid: ["smith_ohp", "smith_bench", "assisted_dip", "cable_upright_row", "pike_pushup", "ohp", "upright_row", "dips_chest", "dips_tri", "skullcrusher", "arnold", "front_raise", "decline_bench", "bench", "thruster"] },
+  back:     { name: "Bel",  avoid: ["smith_rdl", "smith_row", "smith_squat", "rdl", "sl_rdl_bw", "deadlift", "good_morning", "barbell_row", "rack_pull", "tbar_row", "squat", "clean", "kb_swing", "hyperext"] },
+  knee:     { name: "Diz",  avoid: ["pendulum_squat", "smith_lunge", "split_squat_bw", "wall_sit", "leg_ext", "lunge", "bulgarian", "hack_squat", "front_squat", "step_up", "burpee", "thruster"] },
   wrist:    { name: "Bilek", avoid: ["diamond_pushup", "pike_pushup", "mountain_climber", "pushup", "front_squat", "clean", "wrist_curl", "skullcrusher", "bb_curl"] },
 };
 

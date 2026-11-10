@@ -48,19 +48,63 @@ function solveFront(P) {
 }
 
 // ---- çizim yardımcıları ----
-const C = { body: "#e8eaf0", far: "#6b7385", hl: "#4ade80", prop: "#8fa3c0", plate: "#60a5fa", dark: "#3a4150" };
-const seg = (a, b, w, c) => `<line x1="${a[0].toFixed(1)}" y1="${a[1].toFixed(1)}" x2="${b[0].toFixed(1)}" y2="${b[1].toFixed(1)}" stroke="${c}" stroke-width="${w}" stroke-linecap="round"/>`;
-const dot = (p, r, c, extra = "") => `<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="${r}" fill="${c}" ${extra}/>`;
-const rect = (x, y, w, h, c, r = 1.5) => `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${r}" fill="${c}"/>`;
-const plate = (p, r = 8) => dot(p, r, "none", `stroke="${C.plate}" stroke-width="3"`) + dot(p, 2, C.plate);
-const dumbbell = (p) => seg([p[0] - 4, p[1]], [p[0] + 4, p[1]], 2.2, C.prop) + rect(p[0] - 6, p[1] - 3.5, 3, 7, C.plate, 1) + rect(p[0] + 3, p[1] - 3.5, 3, 7, C.plate, 1);
-const kettle = (p) => `<path d="M${(p[0] - 3).toFixed(1)} ${(p[1] + 1).toFixed(1)} q3 -6 6 0" fill="none" stroke="${C.prop}" stroke-width="1.8"/>` + dot([p[0], p[1] + 5], 4.5, C.plate);
-const cable = (p, anchor) => seg(anchor, p, 1.2, C.prop) + dot(anchor, 2.5, C.dark, `stroke="${C.prop}" stroke-width="1"`) + rect(p[0] - 3, p[1] - 1.5, 6, 3, C.plate, 1);
-const bag = (p) => rect(p[0] - 5, p[1], 10, 11, C.plate, 3) + seg([p[0] - 2, p[1]], [p[0] + 2, p[1]], 1.5, C.prop);
-const floor = () => seg([4, FLOOR + 3], [116, FLOOR + 3], 1.5, C.dark);
-const handle = (p) => rect(p[0] - 1.5, p[1] - 5, 3, 10, C.plate, 1);
-const pad = (p, w = 10, h = 4) => rect(p[0] - w / 2, p[1] - h / 2, w, h, C.prop, 1.5);
-const smithRails = () => rect(22, -8, 3, 104, C.dark, 1) + rect(95, -8, 3, 104, C.dark, 1);
+const C = {
+  body: "#e3e8f0", bodyShade: "#c3cbd9", far: "#7c879c", farShade: "#667085",
+  shorts: "#2f3e5c", shortsFar: "#243049", shoe: "#f4f6fa", shoeFar: "#8f9bb0", sole: "#64748b", hair: "#3b4458",
+  hl: "#4ade80", hlGlow: "rgba(74,222,128,.26)", hlFar: "#2f7a4c",
+  prop: "#9fb2cf", plate: "#60a5fa", plateDark: "#1e3a5f", dark: "#3a4354", metal: "#566178", padC: "#46536b", padHi: "#5d6c88",
+};
+const C_BASE = { ...C };
+// Çizim tarzları: palet + bayraklar. ANIM_STYLE ile seçilir.
+const STYLES = {
+  manken: {},
+  neon: { body: "#1a2130", bodyShade: "#1a2130", far: "#131924", farShade: "#131924", shorts: "#1a2130", shortsFar: "#131924", shoe: "#1a2130", shoeFar: "#131924", sole: "#7dd3fc", hair: "#1a2130",
+    hl: "#39ff88", hlGlow: "rgba(57,255,136,.35)", stroke: "#8fd3ff", strokeFar: "#3f6b8f" },
+  sporcu: { body: "#f1c4a5", bodyShade: "#dba888", far: "#bd8f74", farShade: "#a67a61", shirt: "#3b82f6", shorts: "#1f2a44", shortsFar: "#161f33", shoe: "#ffffff", shoeFar: "#b9c2d3", sole: "#ef4444", hair: "#3b2a20" },
+  cizgi: { stick: true },
+};
+let ANIM_STYLE = "cizgi"; // kullanıcı bir tarz seçene kadar eski sade görünüm
+let STY = {};
+const f1 = (n) => n.toFixed(1);
+const seg = (a, b, w, c) => `<line x1="${f1(a[0])}" y1="${f1(a[1])}" x2="${f1(b[0])}" y2="${f1(b[1])}" stroke="${c}" stroke-width="${w}" stroke-linecap="round"/>`;
+const dot = (p, r, c, extra = "") => `<circle${STY.stroke && !extra && (c === C.body || c === C.bodyShade || c === C.shorts || c === C.hair) ? ` stroke="${STY.stroke}" stroke-width="0.9"` : ""} cx="${f1(p[0])}" cy="${f1(p[1])}" r="${r}" fill="${c}" ${extra}/>`;
+const rect = (x, y, w, h, c, r = 1.5) => `<rect x="${f1(x)}" y="${f1(y)}" width="${f1(w)}" height="${f1(h)}" rx="${r}" fill="${c}"/>`;
+const along = (a, b, k) => [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k];
+const angOf = (a, b) => (Math.atan2(b[0] - a[0], -(b[1] - a[1])) * 180) / Math.PI; // a -> b yönü (0 = yukarı)
+
+// İncelen kapsül: a ucunda r1, b ucunda r2 yarıçaplı yuvarlak uçlu şekil
+function cap(a, b, r1, r2, fill, extra = "") {
+  if (STY.stroke && !extra && (fill === C.body || fill === C.bodyShade || fill === C.shorts || fill === C.shoe || fill === C.hair)) extra = `stroke="${STY.stroke}" stroke-width="0.9"`;
+  else if (STY.stroke && !extra && (fill === C.far || fill === C.farShade || fill === C.shortsFar || fill === C.shoeFar)) extra = `stroke="${STY.strokeFar}" stroke-width="0.8"`;
+  const dx = b[0] - a[0], dy = b[1] - a[1], len = Math.hypot(dx, dy);
+  if (len < 0.05) return dot(a, Math.max(r1, r2), fill, extra);
+  const nx = -dy / len, ny = dx / len;
+  const p1 = [a[0] + nx * r1, a[1] + ny * r1], p2 = [b[0] + nx * r2, b[1] + ny * r2];
+  const p3 = [b[0] - nx * r2, b[1] - ny * r2], p4 = [a[0] - nx * r1, a[1] - ny * r1];
+  return `<path d="M${f1(p1[0])} ${f1(p1[1])}L${f1(p2[0])} ${f1(p2[1])}A${r2} ${r2} 0 0 0 ${f1(p3[0])} ${f1(p3[1])}L${f1(p4[0])} ${f1(p4[1])}A${r1} ${r1} 0 0 0 ${f1(p1[0])} ${f1(p1[1])}Z" fill="${fill}" ${extra}/>`;
+}
+// Kas vurgusu: uzvun ön ya da arka yüzünde, hafif parlamalı yeşil şerit
+function muscle(a, b, k1, k2, normalAng, off, r) {
+  const s = step(along(a, b, k1), normalAng, off), e = step(along(a, b, k2), normalAng, off);
+  return cap(s, e, r + 1.3, r + 1.1, C.hlGlow) + cap(s, e, r, r * 0.82, C.hl);
+}
+
+// ---- ekipman ----
+const plate = (p, r = 8) => dot(p, r, C.plateDark, `stroke="${C.plate}" stroke-width="2"`) + dot(p, r * 0.55, "none", `stroke="${C.plate}" stroke-width="0.9" opacity=".7"`) + dot(p, 1.6, C.prop);
+const dumbbell = (p) => seg([p[0] - 4, p[1]], [p[0] + 4, p[1]], 1.8, C.prop)
+  + rect(p[0] - 7, p[1] - 3.6, 3.4, 7.2, C.plate, 1.2) + rect(p[0] + 3.6, p[1] - 3.6, 3.4, 7.2, C.plate, 1.2)
+  + rect(p[0] - 6.4, p[1] - 3.6, 1, 7.2, "rgba(255,255,255,.3)", 0.5) + rect(p[0] + 4.2, p[1] - 3.6, 1, 7.2, "rgba(255,255,255,.3)", 0.5);
+const kettle = (p) => `<path d="M${f1(p[0] - 3.2)} ${f1(p[1] + 2)} q3.2 -7 6.4 0" fill="none" stroke="${C.prop}" stroke-width="1.9" stroke-linecap="round"/>` + dot([p[0], p[1] + 6], 5, C.plate) + dot([p[0] - 1.5, p[1] + 4.5], 1.3, "rgba(255,255,255,.35)");
+const cable = (p, anchor) => seg(anchor, p, 1, C.prop) + dot(anchor, 3, C.dark, `stroke="${C.prop}" stroke-width="1"`) + dot(anchor, 1, C.prop) + rect(p[0] - 3.2, p[1] - 1.6, 6.4, 3.2, C.plate, 1.4);
+const bag = (p) => rect(p[0] - 5.5, p[1], 11, 12, C.plate, 3.5) + rect(p[0] - 3.5, p[1] + 5, 7, 4.5, "rgba(255,255,255,.22)", 1.5) + `<path d="M${f1(p[0] - 2.5)} ${f1(p[1] + 0.5)} q2.5 -4 5 0" fill="none" stroke="${C.prop}" stroke-width="1.4"/>`;
+const floor = () => `<rect x="2" y="${FLOOR + 3}" width="116" height="1.6" rx=".8" fill="${C.dark}"/>`;
+const handle = (p) => rect(p[0] - 1.6, p[1] - 5, 3.2, 10, C.plate, 1.4);
+const pad = (p, w = 10, h = 4) => rect(p[0] - w / 2, p[1] - h / 2, w, h, C.padHi, 1.8);
+const smithRails = () => [22, 95].map((x) => rect(x, -12, 3, 108, C.metal, 1) + rect(x + 0.6, -12, 0.8, 108, "rgba(255,255,255,.18)", 0.4)).join("");
+// minder: üstünde açık renk dikiş çizgisi olan dolgulu yüzey
+const cushion = (a, b, w = 6) => seg(a, b, w, C.padC) + seg(step(a, angOf(a, b) - 90, w * 0.22), step(b, angOf(a, b) - 90, w * 0.22), 1, C.padHi);
+const leg2 = (x, y1) => rect(x, y1, 3.2, FLOOR + 3 - y1, C.metal, 1) + rect(x - 2.4, FLOOR + 1.6, 8, 1.8, C.metal, 0.8);
+
 // mevcut bir kalıbı farklı ekipmanla kullan: props birleştirilir (back/front sırası korunur)
 function variant(base, extra = {}, over = {}) {
   const b = PATTERNS[base];
@@ -71,54 +115,148 @@ function variant(base, extra = {}, over = {}) {
   return { ...b, ...over, props };
 }
 
-// ---- figürü çiz ----
-function drawSide(J, hl, props, P) {
-  const isHL = (k) => hl.includes(k);
-  const col = (k) => (isHL(k) ? C.hl : C.body);
-  const farCol = (k) => (isHL(k) ? "#2f7a4c" : C.far);
-  let s = props.back ? props.back(J, P) : "";
-  // uzak uzuvlar
-  s += seg(J.hip, J.knee2, 5.5, farCol("th")) + seg(J.knee2, J.ank2, 5, farCol("sh")) + seg(J.ank2, J.toe2, 3.5, C.far);
-  s += seg(J.sho, J.elb2, 4.5, farCol("ua")) + seg(J.elb2, J.wr2, 4, farCol("fa"));
+// ---- figürü çiz (yan görünüm) ----
+const R = { sho: 6.1, hipR: 5.2, ua1: 3.3, ua2: 2.7, fa1: 2.7, fa2: 2.05, hand: 2.3, th1: 4.6, th2: 3.4, sh1: 3.4, sh2: 2.35, foot: 2.5 };
+function drawSide(J, hl, props, P, flip) {
+  const has = (k) => hl.includes(k);
+  const t = P.t ?? 0;
+  const frontT = flip ? t - 90 : t + 90;            // gövdenin ön yüzünün baktığı yön
+  const limbFront = (a, b) => angOf(a, b) + (flip ? 90 : -90);
+  let s = "";
+  // zemin gölgesi
+  const cx = (J.hip[0] + J.sho[0]) / 2;
+  s += `<ellipse cx="${f1(cx)}" cy="${FLOOR + 3.6}" rx="24" ry="2.6" fill="rgba(0,0,0,.32)"/>`;
+  if (props.back) s += props.back(J, P);
+
+  // --- uzak taraf (koyu ton) ---
+  s += cap(J.hip, J.knee2, R.th1, R.th2, C.far) + cap(J.hip, along(J.hip, J.knee2, 0.46), R.th1 + 0.5, R.th1 * 0.93, C.shortsFar);
+  s += cap(J.knee2, J.ank2, R.sh1, R.sh2, C.far) + cap(J.ank2, J.toe2, R.foot, R.foot * 0.8, C.shoeFar);
+  s += cap(J.sho, J.elb2, R.ua1, R.ua2, C.far) + cap(J.elb2, J.wr2, R.fa1, R.fa2, C.far) + dot(J.wr2, R.hand, C.farShade);
   if (props.far) s += props.far(J, P);
-  // gövde (göğüs = üst yarı, karın = alt yarı)
-  const m = mid(J.hip, J.sho);
-  s += seg(J.hip, m, 8, isHL("abs") || isHL("torso") ? C.hl : C.body) + seg(m, J.sho, 8, isHL("chest") || isHL("torso") ? C.hl : C.body);
-  if (isHL("glute")) s += dot(step(J.hip, (P.t ?? 0) - 90, 1.5), 4.6, C.hl);
-  s += dot(J.head, RIG.head, C.body);
-  // yakın uzuvlar
-  s += seg(J.hip, J.knee, 6, col("th")) + seg(J.knee, J.ank, 5.5, col("sh")) + seg(J.ank, J.toe, 4, C.body);
-  if (isHL("delt")) s += dot(J.sho, 4.2, C.hl);
-  s += seg(J.sho, J.elb, 5, col("ua")) + seg(J.elb, J.wr, 4.5, col("fa"));
+
+  // --- gövde ---
+  const neck = step(J.sho, t + (P.hd || 0), RIG.neck + 1.5);
+  s += cap(J.sho, neck, 2.5, 2.3, C.bodyShade);
+  s += cap(J.sho, J.hip, R.sho, R.hipR, C.body);
+  if (STY.shirt) s += cap(along(J.hip, J.sho, 0.9), J.hip, R.sho * 0.97, R.hipR, STY.shirt) + cap(along(J.hip, J.sho, 0.9), along(J.hip, J.sho, 0.5), R.sho * 0.97, 5.5, "rgba(255,255,255,.08)");
+  // gövde kasları
+  if (has("back")) s += muscle(J.hip, J.sho, 0.18, 0.92, frontT + 180, 2.3, 2.9);
+  if (has("chest")) s += muscle(J.hip, J.sho, 0.6, 0.9, frontT, 2.3, 3.1);
+  if (has("abs")) s += muscle(J.hip, J.sho, 0.12, 0.54, frontT, 2.0, 2.7);
+  if (has("traps")) { const a = step(J.sho, frontT + 180, 1.8); s += cap(a, step(neck, frontT + 180, 0.8), 3.4, 2.6, C.hlGlow) + cap(a, step(neck, frontT + 180, 0.8), 2.5, 1.8, C.hl); }
+  // şort + kalça
+  s += dot(J.hip, R.hipR + 0.3, C.shorts);
+  if (has("glute")) { const g = step(J.hip, frontT + 180, 2.2); s += dot(g, 5.3, C.hlGlow) + dot(g, 4.1, C.hl); }
+
+  // --- baş ---
+  s += dot(step(J.head, frontT + 180, 1.3), RIG.head, C.hair) + dot(step(J.head, t, 1.2), RIG.head - 0.4, C.hair);
+  s += dot(step(J.head, frontT, 0.9), RIG.head - 0.5, C.body);
+
+  // --- yakın bacak ---
+  s += cap(J.hip, J.knee, R.th1, R.th2, C.body);
+  const tf = limbFront(J.hip, J.knee);
+  if (has("th")) s += cap(along(J.hip, J.knee, 0.42), J.knee, R.th1 * 0.95 + 1, R.th2 + 0.9, C.hlGlow) + cap(along(J.hip, J.knee, 0.44), along(J.hip, J.knee, 0.96), R.th1 * 0.86, R.th2 * 0.9, C.hl);
+  s += cap(J.hip, along(J.hip, J.knee, 0.46), R.th1 + 0.5, R.th1 * 0.95, C.shorts);
+  if (has("quads")) s += muscle(J.hip, J.knee, 0.5, 0.93, tf, 1.5, 2.5);
+  if (has("hams")) s += muscle(J.hip, J.knee, 0.5, 0.93, tf + 180, 1.5, 2.5);
+  s += cap(J.knee, J.ank, R.sh1, R.sh2, C.body);
+  if (has("calf")) s += muscle(J.knee, J.ank, 0.08, 0.62, limbFront(J.knee, J.ank) + 180, 1.15, 2.2);
+  s += cap(J.ank, J.toe, R.foot, R.foot * 0.8, C.shoe) + seg(step(J.ank, angOf(J.ank, J.toe) + (flip ? -90 : 90), R.foot * 0.75), step(J.toe, angOf(J.ank, J.toe) + (flip ? -90 : 90), R.foot * 0.6), 0.9, C.sole);
+
+  // --- yakın kol ---
+  s += cap(J.sho, J.elb, R.ua1, R.ua2, C.body);
+  const af = limbFront(J.sho, J.elb);
+  if (has("biceps")) s += muscle(J.sho, J.elb, 0.2, 0.86, af, 1.0, 2.0);
+  if (has("triceps")) s += muscle(J.sho, J.elb, 0.16, 0.86, af + 180, 1.0, 2.0);
+  s += cap(J.elb, J.wr, R.fa1, R.fa2, C.body);
+  if (has("forearm")) s += cap(along(J.elb, J.wr, 0.08), along(J.elb, J.wr, 0.8), R.fa1 + 1, R.fa2 + 1, C.hlGlow) + cap(along(J.elb, J.wr, 0.1), along(J.elb, J.wr, 0.78), R.fa1 * 0.82, R.fa2 * 0.82, C.hl);
+  if (has("delt")) s += dot(J.sho, 5.2, C.hlGlow) + dot(J.sho, 4, C.hl);
+  s += dot(J.wr, R.hand, C.bodyShade);
   if (props.front) s += props.front(J, P);
   return s;
 }
-function drawFront(J, hl, props, P) {
-  const isHL = (k) => hl.includes(k);
+
+// ---- sade çizgi tarzı (yan görünüm) ----
+function drawSideStick(J, hl, props, P) {
+  const has = (...k) => k.some((x) => hl.includes(x));
+  const B = "#e8eaf0", F = "#6b7385", G = C.hl, GF = "#2f7a4c";
   let s = props.back ? props.back(J, P) : "";
-  const legC = isHL("th") ? C.hl : C.body;
-  for (const [hip, knee, ank] of [[J.hipL, J.kneeL, J.ankL], [J.hipR, J.kneeR, J.ankR]]) s += seg(hip, knee, 6, legC) + seg(knee, ank, 5.5, C.body);
-  s += seg(J.hipL, J.hipR, 7, C.body);
-  if (P.tiltDeg) s += `<g transform="rotate(${P.tiltDeg.toFixed(1)} 60 ${J.pel[1]})">`;
-  s += seg(J.pel, J.chest, 10, isHL("torso") || isHL("chest") ? C.hl : C.body) + seg(J.shoL, J.shoR, 7, isHL("traps") ? C.hl : C.body);
-  if (isHL("traps")) s += seg([55, J.shoL[1] - 2], [65, J.shoR[1] - 2], 5, C.hl);
-  s += seg(J.neck, J.chest, 4, C.body) + dot(J.head, RIG.head, C.body);
-  const armC = isHL("ua") ? C.hl : C.body;
+  const thG = has("th", "quads", "hams"), uaG = has("biceps", "triceps"), faG = has("forearm"), shG = has("calf");
+  s += seg(J.hip, J.knee2, 5.5, thG ? GF : F) + seg(J.knee2, J.ank2, 5, shG ? GF : F) + seg(J.ank2, J.toe2, 3.5, F);
+  s += seg(J.sho, J.elb2, 4.5, uaG ? GF : F) + seg(J.elb2, J.wr2, 4, faG ? GF : F);
+  const m = mid(J.hip, J.sho);
+  s += seg(J.hip, m, 8, has("abs", "back") ? G : B) + seg(m, J.sho, 8, has("chest", "back") ? G : B);
+  if (has("glute")) s += dot(step(J.hip, (P.t ?? 0) - 90, 1.5), 4.6, G);
+  s += dot(J.head, RIG.head, B);
+  s += seg(J.hip, J.knee, 6, thG ? G : B) + seg(J.knee, J.ank, 5.5, shG ? G : B) + seg(J.ank, J.toe, 4, B);
+  if (has("delt", "traps")) s += dot(J.sho, 4.2, G);
+  s += seg(J.sho, J.elb, 5, uaG ? G : B) + seg(J.elb, J.wr, 4.5, faG ? G : B);
+  if (props.front) s += props.front(J, P);
+  return s;
+}
+
+// ---- figürü çiz (ön görünüm) ----
+function drawFront(J, hl, props, P) {
+  const has = (k) => hl.includes(k);
+  const sy = J.shoL[1], py = J.pel[1];
+  let s = `<ellipse cx="60" cy="${FLOOR + 3.6}" rx="24" ry="2.6" fill="rgba(0,0,0,.32)"/>`;
+  if (props.back) s += props.back(J, P);
+  // bacaklar
+  for (const [hip, knee, ank, sgn] of [[J.hipL, J.kneeL, J.ankL, -1], [J.hipR, J.kneeR, J.ankR, 1]]) {
+    s += cap(hip, knee, R.th1, R.th2, C.body);
+    if (has("th")) { const a = along(hip, knee, 0.46), b = along(hip, knee, 0.95); s += cap(a, b, R.th1 * 0.9 + 1, R.th2 + 0.8, C.hlGlow) + cap(a, b, R.th1 * 0.74, R.th2 * 0.8, C.hl); }
+    s += cap(hip, along(hip, knee, 0.46), R.th1 + 0.5, R.th1 * 0.95, C.shorts);
+    s += cap(knee, ank, R.sh1, R.sh2, C.body);
+    s += `<ellipse cx="${f1(ank[0] + sgn * 0.8)}" cy="${f1(ank[1] + 1.6)}" rx="3.4" ry="2.3" fill="${C.shoe}"/>`;
+  }
+  s += cap(J.hipL, J.hipR, 5, 5, C.shorts);
+  if (P.tiltDeg) s += `<g transform="rotate(${f1(P.tiltDeg)} 60 ${f1(py)})">`;
+  // gövde: omuzda geniş, belde dar
+  s += `<path d="M${f1(J.shoL[0] - 2.2)} ${f1(sy - 2.2)} Q60 ${f1(sy - 4.2)} ${f1(J.shoR[0] + 2.2)} ${f1(sy - 2.2)} Q${f1(J.shoR[0] + 3)} ${f1(sy + 6)} 66.5 ${f1(py - 9)} L67.5 ${f1(py + 1)} L52.5 ${f1(py + 1)} L53.5 ${f1(py - 9)} Q${f1(J.shoL[0] - 3)} ${f1(sy + 6)} ${f1(J.shoL[0] - 2.2)} ${f1(sy - 2.2)}Z" fill="${C.body}"/>`;
+  s += cap([60, sy - 2], [60, sy - 6.5], 2.6, 2.4, C.bodyShade);
+  if (has("traps")) s += `<path d="M60 ${f1(sy - 7)} L${f1(J.shoR[0] - 1)} ${f1(sy - 2.6)} L${f1(J.shoL[0] + 1)} ${f1(sy - 2.6)}Z" fill="${C.hl}" stroke="${C.hlGlow}" stroke-width="2.4" stroke-linejoin="round"/>`;
+  if (has("chest")) for (const sgn of [-1, 1]) s += `<ellipse cx="${f1(60 + sgn * 4.6)}" cy="${f1(sy + 4.6)}" rx="5.2" ry="4.4" fill="${C.hlGlow}"/><ellipse cx="${f1(60 + sgn * 4.6)}" cy="${f1(sy + 4.6)}" rx="4" ry="3.3" fill="${C.hl}"/>`;
+  if (has("back")) s += rect(53.5, sy + 1, 13, 15, C.hlGlow, 4) + rect(54.8, sy + 2.2, 10.4, 12.6, C.hl, 3.4);
+  if (has("abs")) for (const sgn of [-1, 1]) s += cap([60 + sgn * 5.2, sy + 11], [60 + sgn * 5.6, py - 3], 2.9, 2.6, C.hlGlow) + cap([60 + sgn * 5.2, sy + 11.5], [60 + sgn * 5.6, py - 3.5], 1.9, 1.7, C.hl);
+  // baş
+  s += dot([60, J.head[1] - 1.1], RIG.head, C.hair) + dot([60, J.head[1] + 0.9], RIG.head - 0.6, C.body);
+  // kollar
   for (const [sho, elb, wr] of [[J.shoL, J.elbL, J.wrL], [J.shoR, J.elbR, J.wrR]]) {
-    if (isHL("delt")) s += dot(sho, 4.4, C.hl);
-    s += seg(sho, elb, 5, armC) + seg(elb, wr, 4.5, C.body);
+    s += cap(sho, elb, R.ua1, R.ua2, C.body);
+    if (has("biceps")) { const a = along(sho, elb, 0.22), b = along(sho, elb, 0.86); s += cap(a, b, 3.2, 2.9, C.hlGlow) + cap(a, b, 2.1, 1.8, C.hl); }
+    s += cap(elb, wr, R.fa1, R.fa2, C.body);
+    if (has("delt")) s += dot(sho, 5.3, C.hlGlow) + dot(sho, 4.1, C.hl);
+    s += dot(wr, R.hand, C.bodyShade);
   }
   if (props.front) s += props.front(J, P);
   if (P.tiltDeg) s += "</g>";
   return s;
 }
 
+// Kalıptaki genel vurguyu doğru kasa çevirir (ör. "ua": curl'de biceps, pushdown'da triceps)
+const HL_HAMS = new Set(["rdl", "good_morning", "sl_rdl", "leg_curl", "leg_curl_seated", "nordic", "pull_through", "standing_leg_curl", "rdl_smith", "kb_swing"]);
+const HL_QUADS = new Set(["squat_bar", "squat_front", "squat_bw", "wall_sit", "hack_squat", "leg_press", "lunge", "bulgarian", "step_up", "leg_ext", "thruster", "belt_squat", "squat_smith", "lunge_smith", "burpee"]);
+const HL_TRI = new Set(["bench", "bench_db", "bench_smith", "decline", "decline_machine", "chest_press", "cable_press", "pushup", "pike_pushup", "dips", "dips_assist", "bench_dips", "ohp", "ohp_smith", "press_seated",
+  "pushdown", "kickback", "kickback_cable", "oh_ext", "oh_ext_cable", "skull", "tri_machine", "seated_dip"]);
+function normHL(key, hl, front) {
+  const out = [];
+  for (const h of hl) {
+    if (h === "torso") out.push("back");
+    else if (h === "sh") out.push("calf");
+    else if (h === "fa") out.push("forearm");
+    else if (h === "ua") out.push(!front && HL_TRI.has(key) ? "triceps" : "biceps");
+    else if (h === "th") out.push(front ? "th" : HL_HAMS.has(key) ? "hams" : HL_QUADS.has(key) ? "quads" : "th");
+    else out.push(h);
+  }
+  return out;
+}
+
 // ---- kalıplar ----
 const STAND = { ank: [60, FLOOR], su: 0, tu: 0, t: 0, ft: 90 };
 const LIE = { hip: [60, 68], t: -90, th: 115, sh: 172, ft: 90 }; // sehpada sırtüstü (baş solda)
-const bench = () => rect(14, 71, 62, 5, C.dark) + rect(20, 76, 4, 17, C.dark, 1) + rect(66, 76, 4, 17, C.dark, 1);
-const seat = (x, y, w = 24) => rect(x, y, w, 5, C.dark) + rect(x + w / 2 - 2, y + 5, 4, FLOOR + 3 - y - 5, C.dark, 1);
-const backPad = (x1, y1, x2, y2) => seg([x1, y1], [x2, y2], 6, C.dark);
+const bench = () => leg2(20, 77) + leg2(66, 77) + cushion([16, 74], [74, 74], 6);
+const seat = (x, y, w = 24) => leg2(x + w / 2 - 1.6, y + 5) + cushion([x + 2, y + 2.5], [x + w - 2, y + 2.5], 5.5);
+const backPad = (x1, y1, x2, y2) => cushion([x1, y1], [x2, y2], 6);
 const atWrist = (fn) => (J) => fn(J.wr);
 const both = (fn) => (J) => fn(J.wr2) + fn(J.wr);
 
@@ -151,7 +289,7 @@ const PATTERNS = {
     props: { front: atWrist((p) => plate(p, 7)) } },
   hip_thrust: { hl: ["glute"], A: { ank: [82, FLOOR], su: -22, tu: -112, t: -62, ua: 120, fa: 90 }, B: { ank: [82, FLOOR], su: -22, tu: -80, t: -88, ua: 110, fa: 95 },
     props: { back: () => rect(4, 66, 26, 6, C.dark) + rect(12, 72, 4, 24, C.dark, 1), front: (J) => plate([J.hip[0] + 2, J.hip[1] - 7], 7) } },
-  glute_bridge: { hl: ["glute"], A: { ank: [82, FLOOR], su: -22, tu: -102, t: -112, ua: 200, fa: 200 }, B: { ank: [82, FLOOR], su: -22, tu: -74, t: -124, ua: 210, fa: 210 }, props: { back: floor } },
+  glute_bridge: { hl: ["glute"], A: { ank: [82, FLOOR], su: -22, tu: -102, t: -112, ua: 200, fa: 200 }, B: { ank: [82, FLOOR], su: -22, tu: -74, t: -124, ua: 210, fa: 210 }, props: {} },
   calf: { hl: ["sh"], A: { ...STAND, ua: 180, fa: 180 }, B: { ...STAND, ank: [60, FLOOR - 5], ft: 135, ua: 180, fa: 180 }, props: { back: () => rect(50, FLOOR - 1, 30, 4, C.dark, 1), front: both(dumbbell) } },
   calf_seated: { hl: ["sh"], A: { hip: [50, 68], t: 0, th: 90, sh: 180, ft: 90, ua: 160, fa: 100 }, B: { hip: [50, 64], t: 0, th: 98, sh: 178, ft: 130, ua: 160, fa: 100 },
     props: { back: () => seat(36, 72), front: (J) => rect(J.knee[0] - 6, J.knee[1] - 7, 14, 4, C.prop, 1) } },
@@ -162,7 +300,7 @@ const PATTERNS = {
   leg_curl: { hl: ["th"], A: { hip: [58, 68], t: -90, th: 90, sh: 90, ft: 180, ua: -125, fa: -60 }, B: { hip: [58, 68], t: -90, th: 90, sh: 15, ft: 300, ua: -125, fa: -60 },
     props: { back: () => rect(16, 72, 62, 5, C.dark) + rect(40, 77, 4, 19, C.dark, 1), front: (J) => dot(step(J.ank, J.ank[1] < 60 ? 270 : 0, 3), 3.5, C.prop) } },
   nordic: { hl: ["th"], A: { knee: [62, 88], tu: 0, sh: 270, ft: 180, t: 0, ua: 165, fa: 150 }, B: { knee: [62, 88], tu: 52, sh: 270, ft: 180, t: 52, ua: 120, fa: 110 },
-    props: { back: () => rect(30, 84, 14, 4, C.prop, 1) + floor() } },
+    props: { back: () => rect(30, 84, 14, 4, C.prop, 1) } },
   bench: { hl: ["chest", "ua"], A: { ...LIE, ua: 172, fa: 12 }, B: { ...LIE, ua: 2, fa: 0 }, props: { back: bench, front: atWrist((p) => plate(p, 8)) } },
   bench_db: { hl: ["chest", "ua"], A: { ...LIE, ua: 172, fa: 12 }, B: { ...LIE, ua: 2, fa: 0 }, props: { back: bench, front: atWrist(dumbbell) } },
   incline: { hl: ["chest", "delt"], A: { hip: [56, 66], t: -45, th: 100, sh: 178, ft: 90, ua: 135, fa: 40 }, B: { hip: [56, 66], t: -45, th: 100, sh: 178, ft: 90, ua: 30, fa: 30 },
@@ -174,10 +312,10 @@ const PATTERNS = {
   crossover: { hl: ["chest"], view: "front", A: { a: 125, b: 115 }, B: { a: 20, b: -8 },
     props: { back: () => dot([10, 6], 2.5, C.dark) + dot([110, 6], 2.5, C.dark), front: (J) => seg([10, 6], J.wrL, 1.1, C.prop) + seg([110, 6], J.wrR, 1.1, C.prop) } },
   rev_fly: { hl: ["delt"], view: "front", A: { a: 15, b: -10 }, B: { a: 92, b: 92 }, props: { front: (J) => dumbbell(J.wrL) + dumbbell(J.wrR) } },
-  pushup: { hl: ["chest", "ua"], A: { hip: [64, 73], t: -74, th: 106, sh: 106, ft: 180, ua: 180, fa: 180 }, B: { hip: [64, 81], t: -82, th: 99, sh: 99, ft: 180, ua: 140, fa: 226 }, props: { back: floor } },
-  pike_pushup: { hl: ["delt", "ua"], A: { hip: [62, 46], t: -150, th: 150, sh: 150, ft: 180, ua: 215, fa: 215 }, B: { hip: [62, 50], t: -142, th: 146, sh: 146, ft: 180, ua: 160, fa: 230 }, props: { back: floor } },
-  mountain: { hl: ["abs", "th"], A: { hip: [64, 73], t: -74, th: 106, sh: 106, th2: 106, sh2: 106, ft: 180, ua: 180, fa: 180 }, B: { hip: [64, 71], t: -72, th: 235, sh: 115, th2: 106, sh2: 106, ft: 180, ua: 180, fa: 180 }, props: { back: floor } },
-  burpee: { hl: ["th", "chest"], A: { ank: [60, FLOOR], su: 34, tu: -85, t: 55, ua: 170, fa: 175 }, B: { ank: [60, FLOOR - 6], su: 0, tu: 0, t: 0, ua: 5, fa: 5, ft: 150 }, props: { back: floor } },
+  pushup: { hl: ["chest", "ua"], A: { hip: [64, 73], t: -74, th: 106, sh: 106, ft: 180, ua: 180, fa: 180 }, B: { hip: [64, 81], t: -82, th: 99, sh: 99, ft: 180, ua: 140, fa: 226 }, props: {} },
+  pike_pushup: { hl: ["delt", "ua"], A: { hip: [62, 46], t: -150, th: 150, sh: 150, ft: 180, ua: 215, fa: 215 }, B: { hip: [62, 50], t: -142, th: 146, sh: 146, ft: 180, ua: 160, fa: 230 }, props: {} },
+  mountain: { hl: ["abs", "th"], A: { hip: [64, 73], t: -74, th: 106, sh: 106, th2: 106, sh2: 106, ft: 180, ua: 180, fa: 180 }, B: { hip: [64, 71], t: -72, th: 235, sh: 115, th2: 106, sh2: 106, ft: 180, ua: 180, fa: 180 }, props: {} },
+  burpee: { hl: ["th", "chest"], A: { ank: [60, FLOOR], su: 34, tu: -85, t: 55, ua: 170, fa: 175 }, B: { ank: [60, FLOOR - 6], su: 0, tu: 0, t: 0, ua: 5, fa: 5, ft: 150 }, props: {} },
   dips: { hl: ["chest", "ua"], A: { hip: [60, 48], t: 4, th: 170, sh: 250, ft: 180, ua: 180, fa: 180 }, B: { hip: [62, 58], t: 18, th: 166, sh: 250, ft: 180, ua: 212, fa: 162 },
     props: { back: () => seg([46, 50], [82, 50], 3, C.prop) + rect(76, 50, 3, 46, C.dark, 1) } },
   bench_dips: { hl: ["ua"], A: { hip: [56, 62], t: 0, th: 100, sh: 100, ft: 10, ua: 200, fa: 180 }, B: { hip: [56, 74], t: 6, th: 100, sh: 100, ft: 10, ua: 238, fa: 128 },
@@ -198,7 +336,7 @@ const PATTERNS = {
     props: { back: () => rect(28, 78, 30, 5, C.dark) + seg([88, 62], [88, 84], 5, C.dark), front: (J) => cable(J.wr, [114, 70]) } },
   face_pull: { hl: ["delt", "torso"], A: { ...STAND, ua: 75, fa: 75 }, B: { ...STAND, ua: 268, fa: 40 }, props: { front: (J) => cable(J.wr, [114, 14]) } },
   inverted_row: { hl: ["torso", "ua"], A: { hip: [70, 81], t: -73, th: 106, sh: 106, ft: 180, ua: 2, fa: 0 }, B: { hip: [68, 71], t: -64, th: 114, sh: 114, ft: 180, ua: 62, fa: -48 },
-    props: { back: () => seg([30, 46], [58, 46], 3, C.prop) + rect(32, 46, 3, 50, C.dark, 1) + floor() } },
+    props: { back: () => seg([30, 46], [58, 46], 3, C.prop) + rect(32, 46, 3, 50, C.dark, 1) } },
   ohp: { hl: ["delt", "ua"], A: { ...STAND, ua: 158, fa: 2 }, B: { ...STAND, ua: 2, fa: 0 }, props: { front: atWrist((p) => plate(p, 8)) } },
   press_seated: { hl: ["delt", "ua"], A: { hip: [52, 66], t: 0, th: 90, sh: 180, ft: 90, ua: 158, fa: 2 }, B: { hip: [52, 66], t: 0, th: 90, sh: 180, ft: 90, ua: 2, fa: 0 },
     props: { back: () => seat(38, 70) + backPad(46, 68, 46, 34), front: atWrist(dumbbell) } },
@@ -215,7 +353,7 @@ const PATTERNS = {
   adductor: { hl: ["th"], view: "front", A: { a: 30, b: 10, seated: true, g: 45, g2: 20, py: 64 }, B: { a: 30, b: 10, seated: true, g: 10, g2: 4, py: 64 },
     props: { back: () => rect(38, 64, 44, 6, C.dark) + rect(57, 70, 6, 26, C.dark, 1) } },
   rear_bent: { hl: ["delt"], A: { ank: [60, FLOOR], su: 8, tu: -25, t: 75, ua: 180, fa: 180 }, B: { ank: [60, FLOOR], su: 8, tu: -25, t: 75, ua: 255, fa: 260 }, props: { front: atWrist(dumbbell) } },
-  prone_yt: { hl: ["delt", "torso"], A: { hip: [64, 86], t: -90, th: 90, sh: 90, ft: 180, ua: 180, fa: 180 }, B: { hip: [64, 86], t: -84, th: 92, sh: 92, ft: 180, ua: -60, fa: -60 }, props: { back: floor } },
+  prone_yt: { hl: ["delt", "torso"], A: { hip: [64, 86], t: -90, th: 90, sh: 90, ft: 180, ua: 180, fa: 180 }, B: { hip: [64, 86], t: -84, th: 92, sh: 92, ft: 180, ua: -60, fa: -60 }, props: {} },
   curl: { hl: ["ua"], A: { ...STAND, ua: 170, fa: 172 }, B: { ...STAND, ua: 168, fa: 18 }, props: { front: atWrist(dumbbell) } },
   curl_bar: { hl: ["ua"], A: { ...STAND, ua: 170, fa: 172 }, B: { ...STAND, ua: 168, fa: 18 }, props: { front: atWrist((p) => plate(p, 7)) } },
   curl_bag: { hl: ["ua"], A: { ...STAND, ua: 170, fa: 172 }, B: { ...STAND, ua: 168, fa: 18 }, props: { front: atWrist(bag) } },
@@ -232,19 +370,22 @@ const PATTERNS = {
   kickback: { hl: ["ua"], A: { ank: [60, FLOOR], su: 10, tu: -25, t: 68, ua: 250, fa: 180 }, B: { ank: [60, FLOOR], su: 10, tu: -25, t: 68, ua: 250, fa: 252 }, props: { front: atWrist(dumbbell) } },
   oh_ext: { hl: ["ua"], A: { ...STAND, ua: 350, fa: 200 }, B: { ...STAND, ua: 352, fa: 355 }, props: { front: atWrist(dumbbell) } },
   skull: { hl: ["ua"], A: { ...LIE, ua: 345, fa: 255 }, B: { ...LIE, ua: 350, fa: 355 }, props: { back: bench, front: atWrist((p) => plate(p, 7)) } },
-  crunch: { hl: ["abs"], A: { hip: [62, 87], t: -90, th: 45, sh: 160, ft: 90, ua: -55, fa: 70 }, B: { hip: [62, 87], t: -58, th: 45, sh: 160, ft: 90, ua: -25, fa: 100 }, props: { back: floor } },
+  crunch: { hl: ["abs"], A: { hip: [62, 87], t: -90, th: 45, sh: 160, ft: 90, ua: -55, fa: 70 }, B: { hip: [62, 87], t: -58, th: 45, sh: 160, ft: 90, ua: -25, fa: 100 }, props: {} },
   crunch_cable: { hl: ["abs"], A: { knee: [62, 90], tu: 0, sh: 270, ft: 180, t: 5, ua: 20, fa: 200 }, B: { knee: [62, 90], tu: 5, sh: 270, ft: 180, t: 100, ua: 115, fa: 290 },
-    props: { back: floor, front: (J) => cable(J.wr, [74, -6]) } },
-  bicycle: { hl: ["abs"], A: { hip: [64, 86], t: -62, th: 40, sh: 110, th2: 90, sh2: 92, ft: 90, ua: -40, fa: 80 }, B: { hip: [64, 86], t: -62, th: 90, sh: 92, th2: 40, sh2: 110, ft: 90, ua: -20, fa: 110 }, props: { back: floor } },
-  twist: { hl: ["abs"], A: { hip: [56, 86], t: -28, th: 55, sh: 105, ft: 90, ua: 130, fa: 75 }, B: { hip: [56, 86], t: -28, th: 55, sh: 105, ft: 90, ua: 175, fa: 120 }, props: { back: floor, front: atWrist((p) => plate(p, 5)) } },
-  plank: { hl: ["abs"], A: { hip: [62, 79], t: -82, th: 98, sh: 98, ft: 180, ua: 180, fa: 270 }, B: { hip: [62, 77.5], t: -81, th: 98, sh: 98, ft: 180, ua: 180, fa: 270 }, props: { back: floor } },
+    props: { front: (J) => cable(J.wr, [74, -6]) } },
+  bicycle: { hl: ["abs"], A: { hip: [64, 86], t: -62, th: 40, sh: 110, th2: 90, sh2: 92, ft: 90, ua: -40, fa: 80 }, B: { hip: [64, 86], t: -62, th: 90, sh: 92, th2: 40, sh2: 110, ft: 90, ua: -20, fa: 110 }, props: {} },
+  twist: { hl: ["abs"], A: { hip: [56, 86], t: -28, th: 55, sh: 105, ft: 90, ua: 130, fa: 75 }, B: { hip: [56, 86], t: -28, th: 55, sh: 105, ft: 90, ua: 175, fa: 120 }, props: { front: atWrist((p) => plate(p, 5)) } },
+  plank: { hl: ["abs"], A: { hip: [62, 79], t: -82, th: 98, sh: 98, ft: 180, ua: 180, fa: 270 }, B: { hip: [62, 77.5], t: -81, th: 98, sh: 98, ft: 180, ua: 180, fa: 270 }, props: {} },
   ab_wheel: { hl: ["abs"], A: { knee: [86, 89], tu: -15, sh: 90, ft: 180, t: -55, ua: 190, fa: 190 }, B: { knee: [86, 89], tu: -55, sh: 90, ft: 180, t: -82, ua: -88, fa: -88 },
-    props: { back: floor, front: (J) => dot([J.wr[0], Math.max(J.wr[1] + 4, FLOOR - 2)], 5, "none", `stroke="${C.plate}" stroke-width="2.5"`) } },
+    props: { front: (J) => dot([J.wr[0], Math.max(J.wr[1] + 4, FLOOR - 2)], 5, "none", `stroke="${C.plate}" stroke-width="2.5"`) } },
   hyperext: { hl: ["torso", "glute"], A: { hip: [58, 48], t: 205, th: 125, sh: 125, ft: 200, ua: 210, fa: 150 }, B: { hip: [58, 48], t: 300, th: 125, sh: 125, ft: 200, ua: 330, fa: 30 },
     props: { back: (J) => seg([J.hip[0] + 4, J.hip[1] + 6], [J.hip[0] + 12, J.hip[1] - 2], 6, C.dark) + seg([86, 72], [92, 68], 5, C.dark) + seg([66, 56], [72, 96], 4, C.dark) } },
-  superman: { hl: ["torso", "glute"], A: { hip: [62, 87], t: -90, th: 90, sh: 90, ft: 180, ua: -90, fa: -90 }, B: { hip: [62, 87], t: -76, th: 80, sh: 80, ft: 160, ua: -72, fa: -72 }, props: { back: floor } },
+  superman: { hl: ["torso", "glute"], A: { hip: [62, 87], t: -90, th: 90, sh: 90, ft: 180, ua: -90, fa: -90 }, B: { hip: [62, 87], t: -76, th: 80, sh: 80, ft: 160, ua: -72, fa: -72 }, props: {} },
   farmer: { hl: ["fa", "traps"], A: { hip: [60, 53], t: 2, th: 160, sh: 185, th2: 198, sh2: 175, ua: 180, fa: 180 }, B: { hip: [60, 51], t: 2, th: 198, sh: 175, th2: 160, sh2: 185, ua: 180, fa: 180 }, props: { front: both(dumbbell) } },
 };
+
+// yüzüstü ya da sola dönük pozlarda vücudun ön yüzü ters taraftadır
+for (const k of ["pushup", "pike_pushup", "mountain", "plank", "leg_curl", "superman", "prone_yt", "hyperext", "ab_wheel"]) PATTERNS[k].flip = true;
 
 // ---- makine / kablo kalıpları ----
 Object.assign(PATTERNS, {
@@ -306,6 +447,7 @@ Object.assign(PATTERNS, {
       return dot([110, FLOOR], 2.5, C.dark) + seg([110, FLOOR], w, 1.1, C.prop);
     } } },
 });
+PATTERNS.reverse_hyper.flip = true;
 // yan eğilme: gövde ön görünümde yana yatar
 PATTERNS.side_bend.tilt = -16; // kablonun tersine eğilir
 
@@ -400,13 +542,20 @@ function lerpPose(A, B, k) {
   return out;
 }
 
-function animFrame(key, k) {
+function animFrame(key, k, style) {
   const pat = PATTERNS[key] || PATTERNS.squat_bw;
   const P = lerpPose(pat.A, pat.B, k);
   if (pat.tilt) P.tiltDeg = pat.tilt * k;
-  const J = pat.view === "front" ? solveFront(P) : solveSide(P);
+  const front = pat.view === "front";
+  const J = front ? solveFront(P) : solveSide(P);
   const props = pat.props || {};
-  return (pat.view === "front" ? drawFront(J, pat.hl || [], props, P) : drawSide(J, pat.hl || [], props, P)) + (props.back === floor ? "" : floor());
+  const hl = normHL(key, pat.hl || [], front);
+  // seçili tarzın paletini uygula, çiz, geri al
+  const st = STYLES[style || ANIM_STYLE] || {};
+  Object.assign(C, C_BASE, st); STY = st;
+  const out = floor() + (front ? drawFront(J, hl, props, P) : st.stick ? drawSideStick(J, hl, props, P) : drawSide(J, hl, props, P, !!pat.flip));
+  Object.assign(C, C_BASE); STY = {};
+  return out;
 }
 
 function exAnimHTML(id) {

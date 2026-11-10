@@ -199,6 +199,15 @@ function drawSideStick(J, hl, props, P) {
 }
 
 // ---- figürü çiz (ön görünüm) ----
+// Renk tonu: k > 0 beyaza, k < 0 siyaha doğru karıştırır (#rrggbb)
+function tint(hex, k) {
+  if (!/^#[0-9a-f]{6}$/i.test(hex)) return hex;
+  const n = parseInt(hex.slice(1), 16), to = k > 0 ? 255 : 0, a = Math.abs(k);
+  const ch = (v) => Math.round(v + (to - v) * a);
+  return "#" + [n >> 16, (n >> 8) & 255, n & 255].map((v) => ch(v).toString(16).padStart(2, "0")).join("");
+}
+let GRAD_SEQ = 0;
+
 function drawFront(J, hl, props, P) {
   const baseHl = C.hl, baseGlow = C.hlGlow;
   // kas açık mı? Açıksa o kasın rengini (varsa P.hlColors) etkinleştirir
@@ -208,51 +217,76 @@ function drawFront(J, hl, props, P) {
     C.hl = c || baseHl; C.hlGlow = P.noGlow ? "transparent" : c ? c + "50" : baseGlow;
     return true;
   };
+  // Tonlama: her renk için ışık sol üstten gelen yuvarlak geçiş (açık -> ana renk -> koyu kenar)
+  const defs = [], gradOf = {};
+  const tone = (c = C.hl) => {
+    if (!/^#[0-9a-f]{6}$/i.test(c)) return c;
+    if (!gradOf[c]) {
+      const id = "mg" + (GRAD_SEQ++ % 100000);
+      defs.push(`<radialGradient id="${id}" cx="36%" cy="28%" r="78%"><stop offset="0" stop-color="${tint(c, 0.42)}"/><stop offset=".55" stop-color="${c}"/><stop offset="1" stop-color="${tint(c, -0.24)}"/></radialGradient>`);
+      gradOf[c] = `url(#${id})`;
+    }
+    return gradOf[c];
+  };
+  const edge = () => `stroke="${tint(C.hl, -0.3)}" stroke-width="0.35" stroke-opacity=".55"`;
+  // yuvarlak kas şekilleri
+  const blob = (cx, cy, rx, ry, rot = 0) => `<ellipse cx="${f1(cx)}" cy="${f1(cy)}" rx="${f1(rx + 1.1)}" ry="${f1(ry + 1.1)}" fill="${C.hlGlow}"${rot ? ` transform="rotate(${rot} ${f1(cx)} ${f1(cy)})"` : ""}/>`
+    + `<ellipse cx="${f1(cx)}" cy="${f1(cy)}" rx="${f1(rx)}" ry="${f1(ry)}" fill="${tone()}" ${edge()}${rot ? ` transform="rotate(${rot} ${f1(cx)} ${f1(cy)})"` : ""}/>`;
+  const strip = (a, b, r1, r2) => cap(a, b, r1 + 1.1, r2 + 1, C.hlGlow) + cap(a, b, r1, r2, tone(), edge());
+  const shape = (d) => `<path d="${d}" fill="${C.hlGlow}" stroke="${C.hlGlow}" stroke-width="2.2" stroke-linejoin="round"/><path d="${d}" fill="${tone()}" ${edge()} stroke-linejoin="round"/>`;
+
   const sy = J.shoL[1], py = J.pel[1];
   let s = `<ellipse cx="60" cy="${FLOOR + 3.6}" rx="24" ry="2.6" fill="rgba(0,0,0,.32)"/>`;
   if (props.back) s += props.back(J, P);
   // bacaklar
   for (const [hip, knee, ank, sgn] of [[J.hipL, J.kneeL, J.ankL, -1], [J.hipR, J.kneeR, J.ankR, 1]]) {
     s += cap(hip, knee, R.th1, R.th2, C.body);
-    if (has("th")) { const a = along(hip, knee, 0.46), b = along(hip, knee, 0.95); s += cap(a, b, R.th1 * 0.9 + 1, R.th2 + 0.8, C.hlGlow) + cap(a, b, R.th1 * 0.74, R.th2 * 0.8, C.hl); }
-    if (has("adductors")) { const a = [along(hip, knee, 0.4)[0] - sgn * 2.1, along(hip, knee, 0.4)[1]], b = [along(hip, knee, 0.9)[0] - sgn * 1.2, along(hip, knee, 0.9)[1]]; s += cap(a, b, 2.9, 2.5, C.hlGlow) + cap(a, b, 1.9, 1.5, C.hl); }
+    if (has("th")) s += strip(along(hip, knee, 0.47), along(hip, knee, 0.9), R.th1 * 0.72, R.th2 * 0.7);
+    if (has("adductors")) s += strip([along(hip, knee, 0.42)[0] - sgn * 2.2, along(hip, knee, 0.42)[1]], [along(hip, knee, 0.86)[0] - sgn * 1.3, along(hip, knee, 0.86)[1]], 1.9, 1.3);
     s += cap(hip, along(hip, knee, 0.46), R.th1 + 0.5, R.th1 * 0.95, C.shorts);
     s += cap(knee, ank, R.sh1, R.sh2, C.body) + cap(along(knee, ank, 0.12), along(knee, ank, 0.55), R.sh1 + 0.5, R.sh1 - 0.3, C.body);
-    if (has("calves")) { const a = along(knee, ank, 0.08), b = along(knee, ank, 0.6); s += cap(a, b, 3.6, 3, C.hlGlow) + cap(a, b, 2.6, 2, C.hl); }
+    if (has("calves")) s += strip(along(knee, ank, 0.12), along(knee, ank, 0.56), 2.7, 1.9);
     s += `<ellipse cx="${f1(ank[0] + sgn * 1.1)}" cy="${f1(ank[1] + 1.7)}" rx="3.7" ry="2.3" fill="${C.shoe}"/>` + rect(ank[0] + sgn * 1.1 - 3.6, ank[1] + 3.1, 7.2, 1, C.sole, 0.5);
   }
   s += cap(J.hipL, J.hipR, 5, 5, C.shorts);
-  if (has("glutes")) for (const sgn of [-1, 1]) s += dot([60 + sgn * 4.6, py + 1.5], 5.4, C.hlGlow) + dot([60 + sgn * 4.6, py + 1.5], 4.2, C.hl);
-  if (has("glute")) for (const h of [J.hipL, J.hipR]) s += dot([h[0] + (h === J.hipL ? -2.2 : 2.2), h[1] + 1], 4.4, C.hlGlow) + dot([h[0] + (h === J.hipL ? -2.2 : 2.2), h[1] + 1], 3.2, C.hl);
+  if (has("glutes")) for (const sgn of [-1, 1]) s += blob(60 + sgn * 4.4, py + 1.4, 4.2, 4.0, sgn * 12);
+  if (has("glute")) for (const sgn of [-1, 1]) s += blob(60 + sgn * 7, py + 1, 3.0, 3.4);
   if (P.tiltDeg) s += `<g transform="rotate(${f1(P.tiltDeg)} 60 ${f1(py)})">`;
   // gövde: omuzda geniş, belde dar
   s += `<path d="M${f1(J.shoL[0] - 2.2)} ${f1(sy - 2.2)} Q60 ${f1(sy - 4.2)} ${f1(J.shoR[0] + 2.2)} ${f1(sy - 2.2)} Q${f1(J.shoR[0] + 3)} ${f1(sy + 6)} 66.5 ${f1(py - 9)} L67.5 ${f1(py + 1)} L52.5 ${f1(py + 1)} L53.5 ${f1(py - 9)} Q${f1(J.shoL[0] - 3)} ${f1(sy + 6)} ${f1(J.shoL[0] - 2.2)} ${f1(sy - 2.2)}Z" fill="${C.body}"${STY.stroke ? ` stroke="${STY.stroke}" stroke-width="0.9"` : ""}/>`;
   if (STY.shirt) s += `<path d="M${f1(J.shoL[0] + 1.2)} ${f1(sy - 2.6)} Q60 ${f1(sy + 3.2)} ${f1(J.shoR[0] - 1.2)} ${f1(sy - 2.6)} Q${f1(J.shoR[0] + 1.4)} ${f1(sy + 7)} 66.5 ${f1(py - 9)} L67.5 ${f1(py + 1)} L52.5 ${f1(py + 1)} L53.5 ${f1(py - 9)} Q${f1(J.shoL[0] - 1.4)} ${f1(sy + 7)} ${f1(J.shoL[0] + 1.2)} ${f1(sy - 2.6)}Z" fill="${STY.shirt}"/>`;
   s += cap([60, sy - 2], [60, sy - 6.5], 2.6, 2.4, C.bodyShade);
-  if (has("traps")) s += `<path d="M60 ${f1(sy - 7)} L${f1(J.shoR[0] - 1)} ${f1(sy - 2.6)} L${f1(J.shoL[0] + 1)} ${f1(sy - 2.6)}Z" fill="${C.hl}" stroke="${C.hlGlow}" stroke-width="2.4" stroke-linejoin="round"/>`;
-  if (has("chest")) for (const sgn of [-1, 1]) s += `<ellipse cx="${f1(60 + sgn * 4.6)}" cy="${f1(sy + 4.6)}" rx="5.2" ry="4.4" fill="${C.hlGlow}"/><ellipse cx="${f1(60 + sgn * 4.6)}" cy="${f1(sy + 4.6)}" rx="4" ry="3.3" fill="${C.hl}"/>`;
-  if (has("back")) s += rect(53.5, sy + 1, 13, 15, C.hlGlow, 4) + rect(54.8, sy + 2.2, 10.4, 12.6, C.hl, 3.4);
-  if (has("absc")) s += rect(55.6, sy + 10, 8.8, py - sy - 12.5, C.hlGlow, 3) + [0, 1, 2].map((i) => rect(56.6, sy + 11 + i * (py - sy - 14.5) / 3, 3.2, (py - sy - 14.5) / 3 - 1, C.hl, 1) + rect(60.2, sy + 11 + i * (py - sy - 14.5) / 3, 3.2, (py - sy - 14.5) / 3 - 1, C.hl, 1)).join("");
-  if (has("lats")) for (const sgn of [-1, 1]) { const a = [60 + sgn * 6.6, sy + 6.5], b = [60 + sgn * 4.2, py - 9]; s += cap(a, b, 4.2, 3, C.hlGlow) + cap(a, b, 3.1, 2, C.hl); }
-  if (has("lower_back")) s += rect(54.6, py - 13, 10.8, 10, C.hlGlow, 3.5) + rect(55.8, py - 12, 8.4, 8, C.hl, 2.8);
-  if (has("abs")) for (const sgn of [-1, 1]) s += cap([60 + sgn * 5.2, sy + 11], [60 + sgn * 5.6, py - 3], 2.9, 2.6, C.hlGlow) + cap([60 + sgn * 5.2, sy + 11.5], [60 + sgn * 5.6, py - 3.5], 1.9, 1.7, C.hl);
+  // trapez: boyundan omuzlara inen yumuşak üçgen
+  if (has("traps")) s += shape(`M60 ${f1(sy - 7.4)} Q${f1(63.5)} ${f1(sy - 4.4)} ${f1(J.shoR[0] - 0.6)} ${f1(sy - 2.9)} Q60 ${f1(sy - 0.6)} ${f1(J.shoL[0] + 0.6)} ${f1(sy - 2.9)} Q${f1(56.5)} ${f1(sy - 4.4)} 60 ${f1(sy - 7.4)}Z`);
+  // göğüs: iki yuvarlak göğüs kası, ortada hafif ayrık
+  if (has("chest")) for (const sgn of [-1, 1]) s += shape(`M${f1(60 + sgn * 0.7)} ${f1(sy + 1.6)} Q${f1(60 + sgn * 5)} ${f1(sy + 0.4)} ${f1(60 + sgn * 8.6)} ${f1(sy + 2.6)} Q${f1(60 + sgn * 9.4)} ${f1(sy + 7.2)} ${f1(60 + sgn * 5)} ${f1(sy + 8.4)} Q${f1(60 + sgn * 1.2)} ${f1(sy + 8.2)} ${f1(60 + sgn * 0.7)} ${f1(sy + 1.6)}Z`);
+  // orta sırt: omuzlar arasında yuvarlak kalkan
+  if (has("back")) s += shape(`M${f1(54.4)} ${f1(sy + 1.6)} Q60 ${f1(sy - 0.4)} ${f1(65.6)} ${f1(sy + 1.6)} Q${f1(66.2)} ${f1(sy + 9)} ${f1(63.4)} ${f1(sy + 13.4)} Q60 ${f1(sy + 15.6)} ${f1(56.6)} ${f1(sy + 13.4)} Q${f1(53.8)} ${f1(sy + 9)} ${f1(54.4)} ${f1(sy + 1.6)}Z`);
+  // kanat: koltuk altından bele daralan iki kanat
+  if (has("lats")) for (const sgn of [-1, 1]) s += shape(`M${f1(60 + sgn * 3.2)} ${f1(sy + 6)} Q${f1(60 + sgn * 8.6)} ${f1(sy + 4.6)} ${f1(60 + sgn * 9.2)} ${f1(sy + 9.4)} Q${f1(60 + sgn * 8)} ${f1(py - 12)} ${f1(60 + sgn * 4.6)} ${f1(py - 8)} Q${f1(60 + sgn * 2.2)} ${f1(py - 12)} ${f1(60 + sgn * 3.2)} ${f1(sy + 6)}Z`);
+  // karın: 2 x 3 yuvarlak kas
+  if (has("absc")) { const h = (py - sy - 15) / 3; for (let i = 0; i < 3; i++) for (const sgn of [-1, 1]) s += blob(60 + sgn * 1.95, sy + 12 + h * (i + 0.5), 1.6, Math.min(1.9, h / 2 - 0.25)); }
+  // bel: omurganın iki yanında dikey kaslar
+  if (has("lower_back")) for (const sgn of [-1, 1]) s += blob(60 + sgn * 2.5, py - 8, 2.0, 4.4, sgn * -6);
+  // yan karın
+  if (has("abs")) for (const sgn of [-1, 1]) s += strip([60 + sgn * 5.2, sy + 11.5], [60 + sgn * 5.6, py - 3.5], 1.9, 1.6);
   // baş
   s += P.backView ? dot([60, J.head[1] - 0.4], RIG.head + 0.2, C.hair) + cap([60, J.head[1] + 4.6], [60, J.head[1] + 6.2], 2.4, 2.4, C.bodyShade)
     : dot([60, J.head[1] - 1.1], RIG.head, C.hair) + dot([60, J.head[1] + 0.9], RIG.head - 0.6, C.body);
   // kollar
-  for (const [sho, elb, wr] of [[J.shoL, J.elbL, J.wrL], [J.shoR, J.elbR, J.wrR]]) {
+  for (const [sho, elb, wr, sgn] of [[J.shoL, J.elbL, J.wrL, -1], [J.shoR, J.elbR, J.wrR, 1]]) {
     s += cap(sho, elb, R.ua1, R.ua2, C.body);
-    if (has("biceps")) { const a = along(sho, elb, 0.22), b = along(sho, elb, 0.86); s += cap(a, b, 3.2, 2.9, C.hlGlow) + cap(a, b, 2.1, 1.8, C.hl); }
+    if (has("biceps")) s += strip(along(sho, elb, 0.26), along(sho, elb, 0.84), 2.1, 1.7);
     s += cap(elb, wr, R.fa1, R.fa2, C.body);
-    if (has("forearm")) { const a = along(elb, wr, 0.08), b = along(elb, wr, 0.75); s += cap(a, b, 3.3, 2.7, C.hlGlow) + cap(a, b, 2.2, 1.7, C.hl); }
-    if (has("side_delt")) { const o = [sho[0] + (sho === J.shoL ? -1.9 : 1.9), sho[1] + 0.6]; s += dot(o, 4.6, C.hlGlow) + dot(o, P.noGlow ? 2.7 : 3.3, C.hl); }
-    if (has("delt")) s += dot(sho, 5.3, C.hlGlow) + dot(sho, P.noGlow ? 3.3 : 4.1, C.hl);
+    if (has("forearm")) s += strip(along(elb, wr, 0.1), along(elb, wr, 0.72), 2.0, 1.5);
+    if (has("side_delt")) s += blob(sho[0] + sgn * 1.9, sho[1] + 0.8, P.noGlow ? 2.5 : 3.1, P.noGlow ? 3.0 : 3.6, sgn * -14);
+    if (has("delt")) s += blob(sho[0] + sgn * 0.3, sho[1] + 0.4, P.noGlow ? 3.3 : 4.0, P.noGlow ? 3.1 : 3.8);
     s += dot(wr, R.hand, C.bodyShade);
   }
   if (props.front) s += props.front(J, P);
   if (P.tiltDeg) s += "</g>";
   C.hl = baseHl; C.hlGlow = baseGlow;
-  return s;
+  return (defs.length ? `<defs>${defs.join("")}</defs>` : "") + s;
 }
 
 // Kalıptaki genel vurguyu doğru kasa çevirir (ör. "ua": curl'de biceps, pushdown'da triceps)

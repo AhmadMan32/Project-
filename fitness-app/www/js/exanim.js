@@ -411,7 +411,7 @@ function animFrame(key, k) {
 
 function exAnimHTML(id) {
   const key = animKeyFor(id);
-  return `<span class="eximg anim-fig"><svg viewBox="8 -8 104 106" data-anim="${key}" aria-hidden="true">${animFrame(key, 0)}</svg></span>`;
+  return `<span class="eximg anim-fig"><svg viewBox="8 -14 104 112" data-anim="${key}" aria-hidden="true">${animFrame(key, 0)}</svg></span>`;
 }
 
 // Tek döngü: ekranda görünen tüm animasyonları günceller (görünmeyenler atlanır)

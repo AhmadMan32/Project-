@@ -538,6 +538,7 @@ function dayEditor(day, i) {
 
 // ---------- Hareket seçici (resimli, iki adım: bölge -> hareket) ----------
 let pickMuscle = null;
+const ST_COLOR = { none: "#f59e0b", low: "#f59e0b", ok: "#4ade80", high: "#ef4444" }; // bölge kartındaki kas rengi
 const EQ_TAG = { gym: "Salon", db: "Dumbbell", bw: "Ekipmansız" };
 const ST_TAG = { none: ["Yok", "st-none"], low: ["Eksik", "st-low"], ok: ["İdeal", "st-ok"], high: ["Fazla", "st-high"] };
 
@@ -575,7 +576,7 @@ function renderPicker() {
         const [label, cls] = ST_TAG[pa.statuses[m]];
         const nEx = allExercises().filter((e) => e.p.includes(m) && ok.has(e.id)).length;
         return `<button class="mcard pick-m ${cls}" data-pickm="${m}">
-          ${muscleThumbSVG(m)}<span>${MUSCLES[m].name}</span>
+          ${athleteThumbSVG(m, ST_COLOR[pa.statuses[m]])}<span>${MUSCLES[m].name}</span>
           <small class="pm-st ${cls}">${label} · ${fmt(+(pa.vol[m] * f).toFixed(1))} set</small>
           <small class="pm-n">${nEx} hareket</small>
         </button>`;
@@ -599,7 +600,7 @@ function renderPicker() {
   const head = pickMuscle && !q ? (() => {
     const t = muscleTarget(pickMuscle, state.profile);
     const [label, cls] = ST_TAG[st];
-    return `<div class="pm-head ${cls}">${muscleThumbSVG(pickMuscle)}<div><b>${MUSCLES[pickMuscle].name}</b>
+    return `<div class="pm-head ${cls}">${athleteThumbSVG(pickMuscle, ST_COLOR[st])}<div><b>${MUSCLES[pickMuscle].name}</b>
       <small>Planda haftalık ${volRange(pa.vol[pickMuscle], f)} set · hedefin ${t.min}-${t.max} · <span class="pm-st ${cls}">${label}</span></small></div></div>`;
   })() : "";
   $("#pickList").innerHTML = head + `<div class="ex-grid">${list.map((e) => {

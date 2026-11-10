@@ -205,11 +205,14 @@ function drawFront(J, hl, props, P) {
   for (const [hip, knee, ank, sgn] of [[J.hipL, J.kneeL, J.ankL, -1], [J.hipR, J.kneeR, J.ankR, 1]]) {
     s += cap(hip, knee, R.th1, R.th2, C.body);
     if (has("th")) { const a = along(hip, knee, 0.46), b = along(hip, knee, 0.95); s += cap(a, b, R.th1 * 0.9 + 1, R.th2 + 0.8, C.hlGlow) + cap(a, b, R.th1 * 0.74, R.th2 * 0.8, C.hl); }
+    if (has("adductors")) { const a = [along(hip, knee, 0.4)[0] - sgn * 2.1, along(hip, knee, 0.4)[1]], b = [along(hip, knee, 0.9)[0] - sgn * 1.2, along(hip, knee, 0.9)[1]]; s += cap(a, b, 2.9, 2.5, C.hlGlow) + cap(a, b, 1.9, 1.5, C.hl); }
     s += cap(hip, along(hip, knee, 0.46), R.th1 + 0.5, R.th1 * 0.95, C.shorts);
     s += cap(knee, ank, R.sh1, R.sh2, C.body);
+    if (has("calves")) { const a = along(knee, ank, 0.08), b = along(knee, ank, 0.6); s += cap(a, b, 3.6, 3, C.hlGlow) + cap(a, b, 2.6, 2, C.hl); }
     s += `<ellipse cx="${f1(ank[0] + sgn * 0.8)}" cy="${f1(ank[1] + 1.6)}" rx="3.4" ry="2.3" fill="${C.shoe}"/>`;
   }
   s += cap(J.hipL, J.hipR, 5, 5, C.shorts);
+  if (has("glutes")) for (const sgn of [-1, 1]) s += dot([60 + sgn * 4.6, py + 1.5], 5.4, C.hlGlow) + dot([60 + sgn * 4.6, py + 1.5], 4.2, C.hl);
   if (has("glute")) for (const h of [J.hipL, J.hipR]) s += dot([h[0] + (h === J.hipL ? -2.2 : 2.2), h[1] + 1], 4.4, C.hlGlow) + dot([h[0] + (h === J.hipL ? -2.2 : 2.2), h[1] + 1], 3.2, C.hl);
   if (P.tiltDeg) s += `<g transform="rotate(${f1(P.tiltDeg)} 60 ${f1(py)})">`;
   // gövde: omuzda geniş, belde dar
@@ -219,14 +222,20 @@ function drawFront(J, hl, props, P) {
   if (has("traps")) s += `<path d="M60 ${f1(sy - 7)} L${f1(J.shoR[0] - 1)} ${f1(sy - 2.6)} L${f1(J.shoL[0] + 1)} ${f1(sy - 2.6)}Z" fill="${C.hl}" stroke="${C.hlGlow}" stroke-width="2.4" stroke-linejoin="round"/>`;
   if (has("chest")) for (const sgn of [-1, 1]) s += `<ellipse cx="${f1(60 + sgn * 4.6)}" cy="${f1(sy + 4.6)}" rx="5.2" ry="4.4" fill="${C.hlGlow}"/><ellipse cx="${f1(60 + sgn * 4.6)}" cy="${f1(sy + 4.6)}" rx="4" ry="3.3" fill="${C.hl}"/>`;
   if (has("back")) s += rect(53.5, sy + 1, 13, 15, C.hlGlow, 4) + rect(54.8, sy + 2.2, 10.4, 12.6, C.hl, 3.4);
+  if (has("absc")) s += rect(55.6, sy + 10, 8.8, py - sy - 12.5, C.hlGlow, 3) + [0, 1, 2].map((i) => rect(56.6, sy + 11 + i * (py - sy - 14.5) / 3, 3.2, (py - sy - 14.5) / 3 - 1, C.hl, 1) + rect(60.2, sy + 11 + i * (py - sy - 14.5) / 3, 3.2, (py - sy - 14.5) / 3 - 1, C.hl, 1)).join("");
+  if (has("lats")) for (const sgn of [-1, 1]) { const a = [60 + sgn * 6.6, sy + 6.5], b = [60 + sgn * 4.2, py - 9]; s += cap(a, b, 4.2, 3, C.hlGlow) + cap(a, b, 3.1, 2, C.hl); }
+  if (has("lower_back")) s += rect(54.6, py - 13, 10.8, 10, C.hlGlow, 3.5) + rect(55.8, py - 12, 8.4, 8, C.hl, 2.8);
   if (has("abs")) for (const sgn of [-1, 1]) s += cap([60 + sgn * 5.2, sy + 11], [60 + sgn * 5.6, py - 3], 2.9, 2.6, C.hlGlow) + cap([60 + sgn * 5.2, sy + 11.5], [60 + sgn * 5.6, py - 3.5], 1.9, 1.7, C.hl);
   // baş
-  s += dot([60, J.head[1] - 1.1], RIG.head, C.hair) + dot([60, J.head[1] + 0.9], RIG.head - 0.6, C.body);
+  s += P.backView ? dot([60, J.head[1] - 0.4], RIG.head + 0.2, C.hair) + cap([60, J.head[1] + 4.6], [60, J.head[1] + 6.2], 2.4, 2.4, C.bodyShade)
+    : dot([60, J.head[1] - 1.1], RIG.head, C.hair) + dot([60, J.head[1] + 0.9], RIG.head - 0.6, C.body);
   // kollar
   for (const [sho, elb, wr] of [[J.shoL, J.elbL, J.wrL], [J.shoR, J.elbR, J.wrR]]) {
     s += cap(sho, elb, R.ua1, R.ua2, C.body);
     if (has("biceps")) { const a = along(sho, elb, 0.22), b = along(sho, elb, 0.86); s += cap(a, b, 3.2, 2.9, C.hlGlow) + cap(a, b, 2.1, 1.8, C.hl); }
     s += cap(elb, wr, R.fa1, R.fa2, C.body);
+    if (has("forearm")) { const a = along(elb, wr, 0.08), b = along(elb, wr, 0.75); s += cap(a, b, 3.3, 2.7, C.hlGlow) + cap(a, b, 2.2, 1.7, C.hl); }
+    if (has("side_delt")) { const o = [sho[0] + (sho === J.shoL ? -1.9 : 1.9), sho[1] + 0.6]; s += dot(o, 4.6, C.hlGlow) + dot(o, 3.3, C.hl); }
     if (has("delt")) s += dot(sho, 5.3, C.hlGlow) + dot(sho, 4.1, C.hl);
     s += dot(wr, R.hand, C.bodyShade);
   }
@@ -563,6 +572,37 @@ function animFrame(key, k, style) {
 function exAnimHTML(id) {
   const key = animKeyFor(id);
   return `<span class="eximg anim-fig"><svg viewBox="1 -14 118 112" data-anim="${key}" aria-hidden="true">${animFrame(key, 0)}</svg></span>`;
+}
+
+// ---- Bölge (kas) kartı resmi: sporcu figürü, ilgili kasa yakınlaştırılmış, önden ya da arkadan ----
+const ATHLETE_THUMB = {
+  chest:      { keys: ["chest"],      box: "36 10 48 40" },
+  front_delt: { keys: ["delt"],       box: "36 10 48 40" },
+  side_delt:  { keys: ["side_delt"],  box: "36 10 48 40" },
+  rear_delt:  { keys: ["delt"],       box: "36 10 48 40", back: true },
+  biceps:     { keys: ["biceps"],     box: "34 14 52 44" },
+  triceps:    { keys: ["biceps"],     box: "34 14 52 44", back: true },
+  forearm:    { keys: ["forearm"],    box: "32 24 56 46" },
+  traps:      { keys: ["traps"],      box: "38 6 44 36", back: true },
+  lats:       { keys: ["lats"],       box: "36 14 48 40", back: true },
+  upper_back: { keys: ["back"],       box: "36 12 48 40", back: true },
+  lower_back: { keys: ["lower_back"], box: "38 26 44 36", back: true },
+  abs:        { keys: ["absc"],       box: "38 22 44 36" },
+  obliques:   { keys: ["abs"],        box: "38 22 44 36" },
+  glutes:     { keys: ["glutes"],     box: "38 38 44 36", back: true },
+  quads:      { keys: ["th"],         box: "36 46 48 40" },
+  hamstrings: { keys: ["th"],         box: "36 46 48 40", back: true },
+  adductors:  { keys: ["adductors"],  box: "36 46 48 40" },
+  calves:     { keys: ["calves"],     box: "38 64 44 36", back: true },
+};
+function athleteThumbSVG(m, color = "#4ade80") {
+  const t = ATHLETE_THUMB[m] || ATHLETE_THUMB.chest;
+  const P = { a: 16, b: 8, g: 5, backView: !!t.back };
+  const st = STYLES[ANIM_STYLE] || {};
+  Object.assign(C, C_BASE, st, { hl: color, hlGlow: color + "55" }); STY = st;
+  const body = drawFront(solveFront(P), t.keys, {}, P);
+  Object.assign(C, C_BASE); STY = {};
+  return `<svg viewBox="${t.box}" class="thumb-svg ath" aria-hidden="true">${body}</svg>`;
 }
 
 // Tek döngü: ekranda görünen tüm animasyonları günceller (görünmeyenler atlanır)

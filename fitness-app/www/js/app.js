@@ -159,6 +159,7 @@ $("#saveEx").onclick = () => {
   const newBest = Math.max(...sets.map((s) => e1rm(s.kg, s.reps)));
   toast(prevBest && newBest > prevBest ? `🏆 Helal ${userName() || "olsun"}! Yeni rekor: ~${newBest.toFixed(1)} kg 1RM` : `Kaydedildi ✓${userName() ? " Devam " + userName() + "!" : ""}`);
   renderDayLog(); renderHistory(); updateScore(); renderPlan();
+  if (typeof onWorkoutSaved === "function") onWorkoutSaved();
 };
 
 function workoutItem(w, withDate) {
@@ -260,7 +261,8 @@ $("#askClaude").onclick = async () => {
 
 function updateScore() {
   const r = analyze(state);
-  $("#scorePill").textContent = state.workouts.length ? `Denge: ${r.score}/100` : "Denge: –";
+  $("#scorePill").textContent = `Denge: ${r.score}/100`;
+  $("#scorePill").classList.toggle("hidden", !state.workouts.length); // kayıt yokken anlamsız
 }
 
 // ---------- GELİŞİM ----------
@@ -531,6 +533,7 @@ function nextDayIndex() {
 // ---------- Render ----------
 function render(tab) {
   if (tab === "plan") renderPlan();
+  if (tab === "workout" && typeof renderSessionBar === "function") renderSessionBar();
   if (tab === "workout") { renderCats(); renderExList(); renderDayLog(); renderHistory(); }
   if (tab === "analysis") renderAnalysis();
   if (tab === "progress") renderProgress();

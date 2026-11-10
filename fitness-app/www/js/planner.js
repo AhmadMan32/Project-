@@ -254,8 +254,102 @@ function analyzePlan(program, profile, custom = []) {
   return { vol, statuses, insights, score, f };
 }
 
-// ---------- Program sekmesi ----------
 let planPickDay = null;
+
+// ---------- Program sekmesi (yeni tasarım) ----------
+const REGION_OF = {
+  chest: "Göğüs", front_delt: "Omuz", side_delt: "Omuz", rear_delt: "Omuz",
+  biceps: "Kol", triceps: "Kol", forearm: "Kol",
+  lats: "Sırt", upper_back: "Sırt", traps: "Sırt", lower_back: "Bel",
+  abs: "Karın", obliques: "Karın",
+  glutes: "Bacak", quads: "Bacak", hamstrings: "Bacak", adductors: "Bacak", calves: "Bacak",
+};
+const planUI = { open: new Set(), checkOpen: false, init: false };
+
+function daySets(day) { return day.exercises.reduce((a, e) => a + e.sets, 0); }
+function dayRegions(day, n = 3) {
+  const score = {};
+  for (const e of day.exercises) {
+    const ex = findExercise(e.id, state.customExercises);
+    for (const m of ex?.p || []) score[REGION_OF[m]] = (score[REGION_OF[m]] || 0) + e.sets;
+  }
+  return Object.entries(score).sort((a, b) => b[1] - a[1]).slice(0, n).map(([r]) => r);
+}
+function loggedToday(id) { return state.workouts.some((w) => w.date === todayStr() && w.exerciseId === id); }
+function lastWeight(id) {
+  const last = [...state.workouts].reverse().find((w) => w.exerciseId === id);
+  return last ? Math.max(...last.sets.map((s) => s.kg || 0)) : null;
+}
+function miniRing(value, target, color, label, text) {
+  const r = 22, c = 2 * Math.PI * r, pct = target ? Math.min(1, value / target) : 0;
+  return `<div class="mring"><svg viewBox="0 0 56 56" width="56" height="56">
+      <circle cx="28" cy="28" r="${r}" fill="none" stroke="var(--card2)" stroke-width="6"/>
+      <circle cx="28" cy="28" r="${r}" fill="none" stroke="${color}" stroke-width="6" stroke-linecap="round"
+        stroke-dasharray="${c}" stroke-dashoffset="${c * (1 - pct)}" transform="rotate(-90 28 28)"/>
+      ${pct >= 1 ? `<text x="28" y="33" text-anchor="middle" font-size="16" fill="${color}">✓</text>` : ""}
+    </svg><div><b>${text}</b><small>${label}</small></div></div>`;
+}
+function dayBodyThumb(day) {
+  const prim = new Set(), sec = new Set();
+  for (const e of day.exercises) {
+    const ex = findExercise(e.id, state.customExercises);
+    (ex?.p || []).forEach((m) => prim.add(m));
+    (ex?.s || []).forEach((m) => sec.add(m));
+  }
+  const color = (m) => (prim.has(m) ? "var(--accent)" : sec.has(m) ? "rgba(74,222,128,.38)" : "#2c313c");
+  return buildBodySVG("front", color) + buildBodySVG("back", color);
+}
+
+// Antrenman oturumu: "Antrenmana başla" ile günün hareketleri sırayla açılır
+function sessionDay() {
+  const s = state.session, prog = state.program;
+  if (!s || s.date !== todayStr() || !prog || !prog.days[s.day]) return null;
+  return prog.days[s.day];
+}
+function sessionRemaining() {
+  const d = sessionDay();
+  return d ? d.exercises.filter((e) => !loggedToday(e.id)) : [];
+}
+function openSessionExercise() {
+  const rem = sessionRemaining();
+  if (!rem.length) return finishSession(true);
+  $(`#tabs button[data-tab="workout"]`).click();
+  $("#wDate").value = todayStr(); renderDayLog();
+  selectExercise(rem[0].id, { sets: rem[0].sets, reps: rem[0].reps });
+  renderSessionBar();
+  $("#setEditor").scrollIntoView({ behavior: "smooth", block: "center" });
+}
+function startSession(dayIdx) {
+  state.session = { date: todayStr(), day: dayIdx };
+  save();
+  openSessionExercise();
+}
+function finishSession(completed) {
+  const d = sessionDay();
+  state.session = null; save();
+  renderSessionBar();
+  if (completed && d) toast(`${d.name} tamamlandı 🎉${userName() ? " Helal " + userName() + "!" : ""}`);
+  $(`#tabs button[data-tab="plan"]`).click();
+}
+function renderSessionBar() {
+  const bar = $("#sessionBar");
+  const d = sessionDay();
+  $("#tab-workout").classList.toggle("in-session", !!d);
+  if (!d) { bar.classList.add("hidden"); return; }
+  const total = d.exercises.length, left = sessionRemaining();
+  const doneN = total - left.length;
+  bar.classList.remove("hidden");
+  bar.innerHTML = `<div class="sb-top"><b>${esc(d.name)}</b><span>${doneN}/${total} hareket</span></div>
+    <div class="sb-track"><div style="width:${(doneN / Math.max(1, total)) * 100}%"></div></div>
+    <div class="sb-bottom"><span>${left.length ? `Şimdi: <b>${esc(exName(left[0].id))}</b>${left[1] ? ` · Sonra: ${esc(exName(left[1].id))}` : ""}` : "Hepsi bitti!"}</span>
+      <button class="btn ghost small-btn" id="sbEnd">Bitir</button></div>`;
+}
+// app.js kaydettikten sonra çağırır
+function onWorkoutSaved() {
+  if (!sessionDay()) return;
+  if (sessionRemaining().length) setTimeout(openSessionExercise, 600);
+  else setTimeout(() => finishSession(true), 600);
+}
 
 function renderPlan() {
   const p = state.profile, prog = state.program;
@@ -265,94 +359,181 @@ function renderPlan() {
     return;
   }
   const manual = prog.mode === "manual";
-  const done = weekWorkoutDays(), next = prog.days.length ? nextDayIndex() : 0;
+  const len = prog.days.length;
+  const next = len ? nextDayIndex() : 0;
+  // kendi planında sıradaki gün ilk açılışta açık gelsin (hareket eklemek için)
+  if (manual && !planUI.init) { planUI.open.add(next); planUI.init = true; }
+  const nextDay = prog.days[next];
   const t = targets(), d = dayNut();
   const pg = d.protein.reduce((a, x) => a + x.g, 0);
-  const todayDone = state.workouts.some((w) => w.date === todayStr());
-  const nextDay = prog.days[next];
+  const done = weekWorkoutDays();
+  const weekTarget = daysMinOf(p) || len;
+  const todayDone = nextDay && nextDay.exercises.length > 0 && nextDay.exercises.every((e) => loggedToday(e.id));
+  const anyToday = state.workouts.some((w) => w.date === todayStr());
+  const active = sessionDay();
   const pa = analyzePlan(prog, p, state.customExercises);
-  const color = (m) => COLORS[pa.statuses[m]];
-
-  $("#planBody").innerHTML = `
-    <div class="hello">
-      <h1>${timeGreeting()}${p.name ? ", " + esc(p.name) : ""}! 👋</h1>
-      <p class="muted">${todayDone ? "Bugünkü antrenmanını yaptın, harikasın. Şimdi dinlenme ve beslenme zamanı."
-        : nextDay?.exercises.length ? `Sıradaki antrenmanın: <b style="color:var(--text)">${esc(nextDay.name)}</b> · ${nextDay.exercises.length} hareket`
-        : manual ? "Programını kurmaya başla; her eklediğin harekette eksik ve fazlaları göstereceğim." : ""}</p>
-    </div>
-    <div class="stat-row">
-      <div class="stat big"><b>${done}/${daysMinOf(p) < prog.days.length && daysMinOf(p) ? daysLabel(p) : prog.days.length}</b><span>Bu hafta antrenman</span><div class="mini"><div style="width:${Math.min(100, done / Math.max(1, daysMinOf(p) || prog.days.length) * 100)}%;background:var(--accent)"></div></div></div>
-      <div class="stat big"><b>${pg}/${t.protein} g</b><span>Bugün protein</span><div class="mini"><div style="width:${Math.min(100, pg / t.protein * 100)}%;background:#4ade80"></div></div></div>
-      ${t.creatine ? `<div class="stat big"><b>${d.creatine}/${t.creatine} g</b><span>Bugün kreatin</span><div class="mini"><div style="width:${Math.min(100, d.creatine / t.creatine * 100)}%;background:#60a5fa"></div></div></div>` : ""}
-    </div>
-
-    <div class="seg">
-      ${Object.entries(PLAN_MODES).map(([k, m]) => `<button class="${prog.mode === k ? "on" : ""}" data-mode="${k}">${m.icon} ${m.name}</button>`).join("")}
-    </div>
-    <p class="muted small mode-desc">${manual
-      ? "✍️ Bu senin planın. Hareketleri sen seçiyorsun; ben her değişiklikte eksik, fazla ve riskli noktaları aşağıda gösteriyorum."
-      : "🤖 Bu planı cevaplarına göre ben oluşturdum. İstersen \"Düzenle\" ile kendi planına çevirebilirsin."}</p>
-
-    <div class="grid two plan-grid">
-      <div class="card">
-        <h2>${esc(prog.split)} <span class="muted small">· ${GOALS[goalKey(p.goal)].name}</span></h2>
-        ${todayDone ? `<div class="insight good"><b>Bugünkü antrenman kaydedildi ✓</b><p>Toparlanmak için protein hedefini tamamla.</p></div>` : ""}
-        ${prog.days.map((day, i) => dayCard(day, i, i === next, manual)).join("")}
-        <div class="row wrap">
-          ${manual ? `<button class="btn" id="addDay">+ Gün ekle</button><button class="btn ghost" id="clearPlan">Planı temizle</button>`
-                   : `<button class="btn primary" id="editPlan">✏️ Düzenle</button><button class="btn" id="regenPlan">🔄 Yeniden oluştur</button>`}
-        </div>
-        <p class="muted small">İpucu: Tüm setlerde tekrar aralığının üst sınırına ulaşınca bir sonraki antrenmanda ağırlığı 2.5 kg (küçük kaslarda 1-2 kg) artır.</p>
-      </div>
-
-      <div class="card">
-        <h2>Plan Kontrolü <span class="score-chip">${pa.score}/100</span></h2>
-        <p class="muted small" style="margin-top:-6px">Planladığın haftalık setler, ${p.name ? esc(p.name) + " için" : "senin için"} belirlediğim hedeflerle karşılaştırılıyor.</p>
-        <div class="body-wrap small-map">${buildBodySVG("front", color)}${buildBodySVG("back", color)}</div>
-        <div class="legend">
-          <span><i style="background:var(--m-none)"></i>Yok</span><span><i style="background:var(--m-low)"></i>Eksik</span>
-          <span><i style="background:var(--m-ok)"></i>İdeal</span><span><i style="background:var(--m-high)"></i>Fazla</span>
-        </div>
-        <div id="planMuscleInfo" class="muscle-info muted small">Bir kasa dokun: planda kaç set var, hedefin ne?</div>
-        <div class="plan-insights">${pa.insights.map((ins, ii) => `
-          <div class="insight ${ins.type}"><b>${esc(ins.title)}</b><p>${esc(ins.text)}</p>
-            ${(ins.actions || []).length ? `<div class="act-row">${ins.actions.map((a, ai) => `<button class="btn act" data-act="${ii}:${ai}">${esc(a.label)}</button>`).join("")}</div>` : ""}
-          </div>`).join("")}</div>
-      </div>
-    </div>`;
   renderPlan._pa = pa;
+  const warnN = pa.insights.filter((i) => i.type === "warn" || i.type === "danger").length;
+  const dateTxt = new Date().toLocaleDateString("tr-TR", { weekday: "long", day: "numeric", month: "long" });
+  const goal = GOALS[goalKey(p.goal)];
+
+  // --- bugünün kartı
+  let hero;
+  if (!nextDay || !nextDay.exercises.length) {
+    hero = `<section class="today-card empty">
+      <span class="tc-tag">${manual ? "KENDİ PROGRAMIN" : "PROGRAM"}</span>
+      <h2>${manual ? "Programını kuralım" : "Bu günde hareket yok"}</h2>
+      <p class="tc-meta">${manual ? "Her güne hareket ekle; ben eksik ve fazlaları anında göstereceğim." : "Plan ayarlarından planı yeniden oluşturabilirsin."}</p>
+      <button class="tc-start" data-goday="${next}">＋ ${esc(nextDay ? nextDay.name : "1. Gün")} için hareket ekle</button>
+    </section>`;
+  } else {
+    const sets = daySets(nextDay), mins = Math.round(sets * SET_MINUTES);
+    const doneN = nextDay.exercises.filter((e) => loggedToday(e.id)).length;
+    hero = `<section class="today-card ${todayDone ? "done" : ""}">
+      <div class="tc-text">
+        <span class="tc-tag">${todayDone ? "BUGÜN TAMAMLANDI ✓" : active ? "ANTRENMAN DEVAM EDİYOR" : `BUGÜN · ${next + 1}. GÜN`}</span>
+        <h2>${esc(nextDay.name)}</h2>
+        <p class="tc-meta">${nextDay.exercises.length} hareket · ${sets} set · ~${mins} dk</p>
+        <div class="tc-chips">${dayRegions(nextDay).map((r) => `<span>${r}</span>`).join("")}</div>
+      </div>
+      <div class="tc-body">${dayBodyThumb(nextDay)}</div>
+      ${todayDone
+        ? `<p class="tc-donetxt">Harika iş${p.name ? ", " + esc(p.name) : ""}! Şimdi sıra protein ve dinlenmede.</p>`
+        : `<button class="tc-start" id="tcStart">${active || doneN ? `▶ Devam et · ${doneN}/${nextDay.exercises.length}` : "▶ Antrenmana başla"}</button>`}
+    </section>`;
+  }
+
+  // --- haftalık şerit
+  const week = `<section class="week">
+    <div class="wk-head"><b>Döngün</b><span>Bu hafta ${done}/${daysLabel(p) !== "-" ? daysLabel(p) : len} antrenman</span></div>
+    <div class="wk-days">${prog.days.map((day, i) => {
+      const st = i < next ? "done" : i === next ? (todayDone ? "done" : "next") : "";
+      return `<button class="wk-day ${st}" data-goday="${i}">
+        <span class="wk-num">${st === "done" ? "✓" : i + 1}</span>
+        <span class="wk-name">${esc(shortDayName(day.name))}</span>
+      </button>`;
+    }).join("")}</div>
+  </section>`;
+
+  // --- halkalar
+  const L = (ml) => +(ml / 1000).toFixed(1);
+  const rings = `<section class="rings">
+    <button class="ring-btn" data-gotab="nutrition">${miniRing(pg, t.protein, "#4ade80", "g protein", `${pg}/${t.protein}`)}</button>
+    ${t.creatine ? `<button class="ring-btn" data-gotab="nutrition">${miniRing(d.creatine, t.creatine, "#60a5fa", "g kreatin", `${d.creatine}/${t.creatine}`)}</button>` : ""}
+    <button class="ring-btn" data-gotab="nutrition">${miniRing(L(d.water), L(t.water), "#38bdf8", "L su", `${L(d.water)}/${L(t.water)}`)}</button>
+  </section>`;
+
+  // --- bugünün hareketleri
+  const todayList = nextDay && nextDay.exercises.length ? `<section class="card ex-card">
+    <div class="sec-head"><h3>${todayDone ? "Bugün yaptıkların" : "Bugünün hareketleri"}</h3><span>${goal.reps} tekrar</span></div>
+    ${nextDay.exercises.map((e, i) => exRow(e, i)).join("")}
+  </section>` : "";
+
+  // --- tüm günler (açılır kartlar)
+  const days = `<section class="days">
+    <div class="sec-title"><h3>${esc(prog.split)}</h3><span>${goal.name}</span></div>
+    ${prog.days.map((day, i) => {
+      const open = planUI.open.has(i);
+      const sets = daySets(day);
+      return `<details class="day-acc ${i === next ? "next" : ""}" data-acc="${i}" ${open ? "open" : ""}>
+        <summary>
+          <span class="da-num">${i + 1}</span>
+          <span class="da-main"><b>${esc(day.name)}</b><small>${day.exercises.length ? `${day.exercises.length} hareket · ~${Math.round(sets * SET_MINUTES)} dk · ${dayRegions(day).join(", ")}` : "Henüz hareket yok"}</small></span>
+          ${i === next ? `<span class="badge">Sıradaki</span>` : ""}
+          <span class="da-chev">›</span>
+        </summary>
+        <div class="da-body">${manual ? dayEditor(day, i) : day.exercises.map((e, ei) => exRow(e, ei)).join("")}
+          ${!manual && i !== next && day.exercises.length ? `<button class="btn ghost full" data-startday="${i}">▶ Bugün bu günü yap</button>` : ""}
+        </div>
+      </details>`;
+    }).join("")}
+    ${manual ? `<div class="row wrap"><button class="btn" id="addDay">+ Gün ekle</button><button class="btn ghost" id="clearPlan">Planı temizle</button></div>` : ""}
+  </section>`;
+
+  // --- plan kontrolü (özet + açılır detay)
+  const showCheck = planUI.checkOpen;
+  const color = (m) => COLORS[pa.statuses[m]];
+  const scoreColor = pa.score >= 85 ? "var(--accent)" : pa.score >= 60 ? "var(--warn)" : "var(--danger)";
+  const check = `<section class="card check-card">
+    <button class="ck-row" id="ckToggle" aria-expanded="${showCheck}">
+      ${miniRing(pa.score, 100, scoreColor, "", "")}
+      <span class="ck-main"><b>Plan kontrolü · ${pa.score}/100</b><small>${warnN ? `${warnN} öneri var, dokun ve gör` : "Dengeli: tüm kaslar hedef aralığında"}</small></span>
+      <span class="da-chev ${showCheck ? "open" : ""}">›</span>
+    </button>
+    ${showCheck ? `<div class="ck-detail">
+      <div class="body-wrap small-map">${buildBodySVG("front", color)}${buildBodySVG("back", color)}</div>
+      <div class="legend">
+        <span><i style="background:var(--m-none)"></i>Yok</span><span><i style="background:var(--m-low)"></i>Eksik</span>
+        <span><i style="background:var(--m-ok)"></i>İdeal</span><span><i style="background:var(--m-high)"></i>Fazla</span>
+      </div>
+      <div id="planMuscleInfo" class="muscle-info muted small">Bir kasa dokun: planda kaç set var, hedefin ne?</div>
+      <div class="plan-insights">${pa.insights.map((ins, ii) => `
+        <div class="insight ${ins.type}"><b>${esc(ins.title)}</b><p>${esc(ins.text)}</p>
+          ${(ins.actions || []).length ? `<div class="act-row">${ins.actions.map((a, ai) => `<button class="btn act" data-act="${ii}:${ai}">${esc(a.label)}</button>`).join("")}</div>` : ""}
+        </div>`).join("")}</div>
+    </div>` : ""}
+  </section>`;
+
+  // --- plan ayarları
+  const settings = `<section class="card plan-settings">
+    <h3>Plan ayarları</h3>
+    <div class="seg">${Object.entries(PLAN_MODES).map(([k, m]) => `<button class="${prog.mode === k ? "on" : ""}" data-mode="${k}">${m.icon} ${m.name}</button>`).join("")}</div>
+    <p class="muted small mode-desc">${manual
+      ? "Bu senin planın. Hareketleri sen seçiyorsun; günleri açıp düzenleyebilirsin, ben her değişiklikte kontrol ediyorum."
+      : "Bu planı cevaplarına göre ben oluşturdum. \"Düzenle\" ile kendi planına çevirebilirsin."}</p>
+    ${manual ? "" : `<div class="row wrap"><button class="btn" id="editPlan">✏️ Düzenle</button><button class="btn ghost" id="regenPlan">🔄 Yeniden oluştur</button></div>`}
+    <p class="muted small tip">💡 Tüm setlerde tekrar aralığının üst sınırına ulaşınca bir sonraki antrenmanda ağırlığı 2.5 kg (küçük kaslarda 1-2 kg) artır.</p>
+  </section>`;
+
+  $("#planBody").innerHTML = `<div class="pg">
+    <header class="pg-hello"><small>${dateTxt}</small><h1>${timeGreeting()}${p.name ? ", " + esc(p.name) : ""} 👋</h1></header>
+    ${hero}${week}${rings}${todayList}${days}${check}${settings}
+  </div>`;
 }
 
-function dayCard(day, i, isNext, manual) {
-  const sets = day.exercises.reduce((a, e) => a + e.sets, 0);
-  return `<div class="plan-day ${isNext ? "next" : ""}">
-    <div class="plan-head">
-      ${manual ? `<input class="day-name" data-dayname="${i}" value="${esc(day.name)}" />` : `<b>${i + 1}. Gün · ${esc(day.name)}</b>`}
-      <span class="muted small">${sets} set · ~${Math.round(sets * SET_MINUTES)} dk</span>
-      ${isNext ? `<span class="badge">Sıradaki</span>` : ""}
-      ${manual ? `<button class="icon-btn" data-delday="${i}" title="Günü sil">🗑</button>` : ""}
+function shortDayName(name) {
+  return name.replace("Vücut ", "").replace("Tüm ", "Tüm ").replace(/\s*\((\w+)\)/, "").replace("İtme", "İtme").slice(0, 12);
+}
+
+function exRow(e, i) {
+  const ex = findExercise(e.id, state.customExercises);
+  const kg = lastWeight(e.id);
+  const ok = loggedToday(e.id);
+  const risk = riskyFor(e.id, state.profile);
+  return `<button class="ex-row ${ok ? "ok" : ""}" data-planex="${e.id}" data-sets="${e.sets}" data-reps="${esc(e.reps)}">
+    <span class="er-num">${ok ? "✓" : i + 1}</span>
+    <span class="er-main"><b>${esc(exName(e.id))}${risk.length ? ` <span class="risk">⚠️</span>` : ""}</b>
+      <small>${(ex?.p || []).map((m) => MUSCLES[m].name).join(", ")}${kg != null ? ` · Son: ${kg} kg` : " · Yeni"}</small></span>
+    <span class="er-sets">${e.sets}×${esc(e.reps)}</span>
+    <span class="da-chev">›</span>
+  </button>`;
+}
+
+// Kendi planında günün düzenleme alanı
+function dayEditor(day, i) {
+  return `<div class="de-head">
+      <input class="day-name" data-dayname="${i}" value="${esc(day.name)}" aria-label="Gün adı" />
+      <button class="icon-btn" data-delday="${i}" title="Günü sil">🗑</button>
     </div>
     ${day.exercises.map((e, ei) => {
-      const last = [...state.workouts].reverse().find((w) => w.exerciseId === e.id);
-      const lastTxt = last ? `Son: ${Math.max(...last.sets.map((s) => s.kg || 0))} kg` : "Yeni";
       const ex = findExercise(e.id, state.customExercises);
       const risk = riskyFor(e.id, state.profile);
-      return `<div class="plan-ex">
-        <div class="grow">
-          <div>${esc(exName(e.id))}${risk.length ? ` <span class="risk">⚠️ ${risk.join(", ")}</span>` : ""}</div>
-          <div class="muted small">${(ex?.p || []).map((m) => MUSCLES[m].name).join(", ")} · ${lastTxt}</div>
-          ${manual ? `<div class="stepper">
-              <button data-step="${i}:${ei}:-1">−</button><span>${e.sets} set</span><button data-step="${i}:${ei}:1">+</button>
-              <span class="muted">×</span><input class="reps-in" data-reps="${i}:${ei}" value="${esc(e.reps)}" />
-              <button class="icon-btn" data-up="${i}:${ei}" title="Yukarı taşı" ${ei ? "" : "disabled"}>↑</button>
-              <button class="icon-btn" data-rmex="${i}:${ei}" title="Çıkar">✕</button>
-            </div>` : `<div class="muted small">${e.sets} set × ${esc(e.reps)}</div>`}
+      return `<div class="de-ex">
+        <div class="de-top">
+          <span class="er-num">${ei + 1}</span>
+          <span class="er-main"><b>${esc(exName(e.id))}${risk.length ? ` <span class="risk">⚠️ ${risk.join(", ")}</span>` : ""}</b>
+            <small>${(ex?.p || []).map((m) => MUSCLES[m].name).join(", ")}</small></span>
+          <button class="btn small-btn" data-planex="${e.id}" data-sets="${e.sets}" data-reps="${esc(e.reps)}">Kaydet</button>
         </div>
-        <button class="btn small-btn" data-planex="${e.id}" data-sets="${e.sets}" data-reps="${esc(e.reps)}">Kaydet</button>
+        <div class="stepper">
+          <button data-step="${i}:${ei}:-1" aria-label="Set azalt">−</button><span>${e.sets} set</span><button data-step="${i}:${ei}:1" aria-label="Set artır">+</button>
+          <span class="muted">×</span><input class="reps-in" data-reps="${i}:${ei}" value="${esc(e.reps)}" aria-label="Tekrar" />
+          <button class="icon-btn" data-up="${i}:${ei}" title="Yukarı taşı" ${ei ? "" : "disabled"}>↑</button>
+          <button class="icon-btn" data-rmex="${i}:${ei}" title="Çıkar">✕</button>
+        </div>
       </div>`;
     }).join("") || `<div class="muted small" style="padding:8px 0">Bu günde henüz hareket yok.</div>`}
-    ${manual ? `<button class="btn ghost full" data-pick="${i}">+ Hareket ekle</button>` : ""}
-  </div>`;
+    <button class="btn ghost full" data-pick="${i}">+ Hareket ekle</button>`;
 }
 
 // ---------- Hareket seçici ----------
@@ -413,6 +594,18 @@ function initPlanner() {
     if (!b) return;
     const prog = state.program;
     if (b.id === "planStartWizard") return openWizard();
+    if (b.id === "tcStart") { const s = sessionDay(); return s ? openSessionExercise() : startSession(nextDayIndex()); }
+    if (b.dataset.startday) return startSession(+b.dataset.startday);
+    if (b.dataset.gotab) return $(`#tabs button[data-tab="${b.dataset.gotab}"]`).click();
+    if (b.id === "ckToggle") { planUI.checkOpen = !planUI.checkOpen; return renderPlan(); }
+    if (b.dataset.goday != null) {
+      const i = +b.dataset.goday;
+      planUI.open.add(i); renderPlan();
+      const el = $(`#planBody [data-acc="${i}"]`);
+      el?.scrollIntoView({ behavior: "smooth", block: "start" });
+      if (state.program.mode === "manual" && !state.program.days[i]?.exercises.length) openPicker(i);
+      return;
+    }
     if (b.dataset.planex) {
       $(`#tabs button[data-tab="workout"]`).click();
       $("#wDate").value = todayStr(); renderDayLog();
@@ -431,9 +624,9 @@ function initPlanner() {
         if (keep) toManual(); else state.program = emptyProgram(state.profile.days);
         toast("Artık planı sen seçiyorsun, ben kontrol ediyorum ✍️");
       }
-      save(); return renderPlan();
+      planUI.init = false; save(); return renderPlan();
     }
-    if (b.id === "editPlan") { toManual(); save(); toast("Düzenleme açık ✍️"); return renderPlan(); }
+    if (b.id === "editPlan") { toManual(); planUI.init = false; save(); toast("Düzenleme açık ✍️"); return renderPlan(); }
     if (b.id === "regenPlan") { state.program = { ...generateProgram(state.profile, state.customExercises), mode: "auto" }; save(); toast("Plan yeniden oluşturuldu"); return renderPlan(); }
     if (b.id === "addDay") { prog.days.push({ key: "custom", name: `${prog.days.length + 1}. Gün`, exercises: [] }); save(); return renderPlan(); }
     if (b.id === "clearPlan") { if (confirm("Tüm günlerdeki hareketler silinsin mi?")) { prog.days.forEach((d) => (d.exercises = [])); save(); renderPlan(); } return; }
@@ -468,6 +661,14 @@ function initPlanner() {
       return renderPlan();
     }
   });
+  // açılır günlerin açık/kapalı durumu yeniden çizimde korunur
+  $("#planBody").addEventListener("toggle", (e) => {
+    const d = e.target.closest?.("[data-acc]");
+    if (!d) return;
+    const i = +d.dataset.acc;
+    if (d.open) planUI.open.add(i); else planUI.open.delete(i);
+  }, true);
+  document.addEventListener("click", (e) => { if (e.target.closest("#sbEnd")) finishSession(false); });
   $("#planBody").addEventListener("change", (e) => {
     const t = e.target;
     if (t.dataset.dayname != null) { state.program.days[+t.dataset.dayname].name = t.value.trim() || `${+t.dataset.dayname + 1}. Gün`; save(); renderPlan(); }
@@ -487,7 +688,7 @@ function initPlanner() {
   });
 
   // seçici
-  $("#pickClose").onclick = () => { $("#picker").classList.add("hidden"); renderPlan(); };
+  $("#pickClose").onclick = () => { $("#picker").classList.add("hidden"); planUI.open.add(planPickDay); renderPlan(); };
   $("#pickSearch").addEventListener("input", renderPicker);
   $("#pickAll").addEventListener("change", renderPicker);
   $("#pickCats").addEventListener("click", (e) => { const c = e.target.closest("[data-pcat]"); if (c) { pickCat = c.dataset.pcat; renderPicker(); } });

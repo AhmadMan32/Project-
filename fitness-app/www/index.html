@@ -210,6 +210,27 @@
 
   <!-- BAŞLANGIÇ SİHİRBAZI -->
   <div id="wizard" class="wizard hidden">
+    <!-- Açılış animasyonu: sadece ilk açılışta -->
+    <div id="wzWelcome" class="welcome hidden">
+      <div class="wl-logo">
+        <span class="wl-ring"></span><span class="wl-ring r2"></span>
+        <svg viewBox="0 0 120 120" class="wl-dumbbell" aria-hidden="true">
+          <rect x="18" y="55" width="84" height="10" rx="4"/>
+          <rect x="28" y="33" width="13" height="54" rx="5"/>
+          <rect x="79" y="33" width="13" height="54" rx="5"/>
+          <rect x="16" y="42" width="10" height="36" rx="4"/>
+          <rect x="94" y="42" width="10" height="36" rx="4"/>
+        </svg>
+      </div>
+      <h1 class="wl-title">FitAI <span>Koç</span></h1>
+      <p class="wl-tag">Cebindeki kişisel antrenörün</p>
+      <ul class="wl-feats">
+        <li>📋 Sana özel antrenman programı</li>
+        <li>🧠 Kas haritasıyla eksik ve fazlaların</li>
+        <li>🥩 Günlük protein ve kreatin takibi</li>
+      </ul>
+      <button class="btn primary wl-start" id="wzStart">Başlayalım</button>
+    </div>
     <div class="wz-top">
       <div class="wz-progress"><div id="wzBar"></div></div>
       <span id="wzStep" class="muted small"></span>

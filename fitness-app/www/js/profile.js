@@ -222,7 +222,23 @@ function openWizard() {
   wz = { i: 0, p: JSON.parse(JSON.stringify(state.profile.onboarded ? state.profile : {})) };
   if (wz.p.goal) wz.p.goal = goalKey(wz.p.goal);
   $("#wizard").classList.remove("hidden");
+  // İlk açılışta önce animasyonlu karşılama ekranı; "Başlayalım"a basınca sorular gelir
+  const first = !state.profile.onboarded;
+  $("#wzWelcome").classList.toggle("hidden", !first);
+  $("#wzWelcome").classList.remove("leaving");
+  $("#wizard").classList.toggle("welcoming", first);
   renderWizard();
+}
+function startWizardQuestions() {
+  const w = $("#wzWelcome");
+  w.classList.add("leaving");
+  setTimeout(() => {
+    w.classList.add("hidden");
+    $("#wizard").classList.remove("welcoming");
+    $("#wizard").classList.add("entering");
+    setTimeout(() => $("#wizard").classList.remove("entering"), 500);
+    $("#wzBody").querySelector("input")?.focus();
+  }, 350);
 }
 function renderWizard() {
   const s = WIZARD_STEPS[wz.i];
@@ -234,7 +250,7 @@ function renderWizard() {
   $("#wzBack").style.visibility = wz.i ? "visible" : "hidden";
   $("#wzNext").textContent = wz.i === WIZARD_STEPS.length - 1 ? "Başlayalım 🚀" : "Devam";
   $("#wzErr").textContent = "";
-  $("#wzBody").querySelector("input")?.focus();
+  if (!$("#wizard").classList.contains("welcoming")) $("#wzBody").querySelector("input")?.focus();
 }
 function wizardNext() {
   const s = WIZARD_STEPS[wz.i];
@@ -266,6 +282,7 @@ function finishWizard() {
 }
 
 function initWizard() {
+  $("#wzStart").onclick = startWizardQuestions;
   $("#wzNext").onclick = wizardNext;
   $("#wzBack").onclick = () => { if (wz.i) { wz.i--; renderWizard(); } };
   $("#wzBody").addEventListener("keydown", (e) => { if (e.key === "Enter") wizardNext(); });

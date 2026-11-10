@@ -204,6 +204,7 @@
             <button class="btn" id="importText">Metinden içe aktar</button>
             <button class="btn danger" id="reset">Tümünü sil</button>
           </div>
+          <p class="muted small" style="margin-top:12px">Hareket fotoğrafları: <a href="https://github.com/yuhonas/free-exercise-db" style="color:var(--accent)">free-exercise-db</a> (kamu malı / Unlicense).</p>
         </div>
       </div>
     </section>
@@ -251,17 +252,22 @@
   <!-- HAREKET SEÇİCİ -->
   <div id="picker" class="sheet hidden">
     <div class="sheet-box">
-      <div class="sheet-head"><h2 id="pickTitle">Hareket seç</h2><button class="btn" id="pickClose">Bitti</button></div>
-      <input type="search" id="pickSearch" placeholder="Hareket ya da kas ara…" />
-      <div class="chips" id="pickCats"></div>
-      <label class="check small"><input type="checkbox" id="pickAll" /> Ekipmanıma / sakatlığıma uymayanları da göster</label>
-      <div class="ex-list" id="pickList"></div>
+      <div class="sheet-head">
+        <button class="btn ghost hidden" id="pickBack" aria-label="Bölgelere dön">‹ Bölgeler</button>
+        <h2 id="pickTitle">Hareket seç</h2>
+        <button class="btn primary" id="pickClose">Bitti</button>
+      </div>
+      <p class="pick-day small" id="pickDayInfo"></p>
+      <input type="search" id="pickSearch" placeholder="🔍 Hareket ya da kas ara…" />
+      <label class="check small hidden" id="pickAllRow"><input type="checkbox" id="pickAll" /> Ekipmanıma / sakatlığıma uymayanları da göster</label>
+      <div class="pick-scroll" id="pickList"></div>
     </div>
   </div>
 
   <div id="toast" class="toast"></div>
 
   <script src="js/data.js"></script>
+  <script src="js/exImages.js"></script>
   <script src="js/body.js"></script>
   <script src="js/analysis.js"></script>
   <script src="js/profile.js"></script>

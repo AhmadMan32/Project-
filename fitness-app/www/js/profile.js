@@ -390,6 +390,7 @@ function finishWizard() {
   $("#wizard").classList.add("hidden");
   renderAll();
   $(`#tabs button[data-tab="plan"]`).click();
+  if (p.planMode === "manual" && !state.program.days.some((d) => d.exercises.length)) setTimeout(() => openPicker(0), 400);
   toast(p.planMode === "manual" ? `Hoş geldin ${p.name}! Şimdi programını kur, ben kontrol edeceğim ✍️` : `Hoş geldin ${p.name}! Programın hazır, hadi başlayalım 💪`);
 }
 

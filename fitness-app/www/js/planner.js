@@ -536,42 +536,96 @@ function dayEditor(day, i) {
     <button class="btn ghost full" data-pick="${i}">+ Hareket ekle</button>`;
 }
 
-// ---------- Hareket seçici ----------
-let pickCat = "Tümü";
-function openPicker(dayIdx) {
+// ---------- Hareket seçici (resimli, iki adım: bölge -> hareket) ----------
+let pickMuscle = null;
+const EQ_TAG = { gym: "Salon", db: "Dumbbell", bw: "Ekipmansız" };
+const ST_TAG = { none: ["Yok", "st-none"], low: ["Eksik", "st-low"], ok: ["İdeal", "st-ok"], high: ["Fazla", "st-high"] };
+
+// Hareketin fotoğrafı: başlangıç ve bitiş pozu arasında geçiş yapar; görseli olmayanlarda kas resmi
+function exImageHTML(id) {
+  const n = (typeof EX_IMAGES !== "undefined" && EX_IMAGES[id]) || 0;
+  if (!n) {
+    const ex = findExercise(id, state.customExercises);
+    return `<span class="eximg noimg">${muscleThumbSVG(ex?.p?.[0] || "chest")}</span>`;
+  }
+  return `<span class="eximg ${n > 1 ? "anim" : ""}">
+    <img src="img/ex/${id}_0.jpg" alt="" loading="lazy" decoding="async" />
+    ${n > 1 ? `<img src="img/ex/${id}_1.jpg" alt="" loading="lazy" decoding="async" class="b" />` : ""}
+  </span>`;
+}
+
+function openPicker(dayIdx, muscle = null) {
   planPickDay = dayIdx;
-  pickCat = "Tümü";
+  pickMuscle = muscle;
   $("#pickSearch").value = "";
-  $("#pickTitle").textContent = `${state.program.days[dayIdx].name} için hareket seç`;
   $("#picker").classList.remove("hidden");
+  $("#pickList").scrollTop = 0;
   renderPicker();
 }
+
 function renderPicker() {
   const pa = analyzePlan(state.program, state.profile, state.customExercises);
-  const need = Object.keys(MUSCLES).filter((m) => pa.statuses[m] === "none" || pa.statuses[m] === "low");
+  const day = state.program.days[planPickDay];
+  const inDay = new Set(day.exercises.map((e) => e.id));
+  const q = $("#pickSearch").value.trim().toLocaleLowerCase("tr");
   const showAll = $("#pickAll").checked;
   const ok = new Set(allowedExercises(state.profile, state.customExercises).map((e) => e.id));
-  const inDay = new Set(state.program.days[planPickDay].exercises.map((e) => e.id));
-  const q = $("#pickSearch").value.trim().toLocaleLowerCase("tr");
-  const cats = ["Tümü", "Eksiklerim", ...new Set(allExercises().map((e) => e.cat))];
-  $("#pickCats").innerHTML = cats.map((c) => `<button class="chip ${c === pickCat ? "on" : ""}" data-pcat="${esc(c)}">${c === "Eksiklerim" ? `⚠️ Eksiklerim (${need.length})` : esc(c)}</button>`).join("");
-  const list = allExercises().filter((e) =>
-    (showAll || ok.has(e.id)) &&
-    (pickCat === "Tümü" || (pickCat === "Eksiklerim" ? e.p.some((m) => need.includes(m)) : e.cat === pickCat)) &&
-    (!q || e.name.toLocaleLowerCase("tr").includes(q) || e.p.some((m) => MUSCLES[m].name.toLocaleLowerCase("tr").includes(q))));
-  $("#pickList").innerHTML = list.map((e) => {
-    const hits = e.p.filter((m) => need.includes(m));
+  const f = pa.f || 1;
+  $("#pickDayInfo").innerHTML = `<b>${esc(day.name)}</b> · ${day.exercises.length} hareket · ${daySets(day)} set · ~${Math.round(daySets(day) * SET_MINUTES)} dk`;
+
+  // 1) Bölge seçimi
+  if (!pickMuscle && !q) {
+    $("#pickTitle").textContent = "Hangi bölgeyi çalıştıracaksın?";
+    $("#pickBack").classList.add("hidden");
+    $("#pickAllRow").classList.add("hidden");
+    const need = Object.keys(MUSCLES).filter((m) => pa.statuses[m] === "none" || pa.statuses[m] === "low");
+    $("#pickList").innerHTML =
+      (need.length ? `<p class="pick-hint small">⚠️ Planında eksik kalan bölgeler turuncu işaretli. Önce onlardan seçmeni öneririm.</p>` : `<p class="pick-hint ok small">✓ Planında eksik bölge kalmadı.</p>`) +
+      PRIORITY_GROUPS.map(([title, keys]) => `<h3 class="mg-title">${title}</h3><div class="muscle-grid">${keys.map((m) => {
+        const [label, cls] = ST_TAG[pa.statuses[m]];
+        const nEx = allExercises().filter((e) => e.p.includes(m) && ok.has(e.id)).length;
+        return `<button class="mcard pick-m ${cls}" data-pickm="${m}">
+          ${muscleThumbSVG(m)}<span>${MUSCLES[m].name}</span>
+          <small class="pm-st ${cls}">${label} · ${fmt(+(pa.vol[m] * f).toFixed(1))} set</small>
+          <small class="pm-n">${nEx} hareket</small>
+        </button>`;
+      }).join("")}</div>`).join("");
+    return;
+  }
+
+  // 2) Hareketler (seçilen bölge ya da arama)
+  $("#pickBack").classList.remove("hidden");
+  $("#pickAllRow").classList.remove("hidden");
+  $("#pickTitle").textContent = pickMuscle && !q ? `${MUSCLES[pickMuscle].name} hareketleri` : "Arama sonuçları";
+  let list = allExercises().filter((e) => (showAll || ok.has(e.id)) &&
+    (q ? (e.name.toLocaleLowerCase("tr").includes(q) || e.p.some((m) => MUSCLES[m].name.toLocaleLowerCase("tr").includes(q))) : e.p.includes(pickMuscle)));
+  // bölgeyi birincil olarak hedefleyenler önce, sonra tercih sırası
+  if (pickMuscle && !q) {
+    const pref = PREFERRED[pickMuscle] || [];
+    const rank = (e) => (e.p[0] === pickMuscle ? 0 : 1) * 100 + (pref.includes(e.id) ? pref.indexOf(e.id) : 50);
+    list.sort((a, b) => rank(a) - rank(b));
+  }
+  const st = pickMuscle ? pa.statuses[pickMuscle] : null;
+  const head = pickMuscle && !q ? (() => {
+    const t = muscleTarget(pickMuscle, state.profile);
+    const [label, cls] = ST_TAG[st];
+    return `<div class="pm-head ${cls}">${muscleThumbSVG(pickMuscle)}<div><b>${MUSCLES[pickMuscle].name}</b>
+      <small>Planda haftalık ${volRange(pa.vol[pickMuscle], f)} set · hedefin ${t.min}-${t.max} · <span class="pm-st ${cls}">${label}</span></small></div></div>`;
+  })() : "";
+  $("#pickList").innerHTML = head + `<div class="ex-grid">${list.map((e) => {
+    const added = inDay.has(e.id);
     const over = e.p.filter((m) => pa.statuses[m] === "high");
     const risk = riskyFor(e.id, state.profile);
-    return `<div class="ex-item ${inDay.has(e.id) ? "sel" : ""}" data-pickid="${e.id}">
-      <span>${esc(e.name)}
-        ${hits.length ? `<span class="tag-good">✓ eksik: ${hits.map((m) => MUSCLES[m].name).join(", ")}</span>` : ""}
-        ${over.length ? `<span class="tag-bad">↑ zaten fazla: ${over.map((m) => MUSCLES[m].name).join(", ")}</span>` : ""}
-        ${risk.length ? `<span class="risk">⚠️ ${risk.join(", ")}</span>` : ""}
+    return `<button class="ex-card-pick ${added ? "added" : ""}" data-pickid="${e.id}" aria-pressed="${added}">
+      ${exImageHTML(e.id)}
+      <span class="ecp-badge">${added ? "✓ Eklendi" : "＋ Ekle"}</span>
+      <span class="ecp-body">
+        <b>${esc(e.name)}</b>
+        <small>${e.p.map((m) => MUSCLES[m].name).join(", ")}</small>
+        <span class="ecp-tags"><span>${EQ_TAG[e.eq] || "Özel"}</span>${risk.length ? `<span class="t-risk">⚠️ ${risk.join(", ")}</span>` : ""}${over.length ? `<span class="t-over">↑ ${over.map((m) => MUSCLES[m].name).join(", ")} fazla</span>` : ""}</span>
       </span>
-      <span class="tags">${e.p.map((m) => MUSCLES[m].name).join(", ")}</span>
-    </div>`;
-  }).join("") || `<div class="muted small">Sonuç yok.</div>`;
+    </button>`;
+  }).join("")}</div>` + (list.length ? "" : `<div class="muted small" style="padding:12px 0">Uygun hareket bulamadım. "Uymayanları da göster"i açabilirsin.</div>`);
 }
 
 function addToPlan(dayIdx, id, sets, reps) {
@@ -623,6 +677,7 @@ function initPlanner() {
         const keep = confirm("Kendi planına geçiyorsun.\n\nTamam: mevcut planı başlangıç olarak kullan ve düzenle\nİptal: boş planla sıfırdan başla");
         if (keep) toManual(); else state.program = emptyProgram(state.profile.days);
         toast("Artık planı sen seçiyorsun, ben kontrol ediyorum ✍️");
+        if (!keep) { planUI.init = false; save(); renderPlan(); return openPicker(0); }
       }
       planUI.init = false; save(); return renderPlan();
     }
@@ -691,12 +746,16 @@ function initPlanner() {
   $("#pickClose").onclick = () => { $("#picker").classList.add("hidden"); planUI.open.add(planPickDay); renderPlan(); };
   $("#pickSearch").addEventListener("input", renderPicker);
   $("#pickAll").addEventListener("change", renderPicker);
-  $("#pickCats").addEventListener("click", (e) => { const c = e.target.closest("[data-pcat]"); if (c) { pickCat = c.dataset.pcat; renderPicker(); } });
+  $("#pickBack").onclick = () => { pickMuscle = null; $("#pickSearch").value = ""; renderPicker(); $("#pickList").scrollTop = 0; };
   $("#pickList").addEventListener("click", (e) => {
+    const m = e.target.closest("[data-pickm]");
+    if (m) { pickMuscle = m.dataset.pickm; renderPicker(); $("#pickList").scrollTop = 0; return; }
     const it = e.target.closest("[data-pickid]");
     if (!it) return;
-    addToPlan(planPickDay, it.dataset.pickid);
-    toast(`${exName(it.dataset.pickid)} eklendi`);
+    const id = it.dataset.pickid, day = state.program.days[planPickDay];
+    const at = day.exercises.findIndex((x) => x.id === id);
+    if (at >= 0) { day.exercises.splice(at, 1); save(); toast(`${exName(id)} çıkarıldı`); }
+    else { addToPlan(planPickDay, id); toast(`${exName(id)} eklendi ✓`); }
     renderPicker();
   });
 }

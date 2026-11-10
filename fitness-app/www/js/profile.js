@@ -34,7 +34,12 @@ function muscleTarget(m, profile = {}) {
   // haftalık zaman kısıtlıysa zorunlu hedef sayılmaz
   let min = base.minor && timeScale < 0.8 ? 0 : Math.max(2, Math.round(base.min * scale * timeScale));
   let max = Math.round(base.max * scale);
-  if ((profile.priorities || []).includes(m)) { min += 3; max += 4; }
+  const prio = profile.priorities || [];
+  if (prio.includes(m)) {
+    // 3 bölgeye kadar tam ek hacim; daha fazlasında ek hacim seçilenler arasında paylaştırılır
+    const share = Math.min(1, 3 / prio.length);
+    min += Math.max(1, Math.round(3 * share)); max += Math.max(1, Math.round(4 * share));
+  }
   return { min, max };
 }
 
@@ -105,7 +110,9 @@ function generateProgram(profile, custom = []) {
     const repeat = split.days.slice(0, di).filter((k) => k === key).length; // PPL×2'de ikinci tur farklı olsun
     let slots = [...tpl.m];
     // Öncelikli kaslar: bu günde varsa öne al ve bir slot daha ekle
-    for (const p of prio) if (slots.includes(p)) slots.splice(2, 0, p);
+    // çok bölge seçildiyse güne en fazla 1 ek slot (temel kaslar programdan düşmesin)
+    let extra = 0;
+    for (const p of prio) if (slots.includes(p) && extra < (prio.length > 3 ? 1 : 3)) { slots.splice(2, 0, p); extra++; }
     slots = slots.slice(0, count);
 
     const used = new Set();
@@ -182,10 +189,13 @@ const WIZARD_STEPS = [
       auto: { name: "Benim için oluştur", icon: "🤖", desc: "Cevaplarına göre dengeli bir program hazırlarım. İstersen sonra düzenlersin." },
       manual: { name: "Kendim seçeceğim", icon: "✍️", desc: "Hareketleri sen seçersin. Ben eksik, fazla ve riskli noktaları anında gösteririm." },
     }, p.planMode), read: (p) => !!p.planMode || "Bir seçenek seç" },
-  { id: "priorities", title: (p) => `${p.name}, özellikle geliştirmek istediğin bir bölge var mı?`, sub: () => "En fazla 3 tane seç, bu kaslara daha fazla hacim vereceğim. İstersen boş geçebilirsin.",
+  { id: "priorities", title: (p) => `${p.name}, özellikle geliştirmek istediğin bir bölge var mı?`, sub: () => "Seçtiğin kaslara daha fazla hacim vereceğim. İstediğin kadar seçebilir ya da boş geçebilirsin.",
     render: (p) => {
       const sel = p.priorities || [];
-      return `<p class="pick-count small ${sel.length ? "has" : ""}">${sel.length ? `Seçilen: ${sel.map((k) => MUSCLES[k].name).join(", ")} (${sel.length}/3)` : "Henüz seçim yok (0/3)"}</p>` +
+      return `<p class="pick-count small ${sel.length ? "has" : ""}">${sel.length ? `Seçilen (${sel.length}): ${sel.map((k) => MUSCLES[k].name).join(", ")}` : "Henüz seçim yok"}</p>` +
+        (sel.length > 3 ? `<p class="pick-note small">${sel.length === Object.keys(MUSCLES).length
+          ? "Tüm bölgeleri seçtin; bu durumda hepsi eşit çalışır, öne çıkan bir bölge olmaz."
+          : `${sel.length} bölge seçtin. Antrenman süren sınırlı olduğu için ek hacmi bu bölgeler arasında paylaştıracağım; her biri biraz daha az ek set alır.`}</p>` : "") +
         PRIORITY_GROUPS.map(([title, keys]) => `<h3 class="mg-title">${title}</h3><div class="muscle-grid">${keys.map((k) => `
           <button class="mcard ${sel.includes(k) ? "on" : ""}" data-multi="priorities" data-val="${k}" aria-pressed="${sel.includes(k)}">
             ${muscleThumbSVG(k)}<span>${MUSCLES[k].name}</span>
@@ -341,8 +351,7 @@ function initWizard() {
       const arr = (p[b.dataset.multi] ||= []);
       const k = b.dataset.val, ix = arr.indexOf(k);
       if (ix >= 0) arr.splice(ix, 1);
-      else if (b.dataset.multi !== "priorities" || arr.length < 3) arr.push(k);
-      else return toast("En fazla 3 bölge seçebilirsin");
+      else arr.push(k);
       renderWizard();
     } else if (b.dataset.none) {
       p[b.dataset.none] = [];

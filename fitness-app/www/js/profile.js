@@ -203,9 +203,18 @@ const WIZARD_STEPS = [
     },
     read: () => true },
   { id: "injuries", title: () => "Sakatlık ya da ağrın var mı?", sub: (p) => `${p.name}, seçtiğin bölgeyi zorlayan hareketleri programına koymayacağım.`,
-    render: (p) => `<div class="chips">${Object.entries(INJURY_RISK).map(([k, v]) => `<button class="chip ${(p.injuries || []).includes(k) ? "on" : ""}" data-multi="injuries" data-val="${k}">${v.name}</button>`).join("")}
-      <button class="chip ${p.injuries && !p.injuries.length ? "on" : ""}" data-none="injuries">Yok</button></div>
-      <p class="muted small">Ağrın devam ediyorsa bir doktora veya fizyoterapiste danış.</p>`,
+    render: (p) => {
+      const sel = p.injuries || [];
+      return `<div class="muscle-grid">${Object.entries(INJURY_RISK).map(([k, v]) => `
+          <button class="mcard inj ${sel.includes(k) ? "on" : ""}" data-multi="injuries" data-val="${k}" aria-pressed="${sel.includes(k)}">
+            ${jointThumbSVG(k)}<span>${v.name}</span>
+          </button>`).join("")}
+          <button class="mcard none ${p.injuries && !sel.length ? "on" : ""}" data-none="injuries" aria-pressed="${!!(p.injuries && !sel.length)}">
+            <span class="none-icon">✓</span><span>Yok</span>
+          </button>
+        </div>
+        <p class="muted small">Ağrın devam ediyorsa bir doktora veya fizyoterapiste danış.</p>`;
+    },
     read: (p) => { p.injuries ||= []; return true; } },
   { id: "creatine", title: () => "Son soru: kreatin kullanıyor musun?", sub: () => "Günlük kreatin takibini buna göre ayarlayacağım.",
     render: (p) => cards("creatine", {

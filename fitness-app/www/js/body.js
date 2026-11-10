@@ -86,3 +86,24 @@ function muscleThumbSVG(m) {
     <circle cx="100" cy="30" r="19" class="silhouette"/>${half(`<path d="${BODY_SILHOUETTE}" class="silhouette"/>`)}${half(musc)}
   </svg>`;
 }
+
+// ---- Eklem / ağrı noktası resmi (sihirbazdaki sakatlık sorusu için) ----
+// points: sol yarıdaki noktalar (sağ taraf aynalanır), center: tek nokta (ör. bel)
+const JOINT_THUMB = {
+  shoulder: { view: "front", box: "30 45 140 85", points: [[60, 74]], r: 9 },
+  back:     { view: "back",  box: "45 125 110 95", center: [100, 176], r: 13 },
+  knee:     { view: "front", box: "40 245 120 95", points: [[81, 290]], r: 9 },
+  wrist:    { view: "front", box: "22 145 156 75", points: [[51, 185]], r: 7 },
+};
+function jointThumbSVG(key) {
+  const t = JOINT_THUMB[key];
+  const muscles = t.view === "front" ? FRONT_MUSCLES : BACK_MUSCLES;
+  const half = (inner) => `<g>${inner}</g><g transform="translate(200,0) scale(-1,1)">${inner}</g>`;
+  let musc = "";
+  for (const paths of Object.values(muscles)) for (const d of paths) musc += `<path d="${d}" class="thumb-off"/>`;
+  const dot = (x, y) => `<circle cx="${x}" cy="${y}" r="${t.r * 1.9}" class="pain-glow"/><circle cx="${x}" cy="${y}" r="${t.r}" class="pain-dot"/>`;
+  const dots = t.center ? dot(...t.center) : half(t.points.map((p) => dot(...p)).join(""));
+  return `<svg viewBox="${t.box}" class="thumb-svg" aria-hidden="true">
+    <circle cx="100" cy="30" r="19" class="silhouette"/>${half(`<path d="${BODY_SILHOUETTE}" class="silhouette"/>`)}${half(musc)}${dots}
+  </svg>`;
+}

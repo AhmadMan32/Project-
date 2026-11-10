@@ -149,7 +149,7 @@ const WIZARD_STEPS = [
       <label>Kilo (kg) <input type="number" step="0.1" id="wz_w" inputmode="decimal" value="${p.weight || ""}" placeholder="örn. 75" /></label>`,
     read: (p) => { p.height = +$("#wz_h").value; p.weight = +$("#wz_w").value; return (p.height > 100 && p.weight > 30) || "Boy ve kilonu gir"; } },
   { id: "goal", title: (p) => `${p.name}, ana hedefin ne?`, sub: () => "Set, tekrar ve beslenme hedeflerini buna göre ayarlayacağım.",
-    render: (p) => cards("goal", GOALS, goalKey(p.goal)), read: (p) => !!p.goal || "Bir hedef seç" },
+    render: (p) => cards("goal", GOALS, p.goal ? goalKey(p.goal) : null), read: (p) => !!p.goal || "Bir hedef seç" },
   { id: "level", title: () => "Ne kadar süredir spor yapıyorsun?", sub: (p) => `${GOALS[p.goal].cheer}, ${p.name}. Şimdi antrenman hacmini seviyene göre ayarlayalım.`,
     render: (p) => cards("level", LEVELS, p.level), read: (p) => !!p.level || "Seviyeni seç" },
   { id: "days", title: (p) => `${p.name}, haftada kaç gün ayırabilirsin?`, sub: (p) => p.level === "beginner" ? "Yeni başlıyorsan 3 gün harika bir başlangıç. Programın bölünmesini buna göre seçeceğim." : "Programın bölünmesini gün sayısına göre seçeceğim.",

@@ -290,14 +290,14 @@ function miniRing(value, target, color, label, text) {
     </svg><div><b>${text}</b><small>${label}</small></div></div>`;
 }
 function dayBodyThumb(day) {
-  const prim = new Set(), sec = new Set();
+  // o günün birincil kasları parlak, ikincil kasları soluk yeşil
+  const colors = {};
   for (const e of day.exercises) {
     const ex = findExercise(e.id, state.customExercises);
-    (ex?.p || []).forEach((m) => prim.add(m));
-    (ex?.s || []).forEach((m) => sec.add(m));
+    (ex?.s || []).forEach((m) => { colors[m] ||= "#2f8f5b"; });
+    (ex?.p || []).forEach((m) => { colors[m] = "#4ade80"; });
   }
-  const color = (m) => (prim.has(m) ? "var(--accent)" : sec.has(m) ? "rgba(74,222,128,.38)" : "#2c313c");
-  return buildBodySVG("front", color) + buildBodySVG("back", color);
+  return athleteBodySVG("front", colors) + athleteBodySVG("back", colors);
 }
 
 // Antrenman oturumu: "Antrenmana başla" ile günün hareketleri sırayla açılır

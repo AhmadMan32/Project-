@@ -197,7 +197,14 @@ function drawSideStick(J, hl, props, P) {
 
 // ---- figürü çiz (ön görünüm) ----
 function drawFront(J, hl, props, P) {
-  const has = (k) => hl.includes(k);
+  const baseHl = C.hl, baseGlow = C.hlGlow;
+  // kas açık mı? Açıksa o kasın rengini (varsa P.hlColors) etkinleştirir
+  const has = (k) => {
+    if (!hl.includes(k)) return false;
+    const c = P.hlColors && P.hlColors[k];
+    C.hl = c || baseHl; C.hlGlow = P.noGlow ? "transparent" : c ? c + "50" : baseGlow;
+    return true;
+  };
   const sy = J.shoL[1], py = J.pel[1];
   let s = `<ellipse cx="60" cy="${FLOOR + 3.6}" rx="24" ry="2.6" fill="rgba(0,0,0,.32)"/>`;
   if (props.back) s += props.back(J, P);
@@ -207,9 +214,9 @@ function drawFront(J, hl, props, P) {
     if (has("th")) { const a = along(hip, knee, 0.46), b = along(hip, knee, 0.95); s += cap(a, b, R.th1 * 0.9 + 1, R.th2 + 0.8, C.hlGlow) + cap(a, b, R.th1 * 0.74, R.th2 * 0.8, C.hl); }
     if (has("adductors")) { const a = [along(hip, knee, 0.4)[0] - sgn * 2.1, along(hip, knee, 0.4)[1]], b = [along(hip, knee, 0.9)[0] - sgn * 1.2, along(hip, knee, 0.9)[1]]; s += cap(a, b, 2.9, 2.5, C.hlGlow) + cap(a, b, 1.9, 1.5, C.hl); }
     s += cap(hip, along(hip, knee, 0.46), R.th1 + 0.5, R.th1 * 0.95, C.shorts);
-    s += cap(knee, ank, R.sh1, R.sh2, C.body);
+    s += cap(knee, ank, R.sh1, R.sh2, C.body) + cap(along(knee, ank, 0.12), along(knee, ank, 0.55), R.sh1 + 0.5, R.sh1 - 0.3, C.body);
     if (has("calves")) { const a = along(knee, ank, 0.08), b = along(knee, ank, 0.6); s += cap(a, b, 3.6, 3, C.hlGlow) + cap(a, b, 2.6, 2, C.hl); }
-    s += `<ellipse cx="${f1(ank[0] + sgn * 0.8)}" cy="${f1(ank[1] + 1.6)}" rx="3.4" ry="2.3" fill="${C.shoe}"/>`;
+    s += `<ellipse cx="${f1(ank[0] + sgn * 1.1)}" cy="${f1(ank[1] + 1.7)}" rx="3.7" ry="2.3" fill="${C.shoe}"/>` + rect(ank[0] + sgn * 1.1 - 3.6, ank[1] + 3.1, 7.2, 1, C.sole, 0.5);
   }
   s += cap(J.hipL, J.hipR, 5, 5, C.shorts);
   if (has("glutes")) for (const sgn of [-1, 1]) s += dot([60 + sgn * 4.6, py + 1.5], 5.4, C.hlGlow) + dot([60 + sgn * 4.6, py + 1.5], 4.2, C.hl);
@@ -235,12 +242,13 @@ function drawFront(J, hl, props, P) {
     if (has("biceps")) { const a = along(sho, elb, 0.22), b = along(sho, elb, 0.86); s += cap(a, b, 3.2, 2.9, C.hlGlow) + cap(a, b, 2.1, 1.8, C.hl); }
     s += cap(elb, wr, R.fa1, R.fa2, C.body);
     if (has("forearm")) { const a = along(elb, wr, 0.08), b = along(elb, wr, 0.75); s += cap(a, b, 3.3, 2.7, C.hlGlow) + cap(a, b, 2.2, 1.7, C.hl); }
-    if (has("side_delt")) { const o = [sho[0] + (sho === J.shoL ? -1.9 : 1.9), sho[1] + 0.6]; s += dot(o, 4.6, C.hlGlow) + dot(o, 3.3, C.hl); }
-    if (has("delt")) s += dot(sho, 5.3, C.hlGlow) + dot(sho, 4.1, C.hl);
+    if (has("side_delt")) { const o = [sho[0] + (sho === J.shoL ? -1.9 : 1.9), sho[1] + 0.6]; s += dot(o, 4.6, C.hlGlow) + dot(o, P.noGlow ? 2.7 : 3.3, C.hl); }
+    if (has("delt")) s += dot(sho, 5.3, C.hlGlow) + dot(sho, P.noGlow ? 3.3 : 4.1, C.hl);
     s += dot(wr, R.hand, C.bodyShade);
   }
   if (props.front) s += props.front(J, P);
   if (P.tiltDeg) s += "</g>";
+  C.hl = baseHl; C.hlGlow = baseGlow;
   return s;
 }
 
@@ -603,6 +611,23 @@ function athleteThumbSVG(m, color = "#4ade80") {
   const body = drawFront(solveFront(P), t.keys, {}, P);
   Object.assign(C, C_BASE); STY = {};
   return `<svg viewBox="${t.box}" class="thumb-svg ath" aria-hidden="true">${body}</svg>`;
+}
+
+// ---- Tam boy sporcu figürü: uygulamadaki 18 kası kendi renkleriyle gösterir ----
+// colors: { chest: "#4ade80", lats: "rgba(...)", ... } ; view: "front" | "back"
+const BODY_KEYS = {
+  front: { chest: "chest", front_delt: "delt", side_delt: "side_delt", biceps: "biceps", forearm: "forearm", abs: "absc", obliques: "abs", quads: "th", adductors: "adductors", calves: "calves" },
+  back: { rear_delt: "delt", side_delt: "side_delt", triceps: "biceps", forearm: "forearm", traps: "traps", lats: "lats", upper_back: "back", lower_back: "lower_back", glutes: "glutes", hamstrings: "th", calves: "calves" },
+};
+function athleteBodySVG(view, colors) {
+  const map = BODY_KEYS[view], keys = [], hlColors = {};
+  for (const [m, key] of Object.entries(map)) if (colors[m]) { keys.push(key); hlColors[key] = colors[m]; }
+  const P = { a: 13, b: 7, g: 5, backView: view === "back", hlColors, noGlow: true };
+  const st = STYLES[ANIM_STYLE] || {};
+  Object.assign(C, C_BASE, st); STY = st;
+  const body = drawFront(solveFront(P), keys, {}, P);
+  Object.assign(C, C_BASE); STY = {};
+  return `<svg viewBox="33 5 54 95" class="ath-body" role="img" aria-label="${view === "front" ? "Önden" : "Arkadan"} görünüm">${body}</svg>`;
 }
 
 // Tek döngü: ekranda görünen tüm animasyonları günceller (görünmeyenler atlanır)

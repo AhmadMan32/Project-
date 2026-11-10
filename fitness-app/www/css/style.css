@@ -440,3 +440,8 @@ body { padding-bottom: env(safe-area-inset-bottom); }
 .eximg.anim-fig { aspect-ratio: 118 / 104; background: radial-gradient(110% 80% at 50% 25%, #252c39, #171a21); }
 .mcard .thumb-svg.ath { height: 84px; border-radius: 10px; background: radial-gradient(110% 80% at 50% 25%, #252c39, #171a21); }
 .pm-head .thumb-svg.ath { border-radius: 10px; background: radial-gradient(110% 80% at 50% 25%, #252c39, #171a21); }
+/* bugünün kartındaki sporcu figürleri (önden + arkadan) */
+.today-card { grid-template-columns: 1fr 128px; }
+.tc-body { gap: 4px; align-items: flex-end; }
+.tc-body .ath-body { width: 62px; height: auto; filter: drop-shadow(0 4px 10px rgba(0,0,0,.35)); }
+@media (max-width: 350px) { .today-card { grid-template-columns: 1fr 104px; } .tc-body .ath-body { width: 50px; } }

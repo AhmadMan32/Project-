@@ -51,3 +51,38 @@ function buildBodySVG(view, colorFor) {
     <text x="100" y="406" text-anchor="middle" class="body-label">${view === "front" ? "ÖN" : "ARKA"}</text>
   </svg>`;
 }
+
+// ---- Tek kası gösteren küçük resim (sihirbazdaki bölge seçimi için) ----
+// view: kasın en iyi göründüğü taraf, box: o bölgeye yakınlaştırılmış görüş alanı
+const MUSCLE_THUMB = {
+  chest:      { view: "front", box: "40 45 120 85" },
+  front_delt: { view: "front", box: "35 45 130 85" },
+  side_delt:  { view: "front", box: "30 45 140 90" },
+  rear_delt:  { view: "back",  box: "35 45 130 85" },
+  biceps:     { view: "front", box: "30 60 140 110" },
+  triceps:    { view: "back",  box: "30 60 140 110" },
+  forearm:    { view: "front", box: "25 100 150 110" },
+  traps:      { view: "back",  box: "45 40 110 80" },
+  lats:       { view: "back",  box: "40 60 120 120" },
+  upper_back: { view: "back",  box: "45 55 110 85" },
+  lower_back: { view: "back",  box: "45 120 110 100" },
+  abs:        { view: "front", box: "45 95 110 110" },
+  obliques:   { view: "front", box: "45 95 110 110" },
+  glutes:     { view: "back",  box: "40 170 120 90" },
+  quads:      { view: "front", box: "40 185 120 120" },
+  hamstrings: { view: "back",  box: "40 215 120 110" },
+  adductors:  { view: "front", box: "40 185 120 110" },
+  calves:     { view: "back",  box: "40 280 120 110" },
+};
+function muscleThumbSVG(m) {
+  const t = MUSCLE_THUMB[m] || { view: "front", box: "0 0 200 410" };
+  const muscles = t.view === "front" ? FRONT_MUSCLES : BACK_MUSCLES;
+  const half = (inner) => `<g>${inner}</g><g transform="translate(200,0) scale(-1,1)">${inner}</g>`;
+  let musc = "";
+  for (const [id, paths] of Object.entries(muscles)) {
+    for (const d of paths) musc += `<path d="${d}" class="${id === m ? "thumb-hit" : "thumb-off"}"/>`;
+  }
+  return `<svg viewBox="${t.box}" class="thumb-svg" aria-hidden="true">
+    <circle cx="100" cy="30" r="19" class="silhouette"/>${half(`<path d="${BODY_SILHOUETTE}" class="silhouette"/>`)}${half(musc)}
+  </svg>`;
+}

@@ -140,6 +140,14 @@ function calorieTarget(p) {
 }
 
 // ---------- Başlangıç sihirbazı ----------
+const PRIORITY_GROUPS = [
+  ["Göğüs ve omuz", ["chest", "front_delt", "side_delt", "rear_delt"]],
+  ["Kollar", ["biceps", "triceps", "forearm"]],
+  ["Sırt", ["lats", "upper_back", "traps", "lower_back"]],
+  ["Karın", ["abs", "obliques"]],
+  ["Bacak ve kalça", ["glutes", "quads", "hamstrings", "adductors", "calves"]],
+];
+
 const WIZARD_STEPS = [
   { id: "name", title: () => "Merhaba! 👋", sub: () => "Ben senin FitAI koçunum. Sana özel bir program hazırlamak için birkaç soru soracağım. Önce tanışalım: adın ne?",
     render: (p) => `<input id="wz_name" placeholder="Adını yaz" autocomplete="given-name" value="${esc(p.name || "")}" autofocus />`,
@@ -175,7 +183,14 @@ const WIZARD_STEPS = [
       manual: { name: "Kendim seçeceğim", icon: "✍️", desc: "Hareketleri sen seçersin. Ben eksik, fazla ve riskli noktaları anında gösteririm." },
     }, p.planMode), read: (p) => !!p.planMode || "Bir seçenek seç" },
   { id: "priorities", title: (p) => `${p.name}, özellikle geliştirmek istediğin bir bölge var mı?`, sub: () => "En fazla 3 tane seç, bu kaslara daha fazla hacim vereceğim. İstersen boş geçebilirsin.",
-    render: (p) => `<div class="chips">${Object.entries(MUSCLES).map(([k, m]) => `<button class="chip ${(p.priorities || []).includes(k) ? "on" : ""}" data-multi="priorities" data-val="${k}">${m.name}</button>`).join("")}</div>`,
+    render: (p) => {
+      const sel = p.priorities || [];
+      return `<p class="pick-count small ${sel.length ? "has" : ""}">${sel.length ? `Seçilen: ${sel.map((k) => MUSCLES[k].name).join(", ")} (${sel.length}/3)` : "Henüz seçim yok (0/3)"}</p>` +
+        PRIORITY_GROUPS.map(([title, keys]) => `<h3 class="mg-title">${title}</h3><div class="muscle-grid">${keys.map((k) => `
+          <button class="mcard ${sel.includes(k) ? "on" : ""}" data-multi="priorities" data-val="${k}" aria-pressed="${sel.includes(k)}">
+            ${muscleThumbSVG(k)}<span>${MUSCLES[k].name}</span>
+          </button>`).join("")}</div>`).join("");
+    },
     read: () => true },
   { id: "injuries", title: () => "Sakatlık ya da ağrın var mı?", sub: (p) => `${p.name}, seçtiğin bölgeyi zorlayan hareketleri programına koymayacağım.`,
     render: (p) => `<div class="chips">${Object.entries(INJURY_RISK).map(([k, v]) => `<button class="chip ${(p.injuries || []).includes(k) ? "on" : ""}" data-multi="injuries" data-val="${k}">${v.name}</button>`).join("")}

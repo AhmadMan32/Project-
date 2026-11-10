@@ -541,18 +541,8 @@ let pickMuscle = null;
 const EQ_TAG = { gym: "Salon", db: "Dumbbell", bw: "Ekipmansız" };
 const ST_TAG = { none: ["Yok", "st-none"], low: ["Eksik", "st-low"], ok: ["İdeal", "st-ok"], high: ["Fazla", "st-high"] };
 
-// Hareketin fotoğrafı: başlangıç ve bitiş pozu arasında geçiş yapar; görseli olmayanlarda kas resmi
-function exImageHTML(id) {
-  const n = (typeof EX_IMAGES !== "undefined" && EX_IMAGES[id]) || 0;
-  if (!n) {
-    const ex = findExercise(id, state.customExercises);
-    return `<span class="eximg noimg">${muscleThumbSVG(ex?.p?.[0] || "chest")}</span>`;
-  }
-  return `<span class="eximg ${n > 1 ? "anim" : ""}">
-    <img src="img/ex/${id}_0.jpg" alt="" loading="lazy" decoding="async" />
-    ${n > 1 ? `<img src="img/ex/${id}_1.jpg" alt="" loading="lazy" decoding="async" class="b" />` : ""}
-  </span>`;
-}
+// Hareket kartı görseli: çizim animasyonu (exanim.js)
+function exImageHTML(id) { return exAnimHTML(id); }
 
 function openPicker(dayIdx, muscle = null) {
   planPickDay = dayIdx;
@@ -626,6 +616,7 @@ function renderPicker() {
       </span>
     </button>`;
   }).join("")}</div>` + (list.length ? "" : `<div class="muted small" style="padding:12px 0">Uygun hareket bulamadım. "Uymayanları da göster"i açabilirsin.</div>`);
+  startAnimations();
 }
 
 function addToPlan(dayIdx, id, sets, reps) {

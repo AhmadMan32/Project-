@@ -435,3 +435,5 @@ body { padding-bottom: env(safe-area-inset-bottom); }
 .ecp-tags .t-risk { color: var(--warn); }
 .ecp-tags .t-over { color: var(--danger); }
 .sheet-box { max-height: 92vh; }
+.eximg.anim-fig { background: linear-gradient(180deg, #1d2129, #191c23); }
+.eximg.anim-fig svg { position: absolute; inset: 0; width: 100%; height: 100%; }

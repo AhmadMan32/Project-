@@ -68,4 +68,4 @@ cd android && ./gradlew assembleDebug
 GitHub'a her push'ta `.github/workflows/android-apk.yml` APK'yı otomatik derler; Actions sekmesindeki çalıştırmanın "Artifacts" bölümünden indirilebilir.
 
 ## Görseller
-Hareket fotoğrafları (`www/img/ex/`), kamu malı (Unlicense) olarak yayınlanan [free-exercise-db](https://github.com/yuhonas/free-exercise-db) arşivinden alınıp küçültülmüştür. Kas ve vücut çizimleri uygulamaya aittir.
+Hareket animasyonları, kas haritası ve vücut çizimleri uygulamanın kendi çizimleridir (SVG, `www/js/exanim.js`, `www/js/body.js`); dış kaynaklı fotoğraf ya da video kullanılmaz.

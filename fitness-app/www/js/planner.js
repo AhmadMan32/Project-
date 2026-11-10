@@ -294,8 +294,8 @@ function dayBodyThumb(day) {
   const colors = {};
   for (const e of day.exercises) {
     const ex = findExercise(e.id, state.customExercises);
-    (ex?.s || []).forEach((m) => { colors[m] ||= "#2f8f5b"; });
-    (ex?.p || []).forEach((m) => { colors[m] = "#4ade80"; });
+    (ex?.s || []).forEach((m) => { colors[m] ||= "#86efac"; });   // yardımcı kas: açık yeşil
+    (ex?.p || []).forEach((m) => { colors[m] = "#16a34a"; });      // ana kas: koyu, doygun yeşil
   }
   return athleteBodySVG("front", colors) + athleteBodySVG("back", colors);
 }
@@ -538,7 +538,7 @@ function dayEditor(day, i) {
 
 // ---------- Hareket seçici (resimli, iki adım: bölge -> hareket) ----------
 let pickMuscle = null;
-const ST_COLOR = { none: "#f59e0b", low: "#f59e0b", ok: "#4ade80", high: "#ef4444" }; // bölge kartındaki kas rengi
+const ST_COLOR = { none: "#f59e0b", low: "#f59e0b", ok: "#16a34a", high: "#ef4444" }; // bölge kartındaki kas rengi
 const EQ_TAG = { gym: "Salon", db: "Dumbbell", bw: "Ekipmansız" };
 const ST_TAG = { none: ["Yok", "st-none"], low: ["Eksik", "st-low"], ok: ["İdeal", "st-ok"], high: ["Fazla", "st-high"] };
 

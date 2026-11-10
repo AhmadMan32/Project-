@@ -62,7 +62,10 @@ const STYLES = {
     hl: "#39ff88", hlGlow: "rgba(57,255,136,.35)", stroke: "#8fd3ff", strokeFar: "#3f6b8f" },
   sporcu: { body: "#f1c4a5", bodyShade: "#dba888", far: "#bd8f74", farShade: "#a67a61", shirt: "#3b82f6", shorts: "#1f2a44", shortsFar: "#161f33", shoe: "#ffffff", shoeFar: "#b9c2d3", sole: "#ef4444", hair: "#3b2a20" },
   cizgi: { stick: true },
+  // kas gösteren figürler için: tamamen beyaz insan, renk sadece kaslarda
+  beyaz: { body: "#f4f6fa", bodyShade: "#dfe4ec", far: "#aab3c3", farShade: "#98a2b4", shorts: "#dde2ea", shortsFar: "#b9c1cf", shoe: "#f4f6fa", shoeFar: "#aab3c3", sole: "#b4bdcc", hair: "#cfd6e1" },
 };
+const BODY_STYLE = "beyaz";
 let ANIM_STYLE = "sporcu";
 let STY = {};
 const f1 = (n) => n.toFixed(1);
@@ -606,7 +609,7 @@ const ATHLETE_THUMB = {
 function athleteThumbSVG(m, color = "#4ade80") {
   const t = ATHLETE_THUMB[m] || ATHLETE_THUMB.chest;
   const P = { a: 16, b: 8, g: 5, backView: !!t.back };
-  const st = STYLES[ANIM_STYLE] || {};
+  const st = STYLES[BODY_STYLE] || {};
   Object.assign(C, C_BASE, st, { hl: color, hlGlow: color + "55" }); STY = st;
   const body = drawFront(solveFront(P), t.keys, {}, P);
   Object.assign(C, C_BASE); STY = {};
@@ -623,7 +626,7 @@ function athleteBodySVG(view, colors) {
   const map = BODY_KEYS[view], keys = [], hlColors = {};
   for (const [m, key] of Object.entries(map)) if (colors[m]) { keys.push(key); hlColors[key] = colors[m]; }
   const P = { a: 13, b: 7, g: 5, backView: view === "back", hlColors, noGlow: true };
-  const st = STYLES[ANIM_STYLE] || {};
+  const st = STYLES[BODY_STYLE] || {};
   Object.assign(C, C_BASE, st); STY = st;
   const body = drawFront(solveFront(P), keys, {}, P);
   Object.assign(C, C_BASE); STY = {};

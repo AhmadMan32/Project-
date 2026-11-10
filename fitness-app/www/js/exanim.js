@@ -63,7 +63,7 @@ const STYLES = {
   sporcu: { body: "#f1c4a5", bodyShade: "#dba888", far: "#bd8f74", farShade: "#a67a61", shirt: "#3b82f6", shorts: "#1f2a44", shortsFar: "#161f33", shoe: "#ffffff", shoeFar: "#b9c2d3", sole: "#ef4444", hair: "#3b2a20" },
   cizgi: { stick: true },
 };
-let ANIM_STYLE = "cizgi"; // kullanıcı bir tarz seçene kadar eski sade görünüm
+let ANIM_STYLE = "sporcu";
 let STY = {};
 const f1 = (n) => n.toFixed(1);
 const seg = (a, b, w, c) => `<line x1="${f1(a[0])}" y1="${f1(a[1])}" x2="${f1(b[0])}" y2="${f1(b[1])}" stroke="${c}" stroke-width="${w}" stroke-linecap="round"/>`;
@@ -210,9 +210,11 @@ function drawFront(J, hl, props, P) {
     s += `<ellipse cx="${f1(ank[0] + sgn * 0.8)}" cy="${f1(ank[1] + 1.6)}" rx="3.4" ry="2.3" fill="${C.shoe}"/>`;
   }
   s += cap(J.hipL, J.hipR, 5, 5, C.shorts);
+  if (has("glute")) for (const h of [J.hipL, J.hipR]) s += dot([h[0] + (h === J.hipL ? -2.2 : 2.2), h[1] + 1], 4.4, C.hlGlow) + dot([h[0] + (h === J.hipL ? -2.2 : 2.2), h[1] + 1], 3.2, C.hl);
   if (P.tiltDeg) s += `<g transform="rotate(${f1(P.tiltDeg)} 60 ${f1(py)})">`;
   // gövde: omuzda geniş, belde dar
-  s += `<path d="M${f1(J.shoL[0] - 2.2)} ${f1(sy - 2.2)} Q60 ${f1(sy - 4.2)} ${f1(J.shoR[0] + 2.2)} ${f1(sy - 2.2)} Q${f1(J.shoR[0] + 3)} ${f1(sy + 6)} 66.5 ${f1(py - 9)} L67.5 ${f1(py + 1)} L52.5 ${f1(py + 1)} L53.5 ${f1(py - 9)} Q${f1(J.shoL[0] - 3)} ${f1(sy + 6)} ${f1(J.shoL[0] - 2.2)} ${f1(sy - 2.2)}Z" fill="${C.body}"/>`;
+  s += `<path d="M${f1(J.shoL[0] - 2.2)} ${f1(sy - 2.2)} Q60 ${f1(sy - 4.2)} ${f1(J.shoR[0] + 2.2)} ${f1(sy - 2.2)} Q${f1(J.shoR[0] + 3)} ${f1(sy + 6)} 66.5 ${f1(py - 9)} L67.5 ${f1(py + 1)} L52.5 ${f1(py + 1)} L53.5 ${f1(py - 9)} Q${f1(J.shoL[0] - 3)} ${f1(sy + 6)} ${f1(J.shoL[0] - 2.2)} ${f1(sy - 2.2)}Z" fill="${C.body}"${STY.stroke ? ` stroke="${STY.stroke}" stroke-width="0.9"` : ""}/>`;
+  if (STY.shirt) s += `<path d="M${f1(J.shoL[0] + 1.2)} ${f1(sy - 2.6)} Q60 ${f1(sy + 3.2)} ${f1(J.shoR[0] - 1.2)} ${f1(sy - 2.6)} Q${f1(J.shoR[0] + 1.4)} ${f1(sy + 7)} 66.5 ${f1(py - 9)} L67.5 ${f1(py + 1)} L52.5 ${f1(py + 1)} L53.5 ${f1(py - 9)} Q${f1(J.shoL[0] - 1.4)} ${f1(sy + 7)} ${f1(J.shoL[0] + 1.2)} ${f1(sy - 2.6)}Z" fill="${STY.shirt}"/>`;
   s += cap([60, sy - 2], [60, sy - 6.5], 2.6, 2.4, C.bodyShade);
   if (has("traps")) s += `<path d="M60 ${f1(sy - 7)} L${f1(J.shoR[0] - 1)} ${f1(sy - 2.6)} L${f1(J.shoL[0] + 1)} ${f1(sy - 2.6)}Z" fill="${C.hl}" stroke="${C.hlGlow}" stroke-width="2.4" stroke-linejoin="round"/>`;
   if (has("chest")) for (const sgn of [-1, 1]) s += `<ellipse cx="${f1(60 + sgn * 4.6)}" cy="${f1(sy + 4.6)}" rx="5.2" ry="4.4" fill="${C.hlGlow}"/><ellipse cx="${f1(60 + sgn * 4.6)}" cy="${f1(sy + 4.6)}" rx="4" ry="3.3" fill="${C.hl}"/>`;
@@ -299,8 +301,8 @@ const PATTERNS = {
     props: { back: () => seat(34, 66) + backPad(38, 64, 34, 32), front: (J) => dot(step(J.ank, 0, 3), 3.5, C.prop) } },
   leg_curl: { hl: ["th"], A: { hip: [58, 68], t: -90, th: 90, sh: 90, ft: 180, ua: -125, fa: -60 }, B: { hip: [58, 68], t: -90, th: 90, sh: 15, ft: 300, ua: -125, fa: -60 },
     props: { back: () => rect(16, 72, 62, 5, C.dark) + rect(40, 77, 4, 19, C.dark, 1), front: (J) => dot(step(J.ank, J.ank[1] < 60 ? 270 : 0, 3), 3.5, C.prop) } },
-  nordic: { hl: ["th"], A: { knee: [62, 88], tu: 0, sh: 270, ft: 180, t: 0, ua: 165, fa: 150 }, B: { knee: [62, 88], tu: 52, sh: 270, ft: 180, t: 52, ua: 120, fa: 110 },
-    props: { back: () => rect(30, 84, 14, 4, C.prop, 1) } },
+  nordic: { hl: ["th"], A: { knee: [52, 88], tu: 0, sh: 270, ft: 180, t: 0, ua: 165, fa: 150 }, B: { knee: [52, 88], tu: 52, sh: 270, ft: 180, t: 52, ua: 120, fa: 110 },
+    props: { back: () => rect(20, 84, 14, 4, C.prop, 1) } },
   bench: { hl: ["chest", "ua"], A: { ...LIE, ua: 172, fa: 12 }, B: { ...LIE, ua: 2, fa: 0 }, props: { back: bench, front: atWrist((p) => plate(p, 8)) } },
   bench_db: { hl: ["chest", "ua"], A: { ...LIE, ua: 172, fa: 12 }, B: { ...LIE, ua: 2, fa: 0 }, props: { back: bench, front: atWrist(dumbbell) } },
   incline: { hl: ["chest", "delt"], A: { hip: [56, 66], t: -45, th: 100, sh: 178, ft: 90, ua: 135, fa: 40 }, B: { hip: [56, 66], t: -45, th: 100, sh: 178, ft: 90, ua: 30, fa: 30 },
@@ -560,7 +562,7 @@ function animFrame(key, k, style) {
 
 function exAnimHTML(id) {
   const key = animKeyFor(id);
-  return `<span class="eximg anim-fig"><svg viewBox="8 -14 104 112" data-anim="${key}" aria-hidden="true">${animFrame(key, 0)}</svg></span>`;
+  return `<span class="eximg anim-fig"><svg viewBox="1 -14 118 112" data-anim="${key}" aria-hidden="true">${animFrame(key, 0)}</svg></span>`;
 }
 
 // Tek döngü: ekranda görünen tüm animasyonları günceller (görünmeyenler atlanır)

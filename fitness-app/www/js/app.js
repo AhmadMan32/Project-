@@ -422,7 +422,7 @@ function renderSettings() {
     <div class="kv"><span>Yaş / Boy / Kilo</span><b>${p.age} · ${p.height} cm · ${p.weight} kg</b></div>
     <div class="kv"><span>Hedef</span><b>${GOALS[goalKey(p.goal)].icon} ${GOALS[goalKey(p.goal)].name}</b></div>
     <div class="kv"><span>Seviye</span><b>${LEVELS[p.level]?.name || "-"}</b></div>
-    <div class="kv"><span>Program</span><b>Haftada ${p.days} gün · ${p.sessionMin} dk</b></div>
+    <div class="kv"><span>Program</span><b>Haftada ${daysLabel(p)} gün · ${p.sessionMin} dk</b></div>
     <div class="kv"><span>Ekipman</span><b>${EQUIPMENT[p.equipment]?.name || "-"}</b></div>
     <div class="kv"><span>Öncelik</span><b>${(p.priorities || []).map((m) => MUSCLES[m].name).join(", ") || "Yok"}</b></div>
     <div class="kv"><span>Sakatlık</span><b>${(p.injuries || []).map((k) => INJURY_RISK[k].name).join(", ") || "Yok"}</b></div>` : `<p class="muted">Henüz soruları yanıtlamadın.</p>`;

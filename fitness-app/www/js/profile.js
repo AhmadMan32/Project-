@@ -19,12 +19,16 @@ const EQUIPMENT = {
   bw:  { name: "Ekipmansız", icon: "🤸", desc: "Sadece vücut ağırlığı" },
 };
 
+// Haftalık gün aralığı: days = en fazla (programın döngü uzunluğu), daysMin = en az (yoksa days)
+const daysMinOf = (p) => +p.daysMin || +p.days || 0;
+const daysLabel = (p) => (daysMinOf(p) && daysMinOf(p) < +p.days ? `${daysMinOf(p)}-${p.days}` : `${p.days || "-"}`);
+
 // Kişiye göre haftalık set hedefi
 function muscleTarget(m, profile = {}) {
   const base = MUSCLES[m];
   const scale = (LEVELS[profile.level] || LEVELS.intermediate).scale;
   // Haftalık süre bütçesi: 4 gün × 60 dk (~96 set) tam hedefe yeter; daha az zamanda alt sınır orantılı düşer
-  const budget = ((+profile.days || 4) * (+profile.sessionMin || 60)) / 2.5;
+  const budget = ((daysMinOf(profile) || 4) * (+profile.sessionMin || 60)) / 2.5; // az gelinen hafta esas alınır
   const timeScale = Math.min(1, Math.max(0.6, budget / 96));
   // Küçük yardımcı kaslar (ön kol, trapez, bel, yan karın, iç bacak) çoğunlukla bileşik hareketlerden çalışır;
   // haftalık zaman kısıtlıysa zorunlu hedef sayılmaz
@@ -131,7 +135,7 @@ function calorieTarget(p) {
   const w = +p.weight, h = +p.height, a = +p.age;
   if (!w || !h || !a) return null;
   const bmr = 10 * w + 6.25 * h - 5 * a + (p.sex === "f" ? -161 : 5);
-  const tdee = bmr * (1.2 + 0.075 * (+p.days || 3));
+  const tdee = bmr * (1.2 + 0.075 * (((daysMinOf(p) || 3) + (+p.days || 3)) / 2));
   return Math.round((tdee + GOALS[goalKey(p.goal)].kcal) / 10) * 10;
 }
 
@@ -153,11 +157,16 @@ const WIZARD_STEPS = [
   { id: "level", title: () => "Ne kadar süredir spor yapıyorsun?", sub: (p) => `${GOALS[p.goal].cheer}, ${p.name}. Şimdi antrenman hacmini seviyene göre ayarlayalım.`,
     render: (p) => cards("level", LEVELS, p.level), read: (p) => !!p.level || "Seviyeni seç" },
   { id: "days", title: (p) => `${p.name}, haftada kaç gün ayırabilirsin?`, sub: (p) => p.level === "beginner" ? "Yeni başlıyorsan 3 gün harika bir başlangıç. Programın bölünmesini buna göre seçeceğim." : "Programın bölünmesini gün sayısına göre seçeceğim.",
-    render: (p) => `<div class="num-pick">${[2, 3, 4, 5, 6].map((d) => `<button class="opt ${p.days === d ? "on" : ""}" data-set="days" data-val="${d}">${d}</button>`).join("")}</div>
+    render: (p) => `<div class="num-pick days-pick">${[2, 3, 4, 5, 6].map((d) => {
+        const lo = daysMinOf(p), hi = +p.days || 0;
+        const cls = d === lo || d === hi ? "on" : d > lo && d < hi ? "in-range" : "";
+        return `<button class="opt ${cls}" data-days="${d}">${d}</button>`;
+      }).join("")}</div>
+      <p class="days-hint muted small">${daysHint(p)}</p>
       <div class="muted small" style="margin:14px 0 6px">Bir antrenman ne kadar sürsün?</div>
       <div class="num-pick">${[30, 45, 60, 90].map((d) => `<button class="opt ${p.sessionMin === d ? "on" : ""}" data-set="sessionMin" data-val="${d}">${d} dk</button>`).join("")}</div>`,
-    read: (p) => (!!p.days && !!p.sessionMin) || "Gün ve süre seç" },
-  { id: "equipment", title: () => "Nerede antrenman yapıyorsun?", sub: (p) => `Haftada ${p.days} gün, ${p.sessionMin} dakika, not ettim. Sana sadece yapabileceğin hareketleri önereceğim.`,
+    read: (p) => (!!p.days && !!p.sessionMin) || "Gün sayısını ve süreyi seç" },
+  { id: "equipment", title: () => "Nerede antrenman yapıyorsun?", sub: (p) => `Haftada ${daysLabel(p)} gün, ${p.sessionMin} dakika, not ettim. Sana sadece yapabileceğin hareketleri önereceğim.`,
     render: (p) => cards("equipment", EQUIPMENT, p.equipment), read: (p) => !!p.equipment || "Bir seçenek seç" },
   { id: "planMode", title: (p) => `${p.name}, programını nasıl oluşturalım?`,
     sub: () => "İki yol var. İstediğin zaman Program sekmesinden değiştirebilirsin.",
@@ -188,6 +197,13 @@ function niceName(v) {
     .split(" ").map((w) => w.charAt(0).toLocaleUpperCase("tr") + w.slice(1).toLocaleLowerCase("tr")).join(" ");
 }
 
+function daysHint(p) {
+  const lo = daysMinOf(p), hi = +p.days;
+  if (!hi) return "Tek bir sayı seçebilir ya da emin değilsen iki sayıya dokunup aralık seçebilirsin (örn. 3 ve 4).";
+  if (lo < hi) return `Haftada ${lo}-${hi} gün: Programın ${hi} günlük bir döngü olacak. ${lo} gün gelebildiğin haftalarda kaldığın günden devam edersin; ${lo} günlük haftada da eksik kalmayacak şekilde ayarlarım.`;
+  return `Haftada ${hi} gün. Emin değilsen bir sayıya daha dokunarak aralık seçebilirsin.`;
+}
+
 function cards(field, opts, cur, compact) {
   return `<div class="opt-cards ${compact ? "compact" : ""}">${Object.entries(opts).map(([k, o]) => `
     <button class="opt-card ${cur === k ? "on" : ""}" data-set="${field}" data-val="${k}">
@@ -207,7 +223,7 @@ function summaryHtml(p) {
   if (p.planMode === "manual") {
     const big = ["chest", "lats", "upper_back", "quads", "hamstrings", "glutes", "side_delt"];
     return statsHtml + `<h3>Programını sen kuracaksın ✍️</h3>
-      <p class="muted small">Program sekmesinde ${p.days} günlük boş bir plan seni bekliyor. Her güne hareket ekledikçe kas haritası ve uyarılar güncellenecek.
+      <p class="muted small">Program sekmesinde ${p.days} günlük boş bir plan seni bekliyor${daysMinOf(p) < p.days ? ` (haftada ${daysLabel(p)} gün geleceğin için ${daysMinOf(p)} günlük haftada da yeterli olacak şekilde kontrol edeceğim)` : ""}. Her güne hareket ekledikçe kas haritası ve uyarılar güncellenecek.
       Seviyene göre haftalık set hedeflerin (örnekler):</p>
       ${big.map((m) => `<div class="kv"><span>${MUSCLES[m].name}${(p.priorities || []).includes(m) ? " ⭐" : ""}</span><b>${muscleTarget(m, p).min}-${muscleTarget(m, p).max} set</b></div>`).join("")}`;
   }
@@ -290,7 +306,16 @@ function initWizard() {
     const b = e.target.closest("button");
     if (!b) return;
     const p = wz.p;
-    if (b.dataset.set) {
+    if (b.dataset.days) {
+      // tek sayı ya da aralık: seçim yokken veya aralık seçiliyken dokunulan sayı tek seçim olur,
+      // tek seçim varken başka sayıya dokunmak aralık oluşturur
+      const d = +b.dataset.days, lo = daysMinOf(p), hi = +p.days || 0;
+      if (!hi || lo < hi || d === hi) { p.days = d; p.daysMin = d; }
+      else { p.days = Math.max(d, hi); p.daysMin = Math.min(d, hi); }
+      const inputs = [...$("#wzBody").querySelectorAll("input")].map((i) => [i.id, i.value]);
+      renderWizard();
+      for (const [id, val] of inputs) if ($("#" + id)) $("#" + id).value = val;
+    } else if (b.dataset.set) {
       const v = b.dataset.val;
       p[b.dataset.set] = /^\d+$/.test(v) ? +v : v;
       // girilmiş alanları kaybetmeden yeniden çiz

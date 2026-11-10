@@ -27,6 +27,14 @@ function planVolume(program, custom = []) {
   return { vol, days, primaryByDay };
 }
 
+// Bir kası çalıştıran uygun hareketler, tercih sırasıyla (plandakiler sona)
+function exerciseCandidates(m, profile, program, custom = []) {
+  const ok = new Map(allowedExercises(profile, custom).map((e) => [e.id, e]));
+  const inPlan = new Set(program.days.flatMap((d) => d.exercises.map((e) => e.id)));
+  const ids = [...new Set([...(PREFERRED[m] || []), ...[...ok.values()].filter((e) => e.p[0] === m).map((e) => e.id)])].filter((id) => ok.has(id));
+  return [...ids.filter((id) => !inPlan.has(id)), ...ids.filter((id) => inPlan.has(id))].map((id) => ok.get(id));
+}
+
 // Bir kası çalıştırmak için en iyi uygun hareket (plandakileri tekrar önermez)
 function bestExerciseFor(m, profile, program, custom = []) {
   const ok = new Map(allowedExercises(profile, custom).map((e) => [e.id, e]));
@@ -52,11 +60,19 @@ function bestDayFor(m, program, custom = []) {
     .sort((a, b) => bestDayScore(m, program.days[b], custom) - bestDayScore(m, program.days[a], custom) || setsOf(program.days[a]) - setsOf(program.days[b]))[0] ?? 0;
 }
 
+// Gün aralığında (ör. 3-4) az gelinen haftada döngünün ne kadarı yapılır: 3/4
+function lowWeekFactor(profile, program) {
+  const len = program.days.length || 1, lo = daysMinOf(profile) || len;
+  return Math.min(1, lo / len);
+}
+const volRange = (v, f) => (f < 1 && v ? `${fmt(+(v * f).toFixed(1))}-${fmt(v)}` : fmt(v));
+
 // Kasın plana göre durumu (verilen profile göre; sihirbaz özetinde state.profile henüz kaydedilmemiş olabilir)
-function planStatus(m, v, profile) {
+function planStatus(m, v, profile, f = 1) {
   const { min, max } = muscleTarget(m, profile);
   if (v === 0) return min === 0 ? "ok" : "none";
-  return v < min ? "low" : v > max ? "high" : "ok";
+  // fazlalık: tam döngü yapılan haftada; eksiklik: az gelinen haftada
+  return v > max ? "high" : v * f < min ? "low" : "ok";
 }
 
 // Otomatik planı kendi kontrolünden geçecek şekilde dengeler:
@@ -67,6 +83,7 @@ function balanceProgram(prog, profile, custom = []) {
   const daySets = (d) => d.exercises.reduce((a, e) => a + e.sets, 0);
   const exOf = (e) => findExercise(e.id, custom);
   const skip = new Set(), skipOver = new Set();
+  const f = lowWeekFactor(profile, prog);
   for (let it = 0; it < 200; it++) {
     const { vol } = planVolume(prog, custom);
     const tgt = (m) => muscleTarget(m, profile);
@@ -77,7 +94,7 @@ function balanceProgram(prog, profile, custom = []) {
       for (const d of prog.days) for (const e of d.exercises) {
         const x = exOf(e);
         if (!x || !(x.p.includes(over) || x.s.includes(over))) continue;
-        const keepsMins = x.p.every((m) => m === over || vol[m] - 1 >= tgt(m).min);
+        const keepsMins = x.p.every((m) => m === over || (vol[m] - 1) * f >= tgt(m).min);
         const w = (x.p.includes(over) ? 1 : 0.5) * e.sets;
         if (keepsMins && (!best || w > best.w)) best = { e, d, w };
       }
@@ -87,8 +104,8 @@ function balanceProgram(prog, profile, custom = []) {
       continue;
     }
     // 2) en büyük oransal eksik, yoksa denge kuralının istediği kas
-    const deficits = Object.keys(MUSCLES).filter((m) => !skip.has(m) && vol[m] < tgt(m).min)
-      .sort((a, b) => (tgt(b).min - vol[b]) / tgt(b).min - (tgt(a).min - vol[a]) / tgt(a).min);
+    const deficits = Object.keys(MUSCLES).filter((m) => !skip.has(m) && vol[m] * f < tgt(m).min)
+      .sort((a, b) => (tgt(b).min - vol[b] * f) / tgt(b).min - (tgt(a).min - vol[a] * f) / tgt(a).min);
     let need = deficits[0], forBalance = false;
     if (!need) {
       const fix = balanceInsights(vol, "plan").flatMap((b) => b.fix || []).find((m) => !skip.has(m) && vol[m] + 1 <= tgt(m).max);
@@ -104,17 +121,19 @@ function balanceProgram(prog, profile, custom = []) {
       if (e) { e.sets++; done = true; break; }
     }
     if (done) continue;
-    // b) yeni hareket ekle
-    const ex = bestExerciseFor(need, profile, prog, custom);
+    // b) yeni hareket ekle: tercih sırasındaki ilk uygun hareket (başka bir kası hedef üstüne taşımayan)
     const sets = Math.max(2, goal.sets + (profile.level === "beginner" ? -1 : 0));
-    if (ex && fitsAll(ex, sets)) {
+    let added = false;
+    for (const ex of exerciseCandidates(need, profile, prog, custom)) {
+      if (!fitsAll(ex, sets)) continue;
       const order = prog.days.map((d, i) => i).filter((i) => daySets(prog.days[i]) + sets <= cap && !prog.days[i].exercises.some((e) => e.id === ex.id))
         .sort((a, b) => bestDayScore(need, prog.days[b], custom) - bestDayScore(need, prog.days[a], custom) || daySets(prog.days[a]) - daySets(prog.days[b]));
-      if (order.length) {
-        prog.days[order[0]].exercises.push({ id: ex.id, sets, reps: ex.id === "plank" || ex.id === "side_plank" ? "30-60 sn" : goal.reps, muscle: need });
-        continue;
-      }
+      if (!order.length) continue;
+      prog.days[order[0]].exercises.push({ id: ex.id, sets, reps: ex.id === "plank" || ex.id === "side_plank" ? "30-60 sn" : goal.reps, muscle: need });
+      added = true;
+      break;
     }
+    if (added) continue;
     // c) denge için: karşı taraftaki fazlayı 1 set azalt (ör. çekme fazlaysa en büyük çekme hareketini)
     if (forBalance) {
       const opp = balanceInsights(vol, "plan").find((b) => (b.fix || []).includes(need));
@@ -122,7 +141,7 @@ function balanceProgram(prog, profile, custom = []) {
       let cut = null;
       if (heavy) for (const d of prog.days) for (const e of d.exercises) {
         const x = exOf(e);
-        if (x && e.sets > 2 && x.p.some((m) => heavy.slice(0, 4).includes(m)) && x.p.every((m) => vol[m] - 1 >= tgt(m).min) && (!cut || e.sets > cut.sets)) cut = e;
+        if (x && e.sets > 2 && x.p.some((m) => heavy.slice(0, 4).includes(m)) && x.p.every((m) => (vol[m] - 1) * f >= tgt(m).min) && (!cut || e.sets > cut.sets)) cut = e;
       }
       if (cut) { cut.sets--; skip.add(need); continue; }
     }
@@ -134,7 +153,8 @@ function balanceProgram(prog, profile, custom = []) {
 function analyzePlan(program, profile, custom = []) {
   const { vol, days, primaryByDay } = planVolume(program, custom);
   const T = (m) => muscleTarget(m, profile);
-  const statusOf = (m, v) => planStatus(m, v, profile);
+  const f = lowWeekFactor(profile, program);
+  const statusOf = (m, v) => planStatus(m, v, profile, f);
   const statuses = {}, insights = [];
   const goal = GOALS[goalKey(profile.goal)];
   const sets = Math.max(2, goal.sets + (profile.level === "beginner" ? -1 : 0));
@@ -159,7 +179,7 @@ function analyzePlan(program, profile, custom = []) {
     if (st === "none") missing.push(m);
     else if (st === "low") {
       const a = addAction(m);
-      insights.push({ type: "warn", title: `${MUSCLES[m].name} yetersiz`, text: `Haftalık ${fmt(v)} set planlanmış, hedefin ${t.min}-${t.max}. En az ${Math.ceil(t.min - v)} set daha ekle.` +
+      insights.push({ type: "warn", title: `${MUSCLES[m].name} yetersiz`, text: `Haftalık ${volRange(v, f)} set planlanmış, hedefin ${t.min}-${t.max}.${f < 1 ? ` Haftada ${daysMinOf(profile)} gün geldiğinde ${fmt(+(v * f).toFixed(1))} sette kalıyor.` : ""} En az ${Math.ceil((t.min - v * f) / f)} set daha ekle.` +
         (a ? "" : " Ekipmanınla bu kas için uygun hareket bulamadım; mevcut hareketlerin set sayısını artırabilirsin."), actions: a ? [a] : [] });
     } else if (st === "high") {
       // en çok set veren hareketi bul ve azaltmayı öner
@@ -168,7 +188,7 @@ function analyzePlan(program, profile, custom = []) {
         const ex = findExercise(e.id, custom);
         if (ex?.p.includes(m) && e.sets > 1 && (!top || e.sets > top.sets)) top = { di, ei, sets: e.sets, name: ex.name };
       }));
-      insights.push({ type: "danger", title: `${MUSCLES[m].name} fazla`, text: `Haftalık ${fmt(v)} set planlanmış, en fazla ${t.max} olmalı. Fazla hacim toparlanmayı bozar, gelişimi yavaşlatır.`,
+      insights.push({ type: "danger", title: `${MUSCLES[m].name} fazla`, text: `${f < 1 ? `Haftada ${profile.days} gün geldiğinde` : "Haftalık"} ${fmt(v)} set planlanmış, en fazla ${t.max} olmalı. Fazla hacim toparlanmayı bozar, gelişimi yavaşlatır.`,
         actions: top ? [{ kind: "reduce", day: top.di, idx: top.ei, label: `− ${top.name} 1 set azalt` }] : [] });
     }
   }
@@ -218,10 +238,10 @@ function analyzePlan(program, profile, custom = []) {
   if (once.length) insights.push({ type: "info", title: "Frekansı artır", text: `${once.map((m) => MUSCLES[m].name).join(", ")} haftada tek günde. Aynı hacmi iki güne bölmek gelişim için daha verimli.`, actions: [] });
 
   // Zaman bütçesi kısıtlıysa bunu açıkça söyle: eksiklerin sebebi plan değil süre olabilir
-  const weeklyMin = (+profile.days || program.days.length) * (+profile.sessionMin || 60);
+  const weeklyMin = (daysMinOf(profile) || program.days.length) * (+profile.sessionMin || 60);
   const deficitCount = Object.values(statuses).filter((x) => x === "low" || x === "none").length;
   if (weeklyMin < 180 && deficitCount >= 2) {
-    insights.push({ type: "info", title: "Haftalık süren kısıtlı", text: `Haftada ${profile.days || program.days.length} gün × ${profile.sessionMin || 60} dk ile her kası ideal hacimde çalıştırmak zor. En etkili çözüm bir gün ya da 15 dk eklemek; yoksa büyük kaslara öncelik ver.`, actions: [] });
+    insights.push({ type: "info", title: "Haftalık süren kısıtlı", text: `Haftada ${daysMinOf(profile) || program.days.length} gün × ${profile.sessionMin || 60} dk ile her kası ideal hacimde çalıştırmak zor. En etkili çözüm bir gün ya da 15 dk eklemek; yoksa büyük kaslara öncelik ver.`, actions: [] });
   }
 
   const okCount = Object.values(statuses).filter((s) => s === "ok").length;
@@ -231,7 +251,7 @@ function analyzePlan(program, profile, custom = []) {
   }
   const order = { danger: 0, warn: 1, info: 2, good: 3 };
   insights.sort((a, b) => order[a.type] - order[b.type]);
-  return { vol, statuses, insights, score };
+  return { vol, statuses, insights, score, f };
 }
 
 // ---------- Program sekmesi ----------
@@ -261,7 +281,7 @@ function renderPlan() {
         : manual ? "Programını kurmaya başla; her eklediğin harekette eksik ve fazlaları göstereceğim." : ""}</p>
     </div>
     <div class="stat-row">
-      <div class="stat big"><b>${done}/${prog.days.length}</b><span>Bu hafta antrenman</span><div class="mini"><div style="width:${Math.min(100, done / Math.max(1, prog.days.length) * 100)}%;background:var(--accent)"></div></div></div>
+      <div class="stat big"><b>${done}/${daysMinOf(p) < prog.days.length && daysMinOf(p) ? daysLabel(p) : prog.days.length}</b><span>Bu hafta antrenman</span><div class="mini"><div style="width:${Math.min(100, done / Math.max(1, daysMinOf(p) || prog.days.length) * 100)}%;background:var(--accent)"></div></div></div>
       <div class="stat big"><b>${pg}/${t.protein} g</b><span>Bugün protein</span><div class="mini"><div style="width:${Math.min(100, pg / t.protein * 100)}%;background:#4ade80"></div></div></div>
       ${t.creatine ? `<div class="stat big"><b>${d.creatine}/${t.creatine} g</b><span>Bugün kreatin</span><div class="mini"><div style="width:${Math.min(100, d.creatine / t.creatine * 100)}%;background:#60a5fa"></div></div></div>` : ""}
     </div>
@@ -462,7 +482,7 @@ function initPlanner() {
       const ex = findExercise(e.id, state.customExercises); return ex && (ex.p.includes(m) || ex.s.includes(m));
     }).map((e) => `${exName(e.id)} (${d.name})`));
     $("#planMuscleInfo").innerHTML = `<b style="color:var(--text)">${MUSCLES[m].name}</b> — ${STATUS_TXT[pa.statuses[m]]}<br>
-      Planda haftalık <b>${fmt(pa.vol[m])}</b> set · hedefin ${t.min}-${t.max}<br>
+      Planda haftalık <b>${volRange(pa.vol[m], lowWeekFactor(state.profile, state.program))}</b> set · hedefin ${t.min}-${t.max}<br>
       ${exs.length ? "Hareketler: " + exs.map(esc).join(", ") : "Bu kas için planında hareket yok."}`;
   });
 

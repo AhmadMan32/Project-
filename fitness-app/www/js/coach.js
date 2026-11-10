@@ -23,7 +23,7 @@ async function askClaudeCoach(state, result) {
     profil: {
       ad: state.profile.name, yas: state.profile.age, cinsiyet: state.profile.sex, boy: state.profile.height, kilo: state.profile.weight,
       hedef: GOALS[goalKey(state.profile.goal)].name, seviye: (LEVELS[state.profile.level] || {}).name,
-      haftalik_gun: state.profile.days, seans_dk: state.profile.sessionMin, ekipman: (EQUIPMENT[state.profile.equipment] || {}).name,
+      haftalik_gun: daysLabel(state.profile), seans_dk: state.profile.sessionMin, ekipman: (EQUIPMENT[state.profile.equipment] || {}).name,
       oncelikli_kaslar: (state.profile.priorities || []).map((m) => MUSCLES[m].name),
       sakatliklar: (state.profile.injuries || []).map((k) => INJURY_RISK[k].name),
     },

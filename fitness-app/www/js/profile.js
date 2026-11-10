@@ -146,6 +146,72 @@ function calorieTarget(p) {
   return Math.round((tdee + GOALS[goalKey(p.goal)].kcal) / 10) * 10;
 }
 
+
+// ---------- Kreatin sorusu ----------
+const CREATINE_OPTS = {
+  yes:   { name: "Evet, kullanıyorum", desc: "Günlük 5 g takibini açarım", tone: "green",
+           icon: '<path d="M6 12.5l4 4 8-9" />' },
+  start: { name: "Başlamak istiyorum", desc: "Sana özel başlangıç planı hazırlarım", tone: "blue",
+           icon: '<path d="M12 19V5M6 11l6-6 6 6" />' },
+  no:    { name: "Hayır, kullanmıyorum", desc: "Kreatin takibini gizlerim", tone: "gray",
+           icon: '<path d="M7 12h10" />' },
+};
+function creatineStepHtml(p) {
+  const w = +p.weight || 75;
+  const load = Math.min(20, Math.round(w * 0.3));
+  const hero = `
+    <div class="cr-hero">
+      <svg viewBox="0 0 120 120" class="cr-jar" aria-hidden="true">
+        <ellipse cx="60" cy="108" rx="34" ry="5" class="cr-shadow"/>
+        <g class="cr-float">
+          <rect x="30" y="34" width="60" height="68" rx="12" class="cr-body"/>
+          <rect x="26" y="24" width="68" height="16" rx="6" class="cr-lid"/>
+          <rect x="38" y="52" width="44" height="30" rx="6" class="cr-label"/>
+          <text x="60" y="73" text-anchor="middle" class="cr-label-txt">C</text>
+        </g>
+        <g class="cr-scoop">
+          <path d="M86 46 q14 -2 18 8 q-8 8 -20 2 z" class="cr-scoop-cup"/>
+          <rect x="99" y="40" width="16" height="4" rx="2" transform="rotate(-35 99 40)" class="cr-scoop-cup"/>
+          <circle cx="94" cy="49" r="3" class="cr-powder"/><circle cx="89" cy="51" r="2.2" class="cr-powder"/>
+        </g>
+        <circle cx="18" cy="30" r="2.5" class="cr-spark s1"/><circle cx="104" cy="22" r="2" class="cr-spark s2"/><circle cx="14" cy="76" r="1.8" class="cr-spark s3"/>
+      </svg>
+      <div class="cr-facts">
+        <b>Kreatin ne işe yarar?</b>
+        <span>💪 Daha fazla güç ve tekrar</span>
+        <span>⚡ Daha hızlı toparlanma</span>
+        <span>🔬 En çok araştırılmış takviye</span>
+      </div>
+    </div>`;
+  const opts = `<div class="cr-opts">${Object.entries(CREATINE_OPTS).map(([k, o]) => `
+    <button class="cr-opt tone-${o.tone} ${p.creatine === k ? "on" : ""}" data-set="creatine" data-val="${k}" aria-pressed="${p.creatine === k}">
+      <span class="cr-ic"><svg viewBox="0 0 24 24">${o.icon}</svg></span>
+      <span class="cr-txt"><b>${o.name}</b><small>${o.desc}</small></span>
+      <span class="cr-radio"></span>
+    </button>`).join("")}</div>`;
+  let preview = "";
+  if (p.creatine === "yes") {
+    preview = `<div class="cr-preview tone-green">
+      <div class="cr-big">5 g<small>/ gün</small></div>
+      <p>Her gün, antrenman olmayan günler dahil. Saati önemli değil; her gün aynı saatte içmek alışkanlığı kolaylaştırır.</p>
+    </div>`;
+  } else if (p.creatine === "start") {
+    preview = `<div class="cr-preview tone-blue">
+      <b class="cr-ptitle">${esc(p.name || "Senin")} için başlangıç planı (${w} kg)</b>
+      <div class="cr-timeline">
+        <div class="cr-step"><span class="cr-dot"></span><div><b>1-7. gün · Yükleme</b><small>Günde ${load} g, ${Math.max(2, Math.round(load / 5))} parçaya bölerek (öğünlerle)</small></div></div>
+        <div class="cr-step"><span class="cr-dot"></span><div><b>8. günden itibaren · Devam</b><small>Günde 5 g, her gün</small></div></div>
+      </div>
+      <p>Yükleme şart değil: direkt 5 g ile başlarsan aynı seviyeye 3-4 haftada ulaşırsın, mide rahatsızlığı da daha az olur.</p>
+    </div>`;
+  } else if (p.creatine === "no") {
+    preview = `<div class="cr-preview tone-gray">
+      <p>Kreatin takibi uygulamada gizlenecek. Fikrini değiştirirsen Ayarlar'dan soruları yeniden yanıtlayarak açabilirsin.</p>
+    </div>`;
+  }
+  return hero + opts + preview + `<p class="muted small cr-note">Böbrek rahatsızlığın varsa ya da ilaç kullanıyorsan takviyeye başlamadan önce doktoruna danış.</p>`;
+}
+
 // ---------- Başlangıç sihirbazı ----------
 const PRIORITY_GROUPS = [
   ["Göğüs ve omuz", ["chest", "front_delt", "side_delt", "rear_delt"]],
@@ -216,12 +282,8 @@ const WIZARD_STEPS = [
         <p class="muted small">Ağrın devam ediyorsa bir doktora veya fizyoterapiste danış.</p>`;
     },
     read: (p) => { p.injuries ||= []; return true; } },
-  { id: "creatine", title: () => "Son soru: kreatin kullanıyor musun?", sub: () => "Günlük kreatin takibini buna göre ayarlayacağım.",
-    render: (p) => cards("creatine", {
-      yes: { name: "Evet, kullanıyorum", icon: "✅", desc: "Günde 5 g takip" },
-      start: { name: "Başlamak istiyorum", icon: "🚀", desc: "İlk hafta yükleme (0.3 g/kg), sonra 5 g" },
-      no: { name: "Hayır", icon: "➖", desc: "Kreatin takibi gizlenir" },
-    }, p.creatine), read: (p) => !!p.creatine || "Bir seçenek seç" },
+  { id: "creatine", title: (p) => `${p.name}, son soru: kreatin kullanıyor musun?`, sub: () => "Günlük kreatin takibini cevabına göre ayarlayacağım.",
+    render: (p) => creatineStepHtml(p), read: (p) => !!p.creatine || "Bir seçenek seç" },
   { id: "summary", title: (p) => p.planMode === "manual" ? `${p.name}, her şey hazır! 🎉` : `${p.name}, planın hazır! 🎉`, sub: (p) => p.planMode === "manual" ? `${GOALS[p.goal].name} hedefin için hedeflerini belirledim:` : `${GOALS[p.goal].name} hedefin için cevaplarına göre hazırladığım plan:`, render: (p) => summaryHtml(p), read: () => true },
 ];
 
@@ -356,6 +418,8 @@ function initWizard() {
       const inputs = [...$("#wzBody").querySelectorAll("input")].map((i) => [i.id, i.value]);
       renderWizard();
       for (const [id, val] of inputs) if ($("#" + id)) $("#" + id).value = val;
+      // seçime göre açılan önizleme ekranın altında kalmasın
+      $("#wzBody .cr-preview")?.scrollIntoView({ behavior: "smooth", block: "nearest" });
     } else if (b.dataset.multi) {
       const arr = (p[b.dataset.multi] ||= []);
       const k = b.dataset.val, ix = arr.indexOf(k);

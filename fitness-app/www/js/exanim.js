@@ -217,18 +217,9 @@ function drawFront(J, hl, props, P) {
     C.hl = c || baseHl; C.hlGlow = P.noGlow ? "transparent" : c ? c + "50" : baseGlow;
     return true;
   };
-  // Tonlama: her renk için ışık sol üstten gelen yuvarlak geçiş (açık -> ana renk -> koyu kenar)
-  const defs = [], gradOf = {};
-  const tone = (c = C.hl) => {
-    if (!/^#[0-9a-f]{6}$/i.test(c)) return c;
-    if (!gradOf[c]) {
-      const id = "mg" + (GRAD_SEQ++ % 100000);
-      defs.push(`<radialGradient id="${id}" cx="36%" cy="28%" r="78%"><stop offset="0" stop-color="${tint(c, 0.42)}"/><stop offset=".55" stop-color="${c}"/><stop offset="1" stop-color="${tint(c, -0.24)}"/></radialGradient>`);
-      gradOf[c] = `url(#${id})`;
-    }
-    return gradOf[c];
-  };
-  const edge = () => `stroke="${tint(C.hl, -0.3)}" stroke-width="0.35" stroke-opacity=".55"`;
+  // düz renk (geçiş yok)
+  const tone = (c = C.hl) => c;
+  const edge = () => "";
   // yuvarlak kas şekilleri
   const blob = (cx, cy, rx, ry, rot = 0) => `<ellipse cx="${f1(cx)}" cy="${f1(cy)}" rx="${f1(rx + 1.1)}" ry="${f1(ry + 1.1)}" fill="${C.hlGlow}"${rot ? ` transform="rotate(${rot} ${f1(cx)} ${f1(cy)})"` : ""}/>`
     + `<ellipse cx="${f1(cx)}" cy="${f1(cy)}" rx="${f1(rx)}" ry="${f1(ry)}" fill="${tone()}" ${edge()}${rot ? ` transform="rotate(${rot} ${f1(cx)} ${f1(cy)})"` : ""}/>`;
@@ -286,7 +277,7 @@ function drawFront(J, hl, props, P) {
   if (props.front) s += props.front(J, P);
   if (P.tiltDeg) s += "</g>";
   C.hl = baseHl; C.hlGlow = baseGlow;
-  return (defs.length ? `<defs>${defs.join("")}</defs>` : "") + s;
+  return s;
 }
 
 // Kalıptaki genel vurguyu doğru kasa çevirir (ör. "ua": curl'de biceps, pushdown'da triceps)

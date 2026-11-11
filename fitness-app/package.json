@@ -1,6 +1,6 @@
 {
   "name": "fitai-koc",
-  "version": "1.5.0",
+  "version": "1.6.0",
   "private": true,
   "description": "FitAI Koç - kişisel fitness takip ve AI koç uygulaması",
   "scripts": {

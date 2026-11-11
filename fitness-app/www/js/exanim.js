@@ -179,7 +179,126 @@ const dumbbell = (p) => seg([p[0] - 4, p[1]], [p[0] + 4, p[1]], 1.8, C.prop)
   + rect(p[0] - 7, p[1] - 3.6, 3.4, 7.2, C.plate, 1.2) + rect(p[0] + 3.6, p[1] - 3.6, 3.4, 7.2, C.plate, 1.2)
   + rect(p[0] - 6.4, p[1] - 3.6, 1, 7.2, "rgba(255,255,255,.3)", 0.5) + rect(p[0] + 4.2, p[1] - 3.6, 1, 7.2, "rgba(255,255,255,.3)", 0.5);
 const kettle = (p) => `<path d="M${f1(p[0] - 3.2)} ${f1(p[1] + 2)} q3.2 -7 6.4 0" fill="none" stroke="${C.prop}" stroke-width="1.9" stroke-linecap="round"/>` + dot([p[0], p[1] + 6], 5, C.plate) + dot([p[0] - 1.5, p[1] + 4.5], 1.3, "rgba(255,255,255,.35)");
-const cable = (p, anchor) => seg(anchor, p, 1, C.prop) + dot(anchor, 3, C.dark, `stroke="${C.prop}" stroke-width="1"`) + dot(anchor, 1, C.prop) + rect(p[0] - 3.2, p[1] - 1.6, 6.4, 3.2, C.plate, 1.4);
+// ---- kablo istasyonu: kule (direk) + makara + kablo + tutamak ----
+// cable() kabloyu ve tutamağı çizer, makaranın yerini kaydeder; animFrame kuleleri figürün arkasına çizer.
+// Tüm kablolu hareketler aynı tasarımı kullanır (CABLE_STYLE).
+let CABLE_ANCHORS = [];
+const CABLE_TOP = -12, CABLE_BOT = FLOOR + 2.4;
+let CSEQ = 0;
+function chromeGrad(x0, w, stops) {
+  const id = "cg" + (++CSEQ).toString(36);
+  return { id, defs: `<defs><linearGradient id="${id}" gradientUnits="userSpaceOnUse" x1="${f1(x0)}" y1="0" x2="${f1(x0 + w)}" y2="0">${stops.map(([o, c]) => `<stop offset="${o}" stop-color="${c}"/>`).join("")}</linearGradient></defs>` };
+}
+// o: w genişlik, col renk, grad [[offset, renk]...], edge ışık şeridi, stripe renk şeridi, holes delik rengi,
+// rails çift ray, outline sadece çizgi, stack [adet, renk], car taşıyıcı, knob, pulley, hub, pr makara yarıçapı, glow, wire, foot
+function towerDraw(x, ys, o) {
+  const w = o.w || 7, x0 = x - w / 2, top = CABLE_TOP, bot = CABLE_BOT, h = bot - top;
+  let s = "";
+  if (o.shadow) s += rect(x0 + 1.2, top + 1, w, h, "rgba(0,0,0,.28)", o.r ?? 1.6);
+  s += rect(x - w / 2 - 3, FLOOR + 1.4, w + 6, 2, o.foot || o.col, 1);
+  let fill = o.col;
+  if (o.grad) { const g = chromeGrad(x0, w, o.grad); s += g.defs; fill = `url(#${g.id})`; }
+  if (o.rails) {
+    s += rect(x0, top, 1.5, h, fill, 0.7) + rect(x0 + w - 1.5, top, 1.5, h, fill, 0.7) + rect(x0 - 0.8, top - 1.2, w + 1.6, 2.6, fill, 1);
+  } else if (o.outline) {
+    s += `<rect x="${f1(x0)}" y="${top}" width="${w}" height="${f1(h)}" rx="1.6" fill="none" stroke="${o.col}" stroke-width=".8"/>`;
+  } else {
+    s += rect(x0, top, w, h, fill, o.r ?? 1.6) + rect(x0 - 0.7, top - 1.2, w + 1.4, 2.6, o.cap || fill, 1);
+  }
+  if (o.edge) s += rect(x0 + 0.7, top + 1.5, 0.8, h - 3, o.edge, 0.4);
+  if (o.stripe) s += rect(x0 + w - 1.7, top + 1.5, 0.9, h - 3, o.stripe, 0.45);
+  if (o.glow) s += `<rect x="${f1(x0)}" y="${top}" width="${w}" height="${f1(h)}" rx="1.6" fill="none" stroke="${o.glow}" stroke-width=".7" opacity=".9"/><rect x="${f1(x0 - 0.8)}" y="${top - 0.8}" width="${w + 1.6}" height="${f1(h + 1.6)}" rx="2.2" fill="none" stroke="${o.glow}" stroke-width="1.6" opacity=".22"/>`;
+  if (o.holes) for (let y = top + 4; y < bot - (o.stack ? 22 : 6); y += 3.6) s += dot([x, y], 0.55, o.holes);
+  let stackTop = bot - 3;
+  if (o.stack) {
+    const [n, c] = o.stack, ph = 1.7, gap = 0.45, sw = Math.max(4, w - 1.6);
+    stackTop = bot - 2.2 - n * (ph + gap);
+    for (let i = 0; i < n; i++) s += rect(x - sw / 2, stackTop + i * (ph + gap), sw, ph, c, 0.5);
+    s += dot([x + sw / 2 - 1, stackTop + 3 * (ph + gap) + ph / 2], 0.6, o.knob || "#e5e7eb");
+  }
+  for (const y of ys) {
+    const yy = Math.min(Math.max(y, top + 2), bot - 2);
+    s += seg([x, yy], [x, stackTop], 0.5, o.wire);
+    if (o.car) s += rect(x0 - 0.9, yy - 3.2, w + 1.8, 6.4, o.car, 1.5) + (o.carKnob ? dot([x0 - 0.9, yy], 1, o.carKnob) : "");
+    const pr = o.pr || 2.8;
+    if (o.glow) s += dot([x, yy], pr + 1.4, o.glow, `opacity=".25"`);
+    s += o.outline ? `<circle cx="${f1(x)}" cy="${f1(yy)}" r="${pr}" fill="none" stroke="${o.pulley}" stroke-width=".8"/>` : dot([x, yy], pr, o.pulley);
+    s += dot([x, yy], pr * 0.42, o.hub);
+  }
+  return s;
+}
+// kuleden makaraya uzanan kiriş (üstte ya da yerde) ve ucundaki makara
+function beamDraw(tx, bx, y, o) {
+  const yy = Math.min(Math.max(y, CABLE_TOP + 2), CABLE_BOT - 2), x0 = Math.min(tx, bx) - 2, w = Math.abs(tx - bx) + 4, pr = o.pr || 2.8;
+  let fill = o.cap || o.col;
+  let s = "";
+  if (o.grad) { const g = chromeGrad(x0, w, o.grad); fill = o.cap || o.grad[1][1]; }
+  s += o.outline ? `<rect x="${f1(x0)}" y="${f1(yy - 1.4)}" width="${f1(w)}" height="2.8" rx="1.2" fill="none" stroke="${o.col}" stroke-width=".8"/>` : rect(x0, yy - 1.4, w, 2.8, o.rails ? o.col : fill, 1.2);
+  if (o.glow) s += `<rect x="${f1(x0)}" y="${f1(yy - 1.4)}" width="${f1(w)}" height="2.8" rx="1.2" fill="none" stroke="${o.glow}" stroke-width=".7"/>`;
+  s += seg([tx, yy], [bx, yy], 0.5, o.wire);
+  s += o.outline ? `<circle cx="${f1(bx)}" cy="${f1(yy)}" r="${pr}" fill="none" stroke="${o.pulley}" stroke-width=".8"/>` : dot([bx, yy], pr, o.pulley);
+  return s + dot([bx, yy], pr * 0.42, o.hub);
+}
+// tutamak tipleri: d (D-tutamak), bar (uzun bar), short (kısa bar), rope (halat), strap (ayak bileği bandı), none
+function handleDraw(S, p, ang, type) {
+  const H = S.handle, g = (inner) => `<g transform="translate(${f1(p[0])} ${f1(p[1])}) rotate(${f1(ang)})">${inner}</g>`;
+  if (type === "none") return "";
+  if (type === "bar" || type === "short") {
+    const L = type === "bar" ? 10 : 5;
+    return rect(p[0] - L, p[1] - 1.1, L * 2, 2.2, H.col, 1.1) + rect(p[0] - L, p[1] - 1.1, 3.4, 2.2, H.grip, 1.1) + rect(p[0] + L - 3.4, p[1] - 1.1, 3.4, 2.2, H.grip, 1.1) + dot(p, 1, H.col);
+  }
+  if (type === "rope") return g(`<path d="M0 0 L-2.4 5.4 M0 0 L2.4 5.4" stroke="${H.rope || H.col}" stroke-width="1.5" stroke-linecap="round"/>` + `<circle cx="-2.4" cy="5.6" r="1.1" fill="${H.grip}"/><circle cx="2.4" cy="5.6" r="1.1" fill="${H.grip}"/><circle r="1" fill="${H.col}"/>`);
+  if (type === "strap") return `<circle cx="${f1(p[0])}" cy="${f1(p[1])}" r="2.4" fill="none" stroke="${H.col}" stroke-width="1.5"/>`;
+  return g(H.outline
+    ? `<rect x="-3.3" y="-1.7" width="6.6" height="3.4" rx="1.7" fill="none" stroke="${H.col}" stroke-width=".9"/>`
+    : `<rect x="-3.4" y="-1.8" width="6.8" height="3.6" rx="1.7" fill="${H.col}"/><rect x="-2.4" y="-.65" width="4.8" height="1.3" rx=".65" fill="${H.grip}"/>`);
+}
+function wireDraw(S, a, p) {
+  const W = S.wire;
+  return (W.glow ? seg(a, p, W.w + 1.8, W.glow).replace("/>", ` opacity=".25"/>`) : "") + (W.sheath ? seg(a, p, W.w + 0.7, W.sheath) : "") + seg(a, p, W.w, W.col);
+}
+const CABLE_STYLES = {
+  klasik:   { name: "Klasik kule", tower: { w: 7, col: "#3a4354", edge: "rgba(255,255,255,.13)", stack: [7, "#5b6b85"], pulley: "#b8c4d6", hub: "#3a4354", wire: "#b8c4d6", car: "#4b5568" },
+              wire: { col: "#cbd5e1", w: 0.85 }, handle: { col: "#60a5fa", grip: "#1e3a5f" } },
+  krom:     { name: "Krom direk", tower: { w: 5, grad: [[0, "#4b5563"], [0.35, "#e5e7eb"], [0.55, "#9ca3af"], [1, "#374151"]], cap: "#6b7280", pulley: "#d1d5db", hub: "#4b5563", wire: "#9ca3af", pr: 2.4 },
+              wire: { col: "#e5e7eb", w: 0.7 }, handle: { col: "#d1d5db", grip: "#111827" } },
+  agirlik:  { name: "Ağırlık kuleli", tower: { w: 10, col: "#262c38", edge: "rgba(255,255,255,.1)", stack: [12, "#f97316"], knob: "#fde68a", pulley: "#e5e7eb", hub: "#262c38", wire: "#94a3b8", car: "#3b4352", pr: 3 },
+              wire: { col: "#cbd5e1", w: 0.9 }, handle: { col: "#f97316", grip: "#7c2d12" } },
+  siyah:    { name: "Siyah-turuncu", tower: { w: 7, col: "#0b0f17", stripe: "#f97316", pulley: "#f97316", hub: "#0b0f17", wire: "#6b7280", car: "#1f2937", pr: 3 },
+              wire: { col: "#9ca3af", w: 0.85, sheath: "#111827" }, handle: { col: "#111827", grip: "#f97316" } },
+  minimal:  { name: "Minimal çizgi", tower: { w: 6, col: "#8b93a5", outline: true, pulley: "#cbd5e1", hub: "#cbd5e1", wire: "#5b6475", pr: 2.4 },
+              wire: { col: "#e5e7eb", w: 0.55 }, handle: { col: "#e5e7eb", grip: "#e5e7eb", outline: true } },
+  ayarli:   { name: "Delikli ayarlı", tower: { w: 7, col: "#4b5a70", holes: "#1e293b", car: "#94a3b8", carKnob: "#ef4444", pulley: "#e2e8f0", hub: "#475569", wire: "#94a3b8", pr: 2.6 },
+              wire: { col: "#e2e8f0", w: 0.8 }, handle: { col: "#e2e8f0", grip: "#ef4444" } },
+  mavi:     { name: "Mavi premium", tower: { w: 8, grad: [[0, "#1e3a8a"], [0.4, "#3b82f6"], [0.6, "#2563eb"], [1, "#1e3a8a"]], cap: "#1e40af", stripe: "#e0e7ff", stack: [6, "#93c5fd"], pulley: "#e0e7ff", hub: "#1e40af", wire: "#bfdbfe", pr: 3 },
+              wire: { col: "#ffffff", w: 0.8 }, handle: { col: "#2563eb", grip: "#e0e7ff" } },
+  fonksiyonel: { name: "Çift raylı trainer", tower: { w: 7, col: "#64748b", rails: true, car: "#f59e0b", carKnob: "#111827", stack: [5, "#334155"], pulley: "#e2e8f0", hub: "#475569", wire: "#94a3b8", pr: 2.6 },
+              wire: { col: "#cbd5e1", w: 0.8 }, handle: { col: "#f59e0b", grip: "#111827" } },
+  beyaz:    { name: "Beyaz stüdyo", tower: { w: 7, col: "#e5e7eb", edge: "#ffffff", shadow: true, cap: "#f3f4f6", pulley: "#9ca3af", hub: "#374151", wire: "#9ca3af", car: "#d1d5db" },
+              wire: { col: "#9ca3af", w: 0.8 }, handle: { col: "#374151", grip: "#9ca3af" } },
+  neon:     { name: "Neon", tower: { w: 6, col: "#0b1220", glow: "#22d3ee", pulley: "#0b1220", hub: "#22d3ee", wire: "#155e75", pr: 2.6 },
+              wire: { col: "#67e8f9", w: 0.7, glow: "#22d3ee" }, handle: { col: "#22d3ee", grip: "#0b1220" } },
+};
+let CABLE_STYLE = "agirlik";
+function cable(p, anchor, o = {}) {
+  const S = CABLE_STYLES[CABLE_STYLE] || CABLE_STYLES.klasik;
+  // o.tower: kule başka bir x'te ise makara oraya kirişle bağlanır (ör. lat pulldown'da kule yanda, makara başın üstünde)
+  CABLE_ANCHORS.push(o.tower != null ? [o.tower, anchor[1], anchor[0]] : anchor);
+  const ang = (Math.atan2(p[1] - anchor[1], p[0] - anchor[0]) * 180) / Math.PI + 90;
+  return wireDraw(S, anchor, p) + handleDraw(S, p, ang, o.handle || "d");
+}
+// kaydedilen makaralar için kuleleri çiz (aynı x'teki makaralar tek kulede)
+function cableTowers() {
+  const S = CABLE_STYLES[CABLE_STYLE] || CABLE_STYLES.klasik, byX = new Map();
+  let beams = "";
+  for (const [x, y, bx] of CABLE_ANCHORS) {
+    const k = Math.round(Math.min(113, Math.max(7, x)));
+    (byX.get(k) || byX.set(k, []).get(k)).push(y);
+    if (bx != null) beams += beamDraw(k, bx, y, S.tower);
+  }
+  CABLE_ANCHORS = [];
+  return [...byX].map(([x, ys]) => towerDraw(x, ys, S.tower)).join("") + beams;
+}
 const bag = (p) => rect(p[0] - 5.5, p[1], 11, 12, C.plate, 3.5) + rect(p[0] - 3.5, p[1] + 5, 7, 4.5, "rgba(255,255,255,.22)", 1.5) + `<path d="M${f1(p[0] - 2.5)} ${f1(p[1] + 0.5)} q2.5 -4 5 0" fill="none" stroke="${C.prop}" stroke-width="1.4"/>`;
 const floor = () => `<rect x="2" y="${FLOOR + 3}" width="116" height="1.6" rx=".8" fill="${C.dark}"/>`;
 const handle = (p) => rect(p[0] - 1.6, p[1] - 5, 3.2, 10, C.plate, 1.4);
@@ -458,7 +577,7 @@ const PATTERNS = {
   chest_press: { hl: ["chest", "ua"], A: { hip: [46, 66], t: -4, th: 90, sh: 180, ft: 90, ua: 160, fa: 75 }, B: { hip: [46, 66], t: -4, th: 90, sh: 180, ft: 90, ua: 92, fa: 90 },
     props: { back: () => seat(32, 70) + backPad(38, 68, 36, 34), front: atWrist((p) => rect(p[0] - 1.5, p[1] - 6, 3, 12, C.plate, 1)) } },
   crossover: { hl: ["chest"], view: "front", A: { a: 125, b: 115 }, B: { a: 20, b: -8 },
-    props: { back: () => dot([10, 6], 2.5, C.dark) + dot([110, 6], 2.5, C.dark), front: (J) => seg([10, 6], J.wrL, 1.1, C.prop) + seg([110, 6], J.wrR, 1.1, C.prop) } },
+    props: { front: (J) => cable(J.wrL, [10, 6]) + cable(J.wrR, [110, 6]) } },
   rev_fly: { hl: ["delt"], view: "front", A: { a: 15, b: -10 }, B: { a: 92, b: 92 }, props: { front: (J) => dumbbell(J.wrL) + dumbbell(J.wrR) } },
   pushup: { hl: ["chest", "ua"], A: { hip: [64, 73], t: -74, th: 106, sh: 106, ft: 180, ua: 180, fa: 180 }, B: { hip: [64, 81], t: -82, th: 99, sh: 99, ft: 180, ua: 140, fa: 226 }, props: {} },
   pike_pushup: { hl: ["delt", "ua"], A: { hip: [62, 46], t: -150, th: 150, sh: 150, ft: 180, ua: 215, fa: 215 }, B: { hip: [62, 50], t: -142, th: 146, sh: 146, ft: 180, ua: 160, fa: 230 }, props: {} },
@@ -473,7 +592,7 @@ const PATTERNS = {
   leg_raise: { hl: ["abs"], A: { hip: [60, 52], t: 0, th: 180, sh: 180, ft: 90, ua: 0, fa: 0 }, B: { hip: [60, 52], t: -6, th: 85, sh: 85, ft: 0, ua: 0, fa: 0 },
     props: { back: () => seg([38, -3], [82, -3], 3, C.prop) } },
   pulldown: { hl: ["torso", "ua"], A: { hip: [56, 70], t: -10, th: 88, sh: 180, ft: 90, ua: 8, fa: 4 }, B: { hip: [56, 70], t: -16, th: 88, sh: 180, ft: 90, ua: 150, fa: 352 },
-    props: { back: () => seat(42, 74), front: (J) => seg([60, -6], J.wr, 1.2, C.prop) + seg([J.wr[0] - 10, J.wr[1]], [J.wr[0] + 10, J.wr[1]], 2.5, C.plate) + rect(J.knee[0] - 4, J.knee[1] - 7, 8, 4, C.prop, 1) } },
+    props: { back: () => seat(42, 74), front: (J) => cable(J.wr, [60, -6], { handle: "bar", tower: 100 }) + rect(J.knee[0] - 4, J.knee[1] - 7, 8, 4, C.prop, 1) } },
   straight_pulldown: { hl: ["torso"], A: { ank: [60, FLOOR], su: 5, tu: -8, t: 22, ua: 70, fa: 70 }, B: { ank: [60, FLOOR], su: 5, tu: -8, t: 22, ua: 172, fa: 172 },
     props: { front: (J) => cable(J.wr, [104, 2]) } },
   row_bent: { hl: ["torso", "ua"], A: { ank: [60, FLOOR], su: 10, tu: -25, t: 62, ua: 180, fa: 180 }, B: { ank: [60, FLOOR], su: 10, tu: -25, t: 62, ua: 252, fa: 178 },
@@ -482,7 +601,7 @@ const PATTERNS = {
     props: { back: () => rect(86, 72, 26, 5, C.dark) + rect(97, 77, 4, 19, C.dark, 1), front: atWrist(dumbbell) } },
   row_seated: { hl: ["torso", "ua"], A: { hip: [42, 74], t: 22, th: 80, sh: 102, ft: 10, ua: 96, fa: 96 }, B: { hip: [42, 74], t: -6, th: 80, sh: 102, ft: 10, ua: 205, fa: 92 },
     props: { back: () => rect(28, 78, 30, 5, C.dark) + seg([88, 62], [88, 84], 5, C.dark), front: (J) => cable(J.wr, [114, 70]) } },
-  face_pull: { hl: ["delt", "torso"], A: { ...STAND, ua: 75, fa: 75 }, B: { ...STAND, ua: 268, fa: 40 }, props: { front: (J) => cable(J.wr, [114, 14]) } },
+  face_pull: { hl: ["delt", "torso"], A: { ...STAND, ua: 75, fa: 75 }, B: { ...STAND, ua: 268, fa: 40 }, props: { front: (J) => cable(J.wr, [114, 14], { handle: "rope" }) } },
   inverted_row: { hl: ["torso", "ua"], A: { hip: [70, 81], t: -73, th: 106, sh: 106, ft: 180, ua: 2, fa: 0 }, B: { hip: [68, 71], t: -64, th: 114, sh: 114, ft: 180, ua: 62, fa: -48 },
     props: { back: () => seg([30, 46], [58, 46], 3, C.prop) + rect(32, 46, 3, 50, C.dark, 1) } },
   ohp: { hl: ["delt", "ua"], A: { ...STAND, ua: 158, fa: 2 }, B: { ...STAND, ua: 2, fa: 0 }, props: { front: atWrist((p) => plate(p, 8)) } },
@@ -491,7 +610,7 @@ const PATTERNS = {
   thruster: { hl: ["th", "delt"], A: { ...STAND, su: 30, tu: -78, t: 30, ua: 160, fa: 20 }, B: { ...STAND, ua: 2, fa: 0 }, props: { front: atWrist(kettle) } },
   front_raise: { hl: ["delt"], A: { ...STAND, ua: 176, fa: 176 }, B: { ...STAND, ua: 90, fa: 90 }, props: { front: atWrist(dumbbell) } },
   lateral: { hl: ["delt"], view: "front", A: { a: 12, b: 10 }, B: { a: 86, b: 88 }, props: { front: (J) => dumbbell(J.wrL) + dumbbell(J.wrR) } },
-  lateral_cable: { hl: ["delt"], view: "front", A: { a: -12, b: -14 }, B: { a: 84, b: 86 }, props: { back: () => dot([104, FLOOR], 2.5, C.dark), front: (J) => seg([104, FLOOR], J.wrL, 1.1, C.prop) + rect(J.wrL[0] - 2, J.wrL[1] - 1.5, 4, 3, C.plate, 1) } },
+  lateral_cable: { hl: ["delt"], view: "front", A: { a: -12, b: -14 }, B: { a: 84, b: 86 }, props: { front: (J) => cable(J.wrL, [104, FLOOR]) } },
   lateral_bag: { hl: ["delt"], view: "front", A: { a: 12, b: 10 }, B: { a: 86, b: 88 }, props: { front: (J) => bag(J.wrL) + bag(J.wrR) } },
   upright_row: { hl: ["delt", "traps"], view: "front", A: { a: 8, b: -14 }, B: { a: 100, b: -42 }, props: { front: (J) => seg(J.wrL, J.wrR, 2.5, C.prop) + plate([J.wrL[0] - 4, J.wrL[1]], 6) + plate([J.wrR[0] + 4, J.wrR[1]], 6) } },
   shrug: { hl: ["traps"], view: "front", A: { a: 4, b: 4, lift: 0 }, B: { a: 4, b: 4, lift: -5 }, props: { front: (J) => dumbbell(J.wrL) + dumbbell(J.wrR) } },
@@ -514,13 +633,13 @@ const PATTERNS = {
     props: { back: () => seat(36, 70), front: atWrist(dumbbell) } },
   wrist_curl: { hl: ["fa"], A: { hip: [50, 66], t: 30, th: 90, sh: 180, ft: 90, ua: 150, fa: 100 }, B: { hip: [50, 66], t: 30, th: 90, sh: 180, ft: 90, ua: 150, fa: 78 },
     props: { back: () => seat(36, 70), front: atWrist(dumbbell) } },
-  pushdown: { hl: ["ua"], A: { ...STAND, t: 8, ua: 175, fa: 40 }, B: { ...STAND, t: 8, ua: 176, fa: 176 }, props: { front: (J) => cable(J.wr, [78, -6]) } },
+  pushdown: { hl: ["ua"], A: { ...STAND, t: 8, ua: 175, fa: 40 }, B: { ...STAND, t: 8, ua: 176, fa: 176 }, props: { front: (J) => cable(J.wr, [78, -6], { handle: "short" }) } },
   kickback: { hl: ["ua"], A: { ank: [60, FLOOR], su: 10, tu: -25, t: 68, ua: 250, fa: 180 }, B: { ank: [60, FLOOR], su: 10, tu: -25, t: 68, ua: 250, fa: 252 }, props: { front: atWrist(dumbbell) } },
   oh_ext: { hl: ["ua"], A: { ...STAND, ua: 350, fa: 200 }, B: { ...STAND, ua: 352, fa: 355 }, props: { front: atWrist(dumbbell) } },
   skull: { hl: ["ua"], A: { ...LIE, ua: 345, fa: 255 }, B: { ...LIE, ua: 350, fa: 355 }, props: { back: bench, front: atWrist((p) => plate(p, 7)) } },
   crunch: { hl: ["abs"], A: { hip: [62, 87], t: -90, th: 45, sh: 160, ft: 90, ua: -55, fa: 70 }, B: { hip: [62, 87], t: -58, th: 45, sh: 160, ft: 90, ua: -25, fa: 100 }, props: {} },
   crunch_cable: { hl: ["abs"], A: { knee: [62, 90], tu: 0, sh: 270, ft: 180, t: 5, ua: 20, fa: 200 }, B: { knee: [62, 90], tu: 5, sh: 270, ft: 180, t: 100, ua: 115, fa: 290 },
-    props: { front: (J) => cable(J.wr, [74, -6]) } },
+    props: { front: (J) => cable(J.wr, [74, -6], { handle: "rope" }) } },
   bicycle: { hl: ["abs"], A: { hip: [64, 86], t: -62, th: 40, sh: 110, th2: 90, sh2: 92, ft: 90, ua: -40, fa: 80 }, B: { hip: [64, 86], t: -62, th: 90, sh: 92, th2: 40, sh2: 110, ft: 90, ua: -20, fa: 110 }, props: {} },
   twist: { hl: ["abs"], A: { hip: [56, 86], t: -28, th: 55, sh: 105, ft: 90, ua: 130, fa: 75 }, B: { hip: [56, 86], t: -28, th: 55, sh: 105, ft: 90, ua: 175, fa: 120 }, props: { front: atWrist((p) => plate(p, 5)) } },
   plank: { hl: ["abs"], A: { hip: [62, 79], t: -82, th: 98, sh: 98, ft: 180, ua: 180, fa: 270 }, B: { hip: [62, 77.5], t: -81, th: 98, sh: 98, ft: 180, ua: 180, fa: 270 }, props: {} },
@@ -538,7 +657,7 @@ for (const k of ["pushup", "pike_pushup", "mountain", "plank", "leg_curl", "supe
 // ---- makine / kablo kalıpları ----
 Object.assign(PATTERNS, {
   crossover_mid: { hl: ["chest"], view: "front", A: { a: 92, b: 96 }, B: { a: 22, b: -12 },
-    props: { back: () => dot([6, 26], 2.5, C.dark) + dot([114, 26], 2.5, C.dark), front: (J) => seg([6, 26], J.wrL, 1.1, C.prop) + seg([114, 26], J.wrR, 1.1, C.prop) } },
+    props: { front: (J) => cable(J.wrL, [6, 26]) + cable(J.wrR, [114, 26]) } },
   crossover_low: { hl: ["chest", "delt"], A: { ank: [62, FLOOR], su: 4, tu: -4, t: 8, ua: 205, fa: 200 }, B: { ank: [62, FLOOR], su: 4, tu: -4, t: 8, ua: 50, fa: 45 },
     props: { front: (J) => cable(J.wr, [28, FLOOR]) } },
   cable_press: { hl: ["chest", "ua"], A: { ank: [62, FLOOR], su: 6, tu: -6, t: 10, ua: 205, fa: 80 }, B: { ank: [62, FLOOR], su: 6, tu: -6, t: 10, ua: 92, fa: 90 },
@@ -554,13 +673,13 @@ Object.assign(PATTERNS, {
   lateral_machine: { hl: ["delt"], view: "front", A: { a: 14, b: 40, py: 64 }, B: { a: 88, b: 120, py: 64 },
     props: { back: () => rect(44, 66, 32, 5, C.dark) + rect(57, 71, 6, 25, C.dark, 1), front: (J) => pad(J.elbL, 6, 6) + pad(J.elbR, 6, 6) } },
   cable_y: { hl: ["delt", "traps"], view: "front", A: { a: -14, b: -14 }, B: { a: 145, b: 148 },
-    props: { back: () => dot([104, FLOOR], 2.5, C.dark), front: (J) => seg([104, FLOOR], J.wrL, 1.1, C.prop) + rect(J.wrL[0] - 2, J.wrL[1] - 1.5, 4, 3, C.plate, 1) } },
+    props: { front: (J) => cable(J.wrL, [104, FLOOR]) } },
   cable_front_raise: { hl: ["delt"], A: { ...STAND, ua: 172, fa: 172 }, B: { ...STAND, ua: 92, fa: 92 }, props: { front: (J) => cable(J.wr, [40, FLOOR]) } },
   cable_rear: { hl: ["delt"], view: "front", A: { a: -20, b: -30 }, B: { a: 92, b: 92 },
-    props: { back: () => dot([10, 26], 2.5, C.dark) + dot([110, 26], 2.5, C.dark), front: (J) => seg([110, 26], J.wrL, 1.1, C.prop) + seg([10, 26], J.wrR, 1.1, C.prop) } },
+    props: { front: (J) => cable(J.wrL, [110, 26]) + cable(J.wrR, [10, 26]) } },
   rear_delt_row: { hl: ["delt", "torso"], A: { ...STAND, ua: 88, fa: 88 }, B: { ...STAND, ua: 280, fa: 95 }, props: { front: (J) => cable(J.wr, [114, 26]) } },
   high_cable_curl: { hl: ["ua"], view: "front", A: { a: 88, b: 90 }, B: { a: 88, b: 172 },
-    props: { back: () => dot([6, 20], 2.5, C.dark) + dot([114, 20], 2.5, C.dark), front: (J) => seg([6, 20], J.wrL, 1.1, C.prop) + seg([114, 20], J.wrR, 1.1, C.prop) } },
+    props: { front: (J) => cable(J.wrL, [6, 20]) + cable(J.wrR, [114, 20]) } },
   bayesian: { hl: ["ua"], A: { ank: [64, FLOOR], su: 4, tu: -4, t: 8, ua: 205, fa: 205 }, B: { ank: [64, FLOOR], su: 4, tu: -4, t: 8, ua: 205, fa: 40 }, props: { front: (J) => cable(J.wr, [18, FLOOR]) } },
   tri_machine: { hl: ["ua"], A: { hip: [48, 66], t: 4, th: 90, sh: 180, ft: 90, ua: 125, fa: 22 }, B: { hip: [48, 66], t: 4, th: 90, sh: 180, ft: 90, ua: 125, fa: 128 },
     props: { back: () => seat(34, 70) + seg([56, 44], [72, 58], 6, C.dark), front: atWrist(handle) } },
@@ -576,9 +695,9 @@ Object.assign(PATTERNS, {
     props: { back: (J) => seg(step(J.hip, 48, 10), step(J.hip, 48, 26), 6, C.dark) + rect(84, 40, 4, 56, C.dark, 1) } },
   pull_through: { hl: ["glute", "th"], A: { ank: [62, FLOOR], su: 8, tu: -32, t: 72, ua: 205, fa: 210 }, B: { ...STAND, ank: [62, FLOOR], ua: 182, fa: 186 }, props: { front: (J) => cable(J.wr, [14, FLOOR]) } },
   cable_abd: { hl: ["glute"], view: "front", A: { a: 30, b: 20, gR: 4 }, B: { a: 30, b: 20, gR: 34 },
-    props: { back: () => rect(28, 10, 4, 86, C.dark, 1), front: (J) => seg([30, FLOOR], J.ankR, 1.1, C.prop) } },
+    props: { front: (J) => cable(J.ankR, [30, FLOOR], { handle: "strap" }) } },
   cable_add: { hl: ["th"], view: "front", A: { a: 10, b: 10, gR: 30 }, B: { a: 10, b: 10, gR: -6 },
-    props: { back: () => rect(108, 10, 4, 86, C.dark, 1), front: (J) => seg([110, FLOOR], J.ankR, 1.1, C.prop) } },
+    props: { front: (J) => cable(J.ankR, [110, FLOOR], { handle: "strap" }) } },
   leg_press_calf: { hl: ["sh"], A: { hip: [44, 70], t: -58, th: 68, sh: 78, ua: 150, fa: 100, ft: 345 }, B: { hip: [44, 70], t: -58, th: 68, sh: 78, ua: 150, fa: 100, ft: 300 },
     props: { back: (J) => backPad(36, 76, 16, 50) + seg([J.toe[0] + 3, J.toe[1] - 12], [J.toe[0] + 9, J.toe[1] + 10], 5, C.prop) } },
   donkey_calf: { hl: ["sh"], A: { ank: [62, FLOOR], su: 0, tu: -2, t: 82, ua: 172, fa: 172 }, B: { ank: [62, FLOOR - 5], su: 0, tu: -2, t: 82, ua: 172, fa: 172, ft: 135 },
@@ -592,10 +711,15 @@ Object.assign(PATTERNS, {
     props: { back: (J, P) => { // kablo, eğilmiş gövdedeki ele bağlanır (grubun dışında çizilir)
       const r = rad(P.tiltDeg || 0), c = [60, J.pel[1]], d = [J.wrR[0] - c[0], J.wrR[1] - c[1]];
       const w = [c[0] + d[0] * Math.cos(r) - d[1] * Math.sin(r), c[1] + d[0] * Math.sin(r) + d[1] * Math.cos(r)];
-      return dot([110, FLOOR], 2.5, C.dark) + seg([110, FLOOR], w, 1.1, C.prop);
+      return cable(w, [110, FLOOR]);
     } } },
 });
 PATTERNS.reverse_hyper.flip = true;
+// Machine Fly (pec deck): kablosuz makine kolları; dumbbell fly: dumbbell
+PATTERNS.pec_deck = { ...PATTERNS.crossover_mid, props: {
+  back: () => rect(32, -6, 3, FLOOR + 2, C.metal, 1) + rect(85, -6, 3, FLOOR + 2, C.metal, 1) + rect(32, -8, 56, 3, C.metal, 1.2),
+  front: (J) => [[J.wrL, [42, -2]], [J.wrR, [78, -2]]].map(([w, piv]) => seg(piv, w, 2.2, C.metal) + rect(w[0] - 1.6, w[1] - 5, 3.2, 10, C.padC, 1.4) + dot(piv, 1.8, C.prop)).join("") } };
+PATTERNS.fly_db = { ...PATTERNS.crossover, props: { front: (J) => dumbbell(J.wrL) + dumbbell(J.wrR) } };
 // yan eğilme: gövde ön görünümde yana yatar
 PATTERNS.side_bend.tilt = -16; // kablonun tersine eğilir
 
@@ -614,22 +738,22 @@ Object.assign(PATTERNS, {
   lunge_smith: variant("lunge", { back: smithRails, front: (J, P) => plate(step(step(J.sho, P.t + 180, 4), P.t - 90, 3), 7) }),
   rdl_smith: variant("rdl", { back: smithRails }),
   calf_smith: variant("calf", { back: smithRails, front: (J, P) => plate(step(step(J.sho, P.t + 180, 4), P.t - 90, 3), 7) }),
-  shrug_cable: variant("shrug", { back: () => dot([60, FLOOR], 2.5, C.dark), front: (J) => seg([60, FLOOR], J.wrL, 1.1, C.prop) + seg([60, FLOOR], J.wrR, 1.1, C.prop) }),
+  shrug_cable: variant("shrug", { front: (J) => cable(J.wrL, [60, FLOOR], { tower: 104 }) + cable(J.wrR, [60, FLOOR], { tower: 104 }) }),
   shrug_smith: variant("shrug", { back: smithRails, front: (J) => seg([J.wrL[0] - 6, J.wrL[1]], [J.wrR[0] + 6, J.wrR[1]], 2.5, C.prop) }),
-  upright_cable: variant("upright_row", { back: () => dot([60, FLOOR], 2.5, C.dark), front: (J) => seg([60, FLOOR], mid(J.wrL, J.wrR), 1.1, C.prop) + seg(J.wrL, J.wrR, 2.5, C.prop) }),
+  upright_cable: variant("upright_row", { front: (J) => cable(mid(J.wrL, J.wrR), [60, FLOOR], { handle: "short", tower: 104 }) }),
   curl_machine: variant("preacher", { front: atWrist(handle) }),
   kickback_cable: variant("kickback", { front: (J) => cable(J.wr, [104, FLOOR]) }),
   oh_ext_cable: variant("oh_ext", { front: (J) => cable(J.wr, [40, FLOOR]) }),
   wrist_curl_cable: variant("wrist_curl", { front: (J) => cable(J.wr, [72, FLOOR]) }),
-  rope_pullover: variant("straight_pulldown", { front: (J) => cable(J.wr, [104, 2]) + seg([J.wr[0] - 3, J.wr[1] + 2], [J.wr[0] + 3, J.wr[1] + 5], 2, C.plate) }),
-  kick_cable: variant("glute_kick", { front: (J) => cable(J.ank, [110, FLOOR]) }),
+  rope_pullover: variant("straight_pulldown", { front: (J) => cable(J.wr, [104, 2], { handle: "rope" }) }),
+  kick_cable: variant("glute_kick", { front: (J) => cable(J.ank, [110, FLOOR], { handle: "strap" }) }),
   torso_rotation: variant("twist", { back: () => seat(30, 84) }),
 });
 
 // Hareket -> kalıp
 const EX_ANIM = {
   bench: "bench", db_bench: "bench_db", close_bench: "bench", incline_bench: "incline", incline_db: "incline", decline_bench: "decline",
-  chest_press: "chest_press", db_fly: "crossover", cable_fly: "crossover", pec_deck: "crossover", pushup: "pushup", diamond_pushup: "pushup",
+  chest_press: "chest_press", db_fly: "fly_db", cable_fly: "crossover", pec_deck: "pec_deck", pushup: "pushup", diamond_pushup: "pushup",
   pike_pushup: "pike_pushup", dips_chest: "dips", dips_tri: "bench_dips",
   deadlift: "deadlift", rack_pull: "rdl", rdl: "rdl", good_morning: "good_morning", sl_rdl_bw: "sl_rdl", kb_swing: "kb_swing", clean: "clean",
   pullup: "pullup", chinup: "pullup", leg_raise: "leg_raise", lat_pulldown: "pulldown", close_pulldown: "pulldown", pullover: "straight_pulldown",
@@ -666,7 +790,7 @@ const EX_ANIM = {
   glute_kick_machine: "glute_kick", cable_glute_kick: "kick_cable", hip_thrust_machine: "hip_thrust", cable_pull_through: "pull_through",
   cable_abduction: "cable_abd", cable_adduction: "cable_add", leg_press_calf: "leg_press_calf", smith_calf: "calf_smith", donkey_calf: "donkey_calf",
   ab_machine: "ab_machine", torso_rotation: "torso_rotation", captain_chair: "captain_chair", pallof_press: "pallof", cable_side_bend: "side_bend",
-  converging_press: "chest_press", vertical_chest_press: "chest_press", incline_machine_fly: "crossover", machine_pullover: "straight_pulldown",
+  converging_press: "chest_press", vertical_chest_press: "chest_press", incline_machine_fly: "pec_deck", machine_pullover: "straight_pulldown",
   iso_pulldown: "pulldown", iso_low_row: "row_machine", machine_shrug: "shrug_smith", iso_shoulder_press: "press_seated", machine_rear_row: "rear_delt_row",
   machine_oh_tri: "oh_ext", machine_hammer_curl: "curl_machine", horizontal_leg_press: "leg_press", vertical_leg_press: "leg_press", v_squat: "hack_squat",
   squat_press_machine: "hack_squat", sissy_squat_machine: "hack_squat", single_leg_ext: "leg_ext", kneeling_leg_curl: "standing_leg_curl", multi_hip: "glute_kick",
@@ -706,7 +830,9 @@ function animFrame(key, k, style) {
   // seçili tarzın paletini uygula, çiz, geri al
   const st = STYLES[style || ANIM_STYLE] || {};
   Object.assign(C, C_BASE, st); STY = st;
-  const out = floor() + (front ? drawFront(J, hl, props, P) : st.stick ? drawSideStick(J, hl, props, P) : drawSide(J, hl, props, P, !!pat.flip));
+  CABLE_ANCHORS = [];
+  const fig = front ? drawFront(J, hl, props, P) : st.stick ? drawSideStick(J, hl, props, P) : drawSide(J, hl, props, P, !!pat.flip);
+  const out = floor() + cableTowers() + fig;
   Object.assign(C, C_BASE); STY = {};
   return out;
 }

@@ -63,22 +63,22 @@ const STYLES = {
   sporcu: { body: "#f1c4a5", bodyShade: "#dba888", far: "#bd8f74", farShade: "#a67a61", shirt: "#3b82f6", shorts: "#1f2a44", shortsFar: "#161f33", shoe: "#ffffff", shoeFar: "#b9c2d3", sole: "#ef4444", hair: "#3b2a20" },
   cizgi: { stick: true },
   // kas gösteren figürler için: tamamen beyaz insan, renk sadece kaslarda
-  beyaz: { body: "#f4f6fa", bodyShade: "#dfe4ec", far: "#aab3c3", farShade: "#98a2b4", shorts: "#dde2ea", shortsFar: "#b9c1cf", shoe: "#f4f6fa", shoeFar: "#aab3c3", sole: "#b4bdcc", hair: "#cfd6e1" },
+  beyaz: { stroke: "#b3bccb", strokeFar: "#8d97a9", strokeW: 0.42, body: "#f4f6fa", bodyShade: "#dfe4ec", far: "#aab3c3", farShade: "#98a2b4", shorts: "#dde2ea", shortsFar: "#b9c1cf", shoe: "#f4f6fa", shoeFar: "#aab3c3", sole: "#b4bdcc", hair: "#cfd6e1" },
 };
 const BODY_STYLE = "beyaz";
 let ANIM_STYLE = "sporcu";
 let STY = {};
 const f1 = (n) => n.toFixed(1);
 const seg = (a, b, w, c) => `<line x1="${f1(a[0])}" y1="${f1(a[1])}" x2="${f1(b[0])}" y2="${f1(b[1])}" stroke="${c}" stroke-width="${w}" stroke-linecap="round"/>`;
-const dot = (p, r, c, extra = "") => `<circle${STY.stroke && !extra && (c === C.body || c === C.bodyShade || c === C.shorts || c === C.hair) ? ` stroke="${STY.stroke}" stroke-width="0.9"` : ""} cx="${f1(p[0])}" cy="${f1(p[1])}" r="${r}" fill="${c}" ${extra}/>`;
+const dot = (p, r, c, extra = "") => `<circle${STY.stroke && !extra && (c === C.body || c === C.bodyShade || c === C.shorts || c === C.hair) ? ` stroke="${STY.stroke}" stroke-width="${STY.strokeW || 0.9}"` : ""} cx="${f1(p[0])}" cy="${f1(p[1])}" r="${r}" fill="${c}" ${extra}/>`;
 const rect = (x, y, w, h, c, r = 1.5) => `<rect x="${f1(x)}" y="${f1(y)}" width="${f1(w)}" height="${f1(h)}" rx="${r}" fill="${c}"/>`;
 const along = (a, b, k) => [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k];
 const angOf = (a, b) => (Math.atan2(b[0] - a[0], -(b[1] - a[1])) * 180) / Math.PI; // a -> b yönü (0 = yukarı)
 
 // İncelen kapsül: a ucunda r1, b ucunda r2 yarıçaplı yuvarlak uçlu şekil
 function cap(a, b, r1, r2, fill, extra = "") {
-  if (STY.stroke && !extra && (fill === C.body || fill === C.bodyShade || fill === C.shorts || fill === C.shoe || fill === C.hair)) extra = `stroke="${STY.stroke}" stroke-width="0.9"`;
-  else if (STY.stroke && !extra && (fill === C.far || fill === C.farShade || fill === C.shortsFar || fill === C.shoeFar)) extra = `stroke="${STY.strokeFar}" stroke-width="0.8"`;
+  if (STY.stroke && !extra && (fill === C.body || fill === C.bodyShade || fill === C.shorts || fill === C.shoe || fill === C.hair)) extra = `stroke="${STY.stroke}" stroke-width="${STY.strokeW || 0.9}"`;
+  else if (STY.stroke && !extra && (fill === C.far || fill === C.farShade || fill === C.shortsFar || fill === C.shoeFar)) extra = `stroke="${STY.strokeFar}" stroke-width="${STY.strokeW || 0.8}"`;
   const dx = b[0] - a[0], dy = b[1] - a[1], len = Math.hypot(dx, dy);
   if (len < 0.05) return dot(a, Math.max(r1, r2), fill, extra);
   const nx = -dy / len, ny = dx / len;
@@ -86,10 +86,91 @@ function cap(a, b, r1, r2, fill, extra = "") {
   const p3 = [b[0] - nx * r2, b[1] - ny * r2], p4 = [a[0] - nx * r1, a[1] - ny * r1];
   return `<path d="M${f1(p1[0])} ${f1(p1[1])}L${f1(p2[0])} ${f1(p2[1])}A${r2} ${r2} 0 0 0 ${f1(p3[0])} ${f1(p3[1])}L${f1(p4[0])} ${f1(p4[1])}A${r1} ${r1} 0 0 0 ${f1(p1[0])} ${f1(p1[1])}Z" fill="${fill}" ${extra}/>`;
 }
-// Kas vurgusu: uzvun ön ya da arka yüzünde, hafif parlamalı yeşil şerit
-function muscle(a, b, k1, k2, normalAng, off, r) {
-  const s = step(along(a, b, k1), normalAng, off), e = step(along(a, b, k2), normalAng, off);
-  return cap(s, e, r + 1.3, r + 1.1, C.hlGlow) + cap(s, e, r, r * 0.82, C.hl);
+// cap() ile aynı şeklin sadece yol verisi
+function capD(a, b, r1, r2) {
+  const dx = b[0] - a[0], dy = b[1] - a[1], len = Math.hypot(dx, dy) || 0.01;
+  const nx = -dy / len, ny = dx / len, P = (p, k, r) => `${f1(p[0] + nx * r * k)} ${f1(p[1] + ny * r * k)}`;
+  return `M${P(a, 1, r1)}L${P(b, 1, r2)}A${r2} ${r2} 0 0 0 ${P(b, -1, r2)}L${P(a, -1, r1)}A${r1} ${r1} 0 0 0 ${P(a, 1, r1)}Z`;
+}
+
+// ---- kas boyama: tek renk yerine renk geçişli dolgu ----
+// Seçenekler önizlemede karşılaştırılır; MUSCLE_STYLE uygulamanın her yerinde kullanılır.
+const MUSCLE_STYLES = {
+  anatomik: "Anatomik geçiş",  // üstten açık, alta doğru koyulaşan ton + ince kenar
+  hacim:    "Hacimli",          // ışık kasın üst-iç kısmında, kenarlara doğru koyulaşır
+  silindir: "Silindir ışık",    // uzvun bir yanından vuran ışık, karşı kenar gölgede
+  lifli:    "Kas lifli",        // anatomik geçiş + kas lifi yönünde ince çizgiler
+  yumusak:  "Yumuşak geçiş",    // ortası dolu, kenarları vücuda doğru eriyen ton
+};
+let MUSCLE_STYLE = "anatomik";
+const MUSCLE_ALPHA = 0.8;
+let MSEQ = 0;
+
+// d: kas şekli, a -> b: kasın ekseni (lif yönü), w: yarı genişlik, c: kas rengi
+function mPaint(d, a, b, w, c = C.hl, style = MUSCLE_STYLE) {
+  const id = "mg" + (++MSEQ).toString(36);
+  const L = tint(c, 0.42), M = c, D = tint(c, -0.28), DD = tint(c, -0.42);
+  const dx = b[0] - a[0], dy = b[1] - a[1], len = Math.hypot(dx, dy) || 1;
+  const nx = (-dy / len) * w, ny = (dx / len) * w, cx = (a[0] + b[0]) / 2, cy = (a[1] + b[1]) / 2;
+  const st = (o, col, op = 1) => `<stop offset="${o}" stop-color="${col}"${op < 1 ? ` stop-opacity="${op}"` : ""}/>`;
+  const lin = (x1, y1, x2, y2, stops) => `<linearGradient id="${id}" gradientUnits="userSpaceOnUse" x1="${f1(x1)}" y1="${f1(y1)}" x2="${f1(x2)}" y2="${f1(y2)}">${stops}</linearGradient>`;
+  // kasın sınırı her stilde belirgin: koyu ince kontur; dolgu hafif saydam (vücudun gölgesi altından seçilir)
+  const edge = (op) => ` stroke="${tint(c, -0.5)}" stroke-opacity="${op}" stroke-width=".42" stroke-linejoin="round"`;
+  let defs, extra = edge(0.85) + ` fill-opacity="${MUSCLE_ALPHA}"`, over = "";
+  if (style === "hacim") {
+    defs = `<radialGradient id="${id}" cx=".45" cy=".4" r=".68" fx=".4" fy=".3">${st(0, L)}${st(0.5, M)}${st(1, DD)}</radialGradient>`;
+  } else if (style === "silindir") {
+    defs = lin(cx + nx, cy + ny, cx - nx, cy - ny, st(0, D) + st(0.3, L) + st(0.62, M) + st(1, DD));
+  } else if (style === "yumusak") {
+    defs = `<radialGradient id="${id}" cx=".5" cy=".45" r=".6">${st(0, tint(c, 0.12))}${st(0.55, M)}${st(0.85, M, 0.7)}${st(1, M, 0.25)}</radialGradient>`;
+  } else {
+    defs = lin(a[0], a[1], b[0], b[1], st(0, L) + st(0.5, M) + st(1, D));
+    if (style === "lifli") {
+      const pid = id + "f";
+      defs += `<pattern id="${pid}" patternUnits="userSpaceOnUse" width="1.15" height="6" patternTransform="rotate(${f1(angOf(a, b))} ${f1(cx)} ${f1(cy)})"><rect width=".3" height="6" fill="#fff" fill-opacity=".32"/></pattern>`;
+      over = `<path d="${d}" fill="url(#${pid})"/>`;
+    }
+  }
+  return `<defs>${defs}</defs><path d="${d}" fill="url(#${id})"${extra}/>${over}`;
+}
+
+// Uzvun içine tam oturan kas şekli: a -> b uzvunun (yarıçap r1 -> r2) t1..t2 arası,
+// enine lo..hi (-1..1, uzvun bir kenarından diğerine). Ortası dolgun, uçları hafif sivri.
+function mBand(a, b, t1, t2, r1, r2, o = {}) {
+  const { lo = -1, hi = 1, e = 0.55, ins = 0.35, b0 = 0.5, b1 = 0.5, prof } = o;
+  const dx = b[0] - a[0], dy = b[1] - a[1], len = Math.hypot(dx, dy) || 0.01, ux = dx / len, uy = dy / len, nx = -uy, ny = ux;
+  const N = 12;
+  const P = (t, f, s) => {
+    const r = Math.max(0.3, r1 + (r2 - r1) * t - ins) * (prof ? prof(s) : e + (1 - e) * Math.sin(Math.PI * s));
+    return [a[0] + dx * t + nx * f * r, a[1] + dy * t + ny * f * r];
+  };
+  const H = [], Lo = [];
+  for (let i = 0; i <= N; i++) { const s = i / N, t = t1 + (t2 - t1) * s; H.push(P(t, hi, s)); Lo.push(P(t, lo, s)); }
+  const pt = (p) => `${f1(p[0])} ${f1(p[1])}`;
+  const ctl = (p, q, dir, bulge) => {
+    const hw = Math.hypot(p[0] - q[0], p[1] - q[1]) / 2;
+    return [(p[0] + q[0]) / 2 + ux * dir * bulge * hw * 2, (p[1] + q[1]) / 2 + uy * dir * bulge * hw * 2];
+  };
+  return `M${pt(H[0])}` + H.slice(1).map((p) => `L${pt(p)}`).join("") +
+    `Q${pt(ctl(H[N], Lo[N], 1, b1))} ${pt(Lo[N])}` + Lo.slice(0, N).reverse().map((p) => `L${pt(p)}`).join("") +
+    `Q${pt(ctl(Lo[0], H[0], -1, b0))} ${pt(H[0])}Z`;
+}
+// Bir şekli verilen kırpma şekli (ör. gövde) içinde boya: kenarlar vücut hattını birebir izler
+function mClip(clipInner, body) {
+  const id = "mc" + (++MSEQ).toString(36);
+  return `<defs><clipPath id="${id}">${clipInner}</clipPath></defs><g clip-path="url(#${id})">${body}</g>`;
+}
+const DELT_PROF = (s) => 1 - 0.68 * Math.pow(s, 1.5);           // omuzda geniş, kola doğru sivrilen
+const FOREARM_PROF = (s) => (s < 0.3 ? 0.78 + 0.22 * (s / 0.3) : 1 - 0.55 * Math.pow((s - 0.3) / 0.7, 1.3)); // dirsek altında dolgun
+const THIGH_PROF = (s) => 1 - 0.42 * Math.pow(s, 2.2);            // üstte (şort altında) tam, dize doğru incelen
+const CALF_PROF = (s) => (s < 0.3 ? 0.72 + 0.28 * (s / 0.3) : 1 - 0.68 * Math.pow((s - 0.3) / 0.7, 1.2)); // baldır: üstte dolgun, aşil tendonuna sivrilen
+const mGlow = (d) => (C.hlGlow && C.hlGlow !== "transparent" ? `<path d="${d}" fill="none" stroke="${C.hlGlow}" stroke-width="2" stroke-linejoin="round"/>` : "");
+// Kas vurgusu: uzvun (yarıçap r1 -> r2) ön ya da arka yarısına oturan şekil
+function muscle(a, b, k1, k2, normalAng, r1, r2, o = {}) {
+  const dx = b[0] - a[0], dy = b[1] - a[1], len = Math.hypot(dx, dy) || 1;
+  const side = (-dy / len) * Math.sin(rad(normalAng)) + (dx / len) * -Math.cos(rad(normalAng)) >= 0 ? 1 : -1;
+  const d = mBand(a, b, k1, k2, r1, r2, { lo: side > 0 ? -0.05 : -1, hi: side > 0 ? 1 : 0.05, ...o });
+  return mGlow(d) + mPaint(d, along(a, b, k1), along(a, b, k2), (r1 + r2) / 2);
 }
 
 // ---- ekipman ----
@@ -143,13 +224,13 @@ function drawSide(J, hl, props, P, flip) {
   s += cap(J.sho, J.hip, R.sho, R.hipR, C.body);
   if (STY.shirt) s += cap(along(J.hip, J.sho, 0.9), J.hip, R.sho * 0.97, R.hipR, STY.shirt) + cap(along(J.hip, J.sho, 0.9), along(J.hip, J.sho, 0.5), R.sho * 0.97, 5.5, "rgba(255,255,255,.08)");
   // gövde kasları
-  if (has("back")) s += muscle(J.hip, J.sho, 0.18, 0.92, frontT + 180, 2.3, 2.9);
-  if (has("chest")) s += muscle(J.hip, J.sho, 0.6, 0.9, frontT, 2.3, 3.1);
-  if (has("abs")) s += muscle(J.hip, J.sho, 0.12, 0.54, frontT, 2.0, 2.7);
-  if (has("traps")) { const a = step(J.sho, frontT + 180, 1.8); s += cap(a, step(neck, frontT + 180, 0.8), 3.4, 2.6, C.hlGlow) + cap(a, step(neck, frontT + 180, 0.8), 2.5, 1.8, C.hl); }
+  if (has("back")) s += muscle(J.hip, J.sho, 0.16, 0.94, frontT + 180, R.hipR, R.sho, { e: 0.6 });
+  if (has("chest")) s += muscle(J.hip, J.sho, 0.58, 0.93, frontT, R.hipR, R.sho, { e: 0.5 });
+  if (has("abs")) s += muscle(J.hip, J.sho, 0.1, 0.54, frontT, R.hipR, R.sho, { e: 0.6 });
+  if (has("traps")) { const a = step(J.sho, frontT + 180, 1.8), b = step(neck, frontT + 180, 0.8), d = mBand(a, b, -0.1, 1.05, 2.9, 2.2, { e: 0.7, ins: 0.4 }); s += mGlow(d) + mPaint(d, b, a, 2.5); }
   // şort + kalça
   s += dot(J.hip, R.hipR + 0.3, C.shorts);
-  if (has("glute")) { const g = step(J.hip, frontT + 180, 2.2); s += dot(g, 5.3, C.hlGlow) + dot(g, 4.1, C.hl); }
+  if (has("glute")) { const g = step(J.hip, frontT + 180, 1.6), d = mBand(step(g, t, 3.6), step(g, t + 180, 4.2), 0, 1, 3.6, 3.2, { e: 0.75, ins: 0, b0: 0.7, b1: 0.8 }); s += mGlow(d) + mPaint(d, step(g, t, 3.6), step(g, t + 180, 4.2), 3.6); }
 
   // --- baş ---
   s += dot(step(J.head, frontT + 180, 1.3), RIG.head, C.hair) + dot(step(J.head, t, 1.2), RIG.head - 0.4, C.hair);
@@ -158,22 +239,22 @@ function drawSide(J, hl, props, P, flip) {
   // --- yakın bacak ---
   s += cap(J.hip, J.knee, R.th1, R.th2, C.body);
   const tf = limbFront(J.hip, J.knee);
-  if (has("th")) s += cap(along(J.hip, J.knee, 0.42), J.knee, R.th1 * 0.95 + 1, R.th2 + 0.9, C.hlGlow) + cap(along(J.hip, J.knee, 0.44), along(J.hip, J.knee, 0.96), R.th1 * 0.86, R.th2 * 0.9, C.hl);
+  if (has("th")) { const d = mBand(J.hip, J.knee, 0.4, 0.95, R.th1, R.th2, { prof: THIGH_PROF, b1: 0.6 }); s += mGlow(d) + mPaint(d, along(J.hip, J.knee, 0.4), along(J.hip, J.knee, 0.94), R.th1); }
   s += cap(J.hip, along(J.hip, J.knee, 0.46), R.th1 + 0.5, R.th1 * 0.95, C.shorts);
-  if (has("quads")) s += muscle(J.hip, J.knee, 0.5, 0.93, tf, 1.5, 2.5);
-  if (has("hams")) s += muscle(J.hip, J.knee, 0.5, 0.93, tf + 180, 1.5, 2.5);
+  if (has("quads")) s += muscle(J.hip, J.knee, 0.4, 0.95, tf, R.th1, R.th2, { prof: THIGH_PROF, b1: 0.6 });
+  if (has("hams")) s += muscle(J.hip, J.knee, 0.4, 0.95, tf + 180, R.th1, R.th2, { prof: THIGH_PROF, b1: 0.6 });
   s += cap(J.knee, J.ank, R.sh1, R.sh2, C.body);
-  if (has("calf")) s += muscle(J.knee, J.ank, 0.08, 0.62, limbFront(J.knee, J.ank) + 180, 1.15, 2.2);
+  if (has("calf")) s += muscle(J.knee, J.ank, 0.06, 0.66, limbFront(J.knee, J.ank) + 180, R.sh1, R.sh2, { prof: CALF_PROF, b0: 0.35 });
   s += cap(J.ank, J.toe, R.foot, R.foot * 0.8, C.shoe) + seg(step(J.ank, angOf(J.ank, J.toe) + (flip ? -90 : 90), R.foot * 0.75), step(J.toe, angOf(J.ank, J.toe) + (flip ? -90 : 90), R.foot * 0.6), 0.9, C.sole);
 
   // --- yakın kol ---
   s += cap(J.sho, J.elb, R.ua1, R.ua2, C.body);
   const af = limbFront(J.sho, J.elb);
-  if (has("biceps")) s += muscle(J.sho, J.elb, 0.2, 0.86, af, 1.0, 2.0);
-  if (has("triceps")) s += muscle(J.sho, J.elb, 0.16, 0.86, af + 180, 1.0, 2.0);
+  if (has("biceps")) s += muscle(J.sho, J.elb, 0.24, 0.9, af, R.ua1, R.ua2, { e: 0.4 });
+  if (has("triceps")) s += muscle(J.sho, J.elb, 0.2, 0.9, af + 180, R.ua1, R.ua2, { e: 0.4 });
   s += cap(J.elb, J.wr, R.fa1, R.fa2, C.body);
-  if (has("forearm")) s += cap(along(J.elb, J.wr, 0.08), along(J.elb, J.wr, 0.8), R.fa1 + 1, R.fa2 + 1, C.hlGlow) + cap(along(J.elb, J.wr, 0.1), along(J.elb, J.wr, 0.78), R.fa1 * 0.82, R.fa2 * 0.82, C.hl);
-  if (has("delt")) s += dot(J.sho, 5.2, C.hlGlow) + dot(J.sho, 4, C.hl);
+  if (has("forearm")) { const d = mBand(J.elb, J.wr, 0.06, 0.74, R.fa1, R.fa2, { prof: FOREARM_PROF }); s += mGlow(d) + mPaint(d, J.elb, along(J.elb, J.wr, 0.74), R.fa1); }
+  if (has("delt")) { const d = mBand(J.sho, J.elb, 0, 0.42, R.ua1, R.ua2, { ins: 0.4, prof: DELT_PROF, b0: 0.95, b1: 0.7 }); s += mGlow(d) + mPaint(d, J.sho, along(J.sho, J.elb, 0.42), R.ua1); }
   s += dot(J.wr, R.hand, C.bodyShade);
   if (props.front) s += props.front(J, P);
   return s;
@@ -217,14 +298,13 @@ function drawFront(J, hl, props, P) {
     C.hl = c || baseHl; C.hlGlow = P.noGlow ? "transparent" : c ? c + "50" : baseGlow;
     return true;
   };
-  // düz renk (geçiş yok)
-  const tone = (c = C.hl) => c;
-  const edge = () => "";
-  // yuvarlak kas şekilleri
-  const blob = (cx, cy, rx, ry, rot = 0) => `<ellipse cx="${f1(cx)}" cy="${f1(cy)}" rx="${f1(rx + 1.1)}" ry="${f1(ry + 1.1)}" fill="${C.hlGlow}"${rot ? ` transform="rotate(${rot} ${f1(cx)} ${f1(cy)})"` : ""}/>`
-    + `<ellipse cx="${f1(cx)}" cy="${f1(cy)}" rx="${f1(rx)}" ry="${f1(ry)}" fill="${tone()}" ${edge()}${rot ? ` transform="rotate(${rot} ${f1(cx)} ${f1(cy)})"` : ""}/>`;
-  const strip = (a, b, r1, r2) => cap(a, b, r1 + 1.1, r2 + 1, C.hlGlow) + cap(a, b, r1, r2, tone(), edge());
-  const shape = (d) => `<path d="${d}" fill="${C.hlGlow}" stroke="${C.hlGlow}" stroke-width="2.2" stroke-linejoin="round"/><path d="${d}" fill="${tone()}" ${edge()} stroke-linejoin="round"/>`;
+  // uzva oturan kas: a -> b uzvunun t1..t2 arası (yarıçap uzvun kendisinden)
+  const limb = (a, b, t1, t2, r1, r2, o) => { const d = mBand(a, b, t1, t2, r1, r2, o); return mGlow(d) + mPaint(d, along(a, b, t1), along(a, b, t2), (r1 + r2) / 2); };
+  // serbest şekil (eksen a -> b, yarı genişlik w)
+  const shape = (d, a, b, w) => mGlow(d) + mPaint(d, a, b, w);
+  const Q = (x, y) => `${f1(x)} ${f1(y)}`;
+  // köşeleri yuvarlatılmış dörtgen yol (karın kasları)
+  const rr = (x, y, w, h, r) => `M${Q(x + r, y)}H${f1(x + w - r)}Q${Q(x + w, y)} ${Q(x + w, y + r)}V${f1(y + h - r)}Q${Q(x + w, y + h)} ${Q(x + w - r, y + h)}H${f1(x + r)}Q${Q(x, y + h)} ${Q(x, y + h - r)}V${f1(y + r)}Q${Q(x, y)} ${Q(x + r, y)}Z`;
 
   const sy = J.shoL[1], py = J.pel[1];
   let s = `<ellipse cx="60" cy="${FLOOR + 3.6}" rx="24" ry="2.6" fill="rgba(0,0,0,.32)"/>`;
@@ -232,46 +312,67 @@ function drawFront(J, hl, props, P) {
   // bacaklar
   for (const [hip, knee, ank, sgn] of [[J.hipL, J.kneeL, J.ankL, -1], [J.hipR, J.kneeR, J.ankR, 1]]) {
     s += cap(hip, knee, R.th1, R.th2, C.body);
-    if (has("th")) s += strip(along(hip, knee, 0.47), along(hip, knee, 0.9), R.th1 * 0.72, R.th2 * 0.7);
-    if (has("adductors")) s += strip([along(hip, knee, 0.42)[0] - sgn * 2.2, along(hip, knee, 0.42)[1]], [along(hip, knee, 0.86)[0] - sgn * 1.3, along(hip, knee, 0.86)[1]], 1.9, 1.3);
+    if (has("th")) s += limb(hip, knee, 0.4, 0.95, R.th1, R.th2, { prof: THIGH_PROF, b1: 0.6 });
+    if (has("adductors")) s += limb(hip, knee, 0.4, 0.84, R.th1, R.th2, { lo: Math.min(sgn * 0.12, sgn), hi: Math.max(sgn * 0.12, sgn), prof: (u) => 1 - 0.75 * Math.pow(u, 1.4), b1: 0.9 });
     s += cap(hip, along(hip, knee, 0.46), R.th1 + 0.5, R.th1 * 0.95, C.shorts);
     s += cap(knee, ank, R.sh1, R.sh2, C.body) + cap(along(knee, ank, 0.12), along(knee, ank, 0.55), R.sh1 + 0.5, R.sh1 - 0.3, C.body);
-    if (has("calves")) s += strip(along(knee, ank, 0.12), along(knee, ank, 0.56), 2.7, 1.9);
+    if (has("calves")) s += limb(along(knee, ank, 0.12), along(knee, ank, 0.55), -0.05, 1.25, R.sh1 + 0.5, R.sh1 - 0.3, { prof: CALF_PROF, b0: 0.35, b1: 0.6 });
     s += `<ellipse cx="${f1(ank[0] + sgn * 1.1)}" cy="${f1(ank[1] + 1.7)}" rx="3.7" ry="2.3" fill="${C.shoe}"/>` + rect(ank[0] + sgn * 1.1 - 3.6, ank[1] + 3.1, 7.2, 1, C.sole, 0.5);
   }
   s += cap(J.hipL, J.hipR, 5, 5, C.shorts);
-  if (has("glutes")) for (const sgn of [-1, 1]) s += blob(60 + sgn * 4.4, py + 1.4, 4.2, 4.0, sgn * 12);
-  if (has("glute")) for (const sgn of [-1, 1]) s += blob(60 + sgn * 7, py + 1, 3.0, 3.4);
   if (P.tiltDeg) s += `<g transform="rotate(${f1(P.tiltDeg)} 60 ${f1(py)})">`;
   // gövde: omuzda geniş, belde dar
-  s += `<path d="M${f1(J.shoL[0] - 2.2)} ${f1(sy - 2.2)} Q60 ${f1(sy - 4.2)} ${f1(J.shoR[0] + 2.2)} ${f1(sy - 2.2)} Q${f1(J.shoR[0] + 3)} ${f1(sy + 6)} 66.5 ${f1(py - 9)} L67.5 ${f1(py + 1)} L52.5 ${f1(py + 1)} L53.5 ${f1(py - 9)} Q${f1(J.shoL[0] - 3)} ${f1(sy + 6)} ${f1(J.shoL[0] - 2.2)} ${f1(sy - 2.2)}Z" fill="${C.body}"${STY.stroke ? ` stroke="${STY.stroke}" stroke-width="0.9"` : ""}/>`;
+  const torsoD = `M${f1(J.shoL[0] - 2.2)} ${f1(sy - 2.2)} Q60 ${f1(sy - 4.2)} ${f1(J.shoR[0] + 2.2)} ${f1(sy - 2.2)} Q${f1(J.shoR[0] + 3)} ${f1(sy + 6)} 66.5 ${f1(py - 9)} L67.5 ${f1(py + 1)} L52.5 ${f1(py + 1)} L53.5 ${f1(py - 9)} Q${f1(J.shoL[0] - 3)} ${f1(sy + 6)} ${f1(J.shoL[0] - 2.2)} ${f1(sy - 2.2)}Z`;
+  s += `<path d="${torsoD}" fill="${C.body}"${STY.stroke ? ` stroke="${STY.stroke}" stroke-width="${STY.strokeW || 0.9}"` : ""}/>`;
+  const inTorso = (body) => mClip(`<path d="${torsoD}"/>`, body);
+  // kalça: şortun içine oturan iki yarım, altta kalça kıvrımı
+  if (has("glutes") || has("glute")) {
+    const clip = cap(J.hipL, J.hipR, 5, 5, "#000") + cap(J.hipL, along(J.hipL, J.kneeL, 0.46), R.th1 + 0.5, R.th1 * 0.95, "#000") + cap(J.hipR, along(J.hipR, J.kneeR, 0.46), R.th1 + 0.5, R.th1 * 0.95, "#000");
+    let g = "";
+    for (const sgn of [-1, 1]) g += shape(`M${Q(60 + sgn * 0.45, py + 0.9)}L${Q(60 + sgn * 13, py + 0.9)}L${Q(60 + sgn * 13, py + 8.6)}Q${Q(60 + sgn * 5.5, py + 10.4)} ${Q(60 + sgn * 0.45, py + 7.6)}Z`, [60 + sgn * 2, py + 1], [60 + sgn * 5.5, py + 9], 5);
+    s += mClip(clip, g);
+  }
   if (STY.shirt) s += `<path d="M${f1(J.shoL[0] + 1.2)} ${f1(sy - 2.6)} Q60 ${f1(sy + 3.2)} ${f1(J.shoR[0] - 1.2)} ${f1(sy - 2.6)} Q${f1(J.shoR[0] + 1.4)} ${f1(sy + 7)} 66.5 ${f1(py - 9)} L67.5 ${f1(py + 1)} L52.5 ${f1(py + 1)} L53.5 ${f1(py - 9)} Q${f1(J.shoL[0] - 1.4)} ${f1(sy + 7)} ${f1(J.shoL[0] + 1.2)} ${f1(sy - 2.6)}Z" fill="${STY.shirt}"/>`;
   s += cap([60, sy - 2], [60, sy - 6.5], 2.6, 2.4, C.bodyShade);
   // trapez: boyundan omuzlara inen yumuşak üçgen
-  if (has("traps")) s += shape(`M60 ${f1(sy - 7.4)} Q${f1(63.5)} ${f1(sy - 4.4)} ${f1(J.shoR[0] - 0.6)} ${f1(sy - 2.9)} Q60 ${f1(sy - 0.6)} ${f1(J.shoL[0] + 0.6)} ${f1(sy - 2.9)} Q${f1(56.5)} ${f1(sy - 4.4)} 60 ${f1(sy - 7.4)}Z`);
-  // göğüs: iki yuvarlak göğüs kası, ortada hafif ayrık
-  if (has("chest")) for (const sgn of [-1, 1]) s += shape(`M${f1(60 + sgn * 0.7)} ${f1(sy + 1.6)} Q${f1(60 + sgn * 5)} ${f1(sy + 0.4)} ${f1(60 + sgn * 8.6)} ${f1(sy + 2.6)} Q${f1(60 + sgn * 9.4)} ${f1(sy + 7.2)} ${f1(60 + sgn * 5)} ${f1(sy + 8.4)} Q${f1(60 + sgn * 1.2)} ${f1(sy + 8.2)} ${f1(60 + sgn * 0.7)} ${f1(sy + 1.6)}Z`);
-  // orta sırt: omuzlar arasında yuvarlak kalkan
-  if (has("back")) s += shape(`M${f1(54.4)} ${f1(sy + 1.6)} Q60 ${f1(sy - 0.4)} ${f1(65.6)} ${f1(sy + 1.6)} Q${f1(66.2)} ${f1(sy + 9)} ${f1(63.4)} ${f1(sy + 13.4)} Q60 ${f1(sy + 15.6)} ${f1(56.6)} ${f1(sy + 13.4)} Q${f1(53.8)} ${f1(sy + 9)} ${f1(54.4)} ${f1(sy + 1.6)}Z`);
-  // kanat: koltuk altından bele daralan iki kanat
-  if (has("lats")) for (const sgn of [-1, 1]) s += shape(`M${f1(60 + sgn * 3.2)} ${f1(sy + 6)} Q${f1(60 + sgn * 8.6)} ${f1(sy + 4.6)} ${f1(60 + sgn * 9.2)} ${f1(sy + 9.4)} Q${f1(60 + sgn * 8)} ${f1(py - 12)} ${f1(60 + sgn * 4.6)} ${f1(py - 8)} Q${f1(60 + sgn * 2.2)} ${f1(py - 12)} ${f1(60 + sgn * 3.2)} ${f1(sy + 6)}Z`);
-  // karın: 2 x 3 yuvarlak kas
-  if (has("absc")) { const h = (py - sy - 15) / 3; for (let i = 0; i < 3; i++) for (const sgn of [-1, 1]) s += blob(60 + sgn * 1.95, sy + 12 + h * (i + 0.5), 1.6, Math.min(1.9, h / 2 - 0.25)); }
-  // bel: omurganın iki yanında dikey kaslar
-  if (has("lower_back")) for (const sgn of [-1, 1]) s += blob(60 + sgn * 2.5, py - 8, 2.0, 4.4, sgn * -6);
-  // yan karın
-  if (has("abs")) for (const sgn of [-1, 1]) s += strip([60 + sgn * 5.2, sy + 11.5], [60 + sgn * 5.6, py - 3.5], 1.9, 1.6);
+  if (has("traps")) s += shape(`M60 ${f1(sy - 7.4)} Q${f1(63.5)} ${f1(sy - 4.4)} ${f1(J.shoR[0] - 0.6)} ${f1(sy - 2.9)} Q60 ${f1(sy - 0.6)} ${f1(J.shoL[0] + 0.6)} ${f1(sy - 2.9)} Q${f1(56.5)} ${f1(sy - 4.4)} 60 ${f1(sy - 7.4)}Z`, [60, sy - 7.4], [60, sy - 1], 5);
+  // gövde kasları gövde şekliyle kırpılır: dış kenarları vücut hattını birebir izler
+  let tm = "";
+  // göğüs: göğüs kemiğinden koltuk altına, altta kavisli sınır
+  if (has("chest")) for (const sgn of [-1, 1]) tm += shape(`M${Q(60 + sgn * 0.5, sy + 0.4)}Q${Q(60 + sgn * 5, sy - 0.8)} ${Q(60 + sgn * 13, sy - 0.6)}L${Q(60 + sgn * 13, sy + 5.2)}Q${Q(60 + sgn * 8.6, sy + 9.8)} ${Q(60 + sgn * 4.4, sy + 9.3)}Q${Q(60 + sgn * 0.6, sy + 9)} ${Q(60 + sgn * 0.5, sy + 6.5)}Z`,
+    [60 + sgn * 1.5, sy + 1], [60 + sgn * 7.5, sy + 8.5], 4.5);
+  // orta sırt: kürek kemikleri arası, aşağı doğru daralan
+  if (has("back")) tm += shape(`M${Q(60, sy - 1)}Q${Q(66, sy - 0.6)} ${Q(73, sy + 2.2)}L${Q(73, sy + 5)}Q${Q(66.6, sy + 8.6)} ${Q(64, sy + 13.4)}Q${Q(60, sy + 16)} ${Q(56, sy + 13.4)}Q${Q(53.4, sy + 8.6)} ${Q(47, sy + 5)}L${Q(47, sy + 2.2)}Q${Q(54, sy - 0.6)} ${Q(60, sy - 1)}Z`,
+    [60, sy - 1], [60, sy + 15], 7);
+  // kanat: koltuk altından bele inen, gövde kenarını izleyen geniş kas
+  if (has("lats")) for (const sgn of [-1, 1]) tm += shape(`M${Q(60 + sgn * 5.4, sy + 5.2)}Q${Q(60 + sgn * 9, sy + 3.4)} ${Q(60 + sgn * 13, sy + 3.2)}L${Q(60 + sgn * 13, py - 11)}Q${Q(60 + sgn * 8.4, py - 6.2)} ${Q(60 + sgn * 4.4, py - 7)}Q${Q(60 + sgn * 3.5, sy + 11.5)} ${Q(60 + sgn * 5.4, sy + 5.2)}Z`,
+    [60 + sgn * 9, sy + 4], [60 + sgn * 5, py - 7], 4);
+  // yan karın: gövde kenarı boyunca
+  if (has("abs")) for (const sgn of [-1, 1]) tm += shape(`M${Q(60 + sgn * 3.9, sy + 10.8)}L${Q(60 + sgn * 13, sy + 9.6)}L${Q(60 + sgn * 13, py + 2)}L${Q(60 + sgn * 5.6, py - 0.8)}Q${Q(60 + sgn * 3.7, py - 6)} ${Q(60 + sgn * 3.9, sy + 10.8)}Z`,
+    [60 + sgn * 6, sy + 10], [60 + sgn * 5, py], 2.5);
+  // bel: omurganın iki yanında uzun kaslar
+  if (has("lower_back")) for (const sgn of [-1, 1]) tm += shape(`M${Q(60 + sgn * 0.6, py - 15)}Q${Q(60 + sgn * 3.7, py - 15.6)} ${Q(60 + sgn * 4, py - 11)}L${Q(60 + sgn * 3.6, py - 0.6)}L${Q(60 + sgn * 0.6, py - 0.6)}Z`,
+    [60 + sgn * 2.2, py - 15], [60 + sgn * 2.2, py - 1], 1.7);
+  if (tm) s += inTorso(tm);
+  // karın: 2 x 3 kas, köşeleri hafif yuvarlak
+  if (has("absc")) {
+    const top = sy + 11.2, bot = py - 2.2, gap = 0.75, h = (bot - top - gap * 2) / 3;
+    for (let i = 0; i < 3; i++) for (const sgn of [-1, 1]) {
+      const y = top + i * (h + gap), w = 3.1 - (i === 0 ? 0.25 : 0), x = sgn > 0 ? 60.45 : 59.55 - w;
+      s += shape(rr(x, y, w, h, Math.min(1, h / 3)), [x + w / 2, y], [x + w / 2, y + h], w / 2);
+    }
+  }
   // baş
   s += P.backView ? dot([60, J.head[1] - 0.4], RIG.head + 0.2, C.hair) + cap([60, J.head[1] + 4.6], [60, J.head[1] + 6.2], 2.4, 2.4, C.bodyShade)
     : dot([60, J.head[1] - 1.1], RIG.head, C.hair) + dot([60, J.head[1] + 0.9], RIG.head - 0.6, C.body);
   // kollar
   for (const [sho, elb, wr, sgn] of [[J.shoL, J.elbL, J.wrL, -1], [J.shoR, J.elbR, J.wrR, 1]]) {
     s += cap(sho, elb, R.ua1, R.ua2, C.body);
-    if (has("biceps")) s += strip(along(sho, elb, 0.26), along(sho, elb, 0.84), 2.1, 1.7);
+    if (has("biceps")) s += limb(sho, elb, 0.28, 0.92, R.ua1, R.ua2, { e: 0.45 });
     s += cap(elb, wr, R.fa1, R.fa2, C.body);
-    if (has("forearm")) s += strip(along(elb, wr, 0.1), along(elb, wr, 0.72), 2.0, 1.5);
-    if (has("side_delt")) s += blob(sho[0] + sgn * 1.9, sho[1] + 0.8, P.noGlow ? 2.5 : 3.1, P.noGlow ? 3.0 : 3.6, sgn * -14);
-    if (has("delt")) s += blob(sho[0] + sgn * 0.3, sho[1] + 0.4, P.noGlow ? 3.3 : 4.0, P.noGlow ? 3.1 : 3.8);
+    if (has("forearm")) s += limb(elb, wr, 0.04, 0.74, R.fa1, R.fa2, { prof: FOREARM_PROF });
+    if (has("side_delt")) s += limb(sho, elb, 0, 0.4, R.ua1, R.ua2, { lo: Math.min(-sgn * 0.1, -sgn), hi: Math.max(-sgn * 0.1, -sgn), ins: 0.4, prof: DELT_PROF, b0: 0.85, b1: 0.7 });
+    if (has("delt")) s += limb(sho, elb, 0, 0.42, R.ua1, R.ua2, { ins: 0.4, prof: DELT_PROF, b0: 0.95, b1: 0.7 });
     s += dot(wr, R.hand, C.bodyShade);
   }
   if (props.front) s += props.front(J, P);

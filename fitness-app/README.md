@@ -43,7 +43,7 @@ Cevaplara göre uygulama şekillenir:
 Ayarlar > "Soruları yeniden yanıtla" ile her şeyi tekrar şekillendirebilirsin.
 
 ## Özellikler
-- **Antrenman kaydı:** 80+ hazır hareket (göğüs, sırt, omuz, kol, bacak, karın, tüm vücut), arama ve kategori filtresi, set başına kilo × tekrar. Son seferin ağırlıkları otomatik dolar, yeni rekorda bildirim çıkar. Kendi hareketini kas seçerek ekleyebilirsin.
+- **Antrenman kaydı:** 180+ hazır hareket (göğüs, sırt, omuz, kol, bacak, karın, tüm vücut; 60+ makine hareketi "Machine …" adıyla), arama ("machine fly", "makine göğüs" gibi) ve kategori / "Makine" filtresi, set başına kilo × tekrar. Son seferin ağırlıkları otomatik dolar, yeni rekorda bildirim çıkar. Kendi hareketini kas seçerek ekleyebilirsin.
 - **AI analiz ve kas haritası:** Ön/arka vücut modelinde her kas son 7 günün set sayısına göre renklenir (gri: çalışmadı, turuncu: yetersiz, yeşil: ideal, kırmızı: fazla). Analiz motoru şunları söyler:
   - fazla çalışan veya hiç çalışmayan kaslar ve onlar için önerilen hareketler
   - itme/çekme, ön/arka omuz, quad/hamstring ve üst/alt vücut dengesizlikleri

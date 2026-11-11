@@ -666,6 +666,11 @@ const EX_ANIM = {
   glute_kick_machine: "glute_kick", cable_glute_kick: "kick_cable", hip_thrust_machine: "hip_thrust", cable_pull_through: "pull_through",
   cable_abduction: "cable_abd", cable_adduction: "cable_add", leg_press_calf: "leg_press_calf", smith_calf: "calf_smith", donkey_calf: "donkey_calf",
   ab_machine: "ab_machine", torso_rotation: "torso_rotation", captain_chair: "captain_chair", pallof_press: "pallof", cable_side_bend: "side_bend",
+  converging_press: "chest_press", vertical_chest_press: "chest_press", incline_machine_fly: "crossover", machine_pullover: "straight_pulldown",
+  iso_pulldown: "pulldown", iso_low_row: "row_machine", machine_shrug: "shrug_smith", iso_shoulder_press: "press_seated", machine_rear_row: "rear_delt_row",
+  machine_oh_tri: "oh_ext", machine_hammer_curl: "curl_machine", horizontal_leg_press: "leg_press", vertical_leg_press: "leg_press", v_squat: "hack_squat",
+  squat_press_machine: "hack_squat", sissy_squat_machine: "hack_squat", single_leg_ext: "leg_ext", kneeling_leg_curl: "standing_leg_curl", multi_hip: "glute_kick",
+  standing_calf_machine: "calf", calf_press_machine: "leg_press_calf", ab_coaster: "captain_chair", oblique_machine: "torso_rotation",
 };
 
 // Özel (kullanıcının eklediği) hareketler için birincil kasa göre kalıp

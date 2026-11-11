@@ -589,7 +589,7 @@ function renderPicker() {
   $("#pickAllRow").classList.remove("hidden");
   $("#pickTitle").textContent = pickMuscle && !q ? `${MUSCLES[pickMuscle].name} hareketleri` : "Arama sonuçları";
   let list = allExercises().filter((e) => (showAll || ok.has(e.id)) &&
-    (q ? (e.name.toLocaleLowerCase("tr").includes(q) || e.p.some((m) => MUSCLES[m].name.toLocaleLowerCase("tr").includes(q))) : e.p.includes(pickMuscle)));
+    (q ? exMatches(e, q) : e.p.includes(pickMuscle)));
   // bölgeyi birincil olarak hedefleyenler önce, sonra tercih sırası
   if (pickMuscle && !q) {
     const pref = PREFERRED[pickMuscle] || [];
@@ -613,7 +613,7 @@ function renderPicker() {
       <span class="ecp-body">
         <b>${esc(e.name)}</b>
         <small>${e.p.map((m) => MUSCLES[m].name).join(", ")}</small>
-        <span class="ecp-tags"><span>${EQ_TAG[e.eq] || "Özel"}</span>${risk.length ? `<span class="t-risk">⚠️ ${risk.join(", ")}</span>` : ""}${over.length ? `<span class="t-over">↑ ${over.map((m) => MUSCLES[m].name).join(", ")} fazla</span>` : ""}</span>
+        <span class="ecp-tags"><span>${e.machine ? "Makine" : EQ_TAG[e.eq] || "Özel"}</span>${risk.length ? `<span class="t-risk">⚠️ ${risk.join(", ")}</span>` : ""}${over.length ? `<span class="t-over">↑ ${over.map((m) => MUSCLES[m].name).join(", ")} fazla</span>` : ""}</span>
       </span>
     </button>`;
   }).join("")}</div>` + (list.length ? "" : `<div class="muted small" style="padding:12px 0">Uygun hareket bulamadım. "Uymayanları da göster"i açabilirsin.</div>`);

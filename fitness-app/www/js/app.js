@@ -74,7 +74,7 @@ $("#exSearch").addEventListener("input", renderExList);
 $("#showAllEx").addEventListener("change", renderExList);
 
 function renderCats() {
-  const cats = ["Tümü", ...new Set(allExercises().map((e) => e.cat))];
+  const cats = ["Tümü", "Makine", ...new Set(allExercises().map((e) => e.cat))];
   $("#catChips").innerHTML = cats.map((c) => `<button class="chip ${c === selectedCat ? "on" : ""}" data-cat="${esc(c)}">${esc(c)}</button>`).join("");
 }
 $("#catChips").addEventListener("click", (e) => {
@@ -89,8 +89,8 @@ function renderExList() {
   const showAll = $("#showAllEx").checked;
   const ok = new Set(allowedExercises(state.profile, state.customExercises).map((e) => e.id));
   const list = allExercises().filter((e) => (showAll || ok.has(e.id)) &&
-    (selectedCat === "Tümü" || e.cat === selectedCat) &&
-    (!q || e.name.toLocaleLowerCase("tr").includes(q) || e.p.some((m) => MUSCLES[m].name.toLocaleLowerCase("tr").includes(q)))
+    (selectedCat === "Tümü" || e.cat === selectedCat || (selectedCat === "Makine" && e.machine)) &&
+    exMatches(e, q)
   );
   $("#exList").innerHTML = list.map((e) => `
     <div class="ex-item ${selectedEx?.id === e.id ? "sel" : ""}" data-id="${e.id}">

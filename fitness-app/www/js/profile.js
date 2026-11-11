@@ -223,16 +223,20 @@ const PRIORITY_GROUPS = [
 
 const WIZARD_STEPS = [
   { id: "name", title: () => "Merhaba! 👋", sub: () => "Ben senin FitAI koçunum. Sana özel bir program hazırlamak için birkaç soru soracağım. Önce tanışalım: adın ne?",
-    render: (p) => `<input id="wz_name" placeholder="Adını yaz" autocomplete="given-name" value="${esc(p.name || "")}" autofocus />`,
+    render: (p) => `<input id="wz_name" placeholder="Adını yaz" autocomplete="given-name" maxlength="30" enterkeyhint="next" value="${esc(p.name || "")}" autofocus />`,
     read: (p) => { p.name = niceName($("#wz_name").value); return !!p.name || "Sana nasıl hitap edeyim? Adını yaz"; } },
   { id: "body1", title: (p) => `Memnun oldum ${p.name}! 🤝`, sub: () => "Seni biraz tanıyalım. Kalori ve su hedefini hesaplamak için cinsiyetin ve yaşın lazım.",
     render: (p) => `${cards("sex", { m: { name: "Erkek", icon: "♂️" }, f: { name: "Kadın", icon: "♀️" } }, p.sex, true)}
       <label>Yaş <input type="number" id="wz_age" inputmode="numeric" value="${p.age || ""}" placeholder="örn. 25" /></label>`,
-    read: (p) => { p.age = +$("#wz_age").value; return (!!p.sex && p.age >= 12 && p.age < 100) || "Cinsiyet ve yaşını gir"; } },
+    read: (p) => { p.age = Math.round(num($("#wz_age").value)) || 0; if (!p.sex) return "Cinsiyetini seç"; return (p.age >= 12 && p.age < 100) || "Yaş 12 ile 99 arasında olmalı"; } },
   { id: "body2", title: (p) => `${p.name}, boyun ve kilon kaç?`, sub: (p) => `${p.age} yaşındasın, güzel. Protein hedefini kilona göre belirleyeceğim.`,
-    render: (p) => `<label>Boy (cm) <input type="number" id="wz_h" inputmode="numeric" value="${p.height || ""}" placeholder="örn. 178" /></label>
-      <label>Kilo (kg) <input type="number" step="0.1" id="wz_w" inputmode="decimal" value="${p.weight || ""}" placeholder="örn. 75" /></label>`,
-    read: (p) => { p.height = +$("#wz_h").value; p.weight = +$("#wz_w").value; return (p.height > 100 && p.weight > 30) || "Boy ve kilonu gir"; } },
+    render: (p) => `<label>Boy (cm) <input type="text" id="wz_h" inputmode="numeric" enterkeyhint="next" autocomplete="off" value="${p.height || ""}" placeholder="örn. 178" /></label>
+      <label>Kilo (kg) <input type="text" id="wz_w" inputmode="decimal" enterkeyhint="next" autocomplete="off" value="${p.weight || ""}" placeholder="örn. 75" /></label>`,
+    read: (p) => {
+      p.height = Math.round(num($("#wz_h").value)) || 0; p.weight = +(num($("#wz_w").value) || 0).toFixed(1);
+      if (!(p.height >= 120 && p.height <= 230)) return "Boy 120-230 cm arasında olmalı";
+      return (p.weight >= 30 && p.weight <= 250) || "Kilo 30-250 kg arasında olmalı";
+    } },
   { id: "goal", title: (p) => `${p.name}, ana hedefin ne?`, sub: () => "Set, tekrar ve beslenme hedeflerini buna göre ayarlayacağım.",
     render: (p) => cards("goal", GOALS, p.goal ? goalKey(p.goal) : null), read: (p) => !!p.goal || "Bir hedef seç" },
   { id: "level", title: () => "Ne kadar süredir spor yapıyorsun?", sub: (p) => `${GOALS[p.goal].cheer}, ${p.name}. Şimdi antrenman hacmini seviyene göre ayarlayalım.`,
@@ -308,11 +312,12 @@ function cards(field, opts, cur, compact) {
 }
 
 function summaryHtml(p) {
-  const t = nutritionTargets(p);
+  // kreatine başlayacaksa ilk hafta yükleme dozu gösterilir (finishWizard da aynısını ayarlar)
+  const t = nutritionTargets({ ...p, creatineLoading: p.creatine === "start", loadingUntil: null });
   const kcal = calorieTarget(p);
   const statsHtml = `<div class="sum-grid">
       <div class="stat"><b>${t.protein} g</b><span>Günlük protein</span></div>
-      ${p.creatine !== "no" ? `<div class="stat"><b>${t.creatine} g</b><span>Kreatin</span></div>` : ""}
+      ${p.creatine !== "no" ? `<div class="stat"><b>${t.creatine} g</b><span>${p.creatine === "start" ? "Kreatin (ilk 7 gün)" : "Kreatin"}</span></div>` : ""}
       ${kcal ? `<div class="stat"><b>${kcal}</b><span>Kalori (kcal)</span></div>` : ""}
       <div class="stat"><b>${(t.water / 1000).toFixed(1)} L</b><span>Su</span></div>
     </div>`;
@@ -339,7 +344,9 @@ function openWizard() {
   $("#wzWelcome").classList.toggle("hidden", !first);
   $("#wzWelcome").classList.remove("leaving");
   $("#wizard").classList.toggle("welcoming", first);
+  $("#wzClose").classList.toggle("hidden", first); // soruları yeniden yanıtlarken vazgeçilebilir
   renderWizard();
+  $("#wizard .wz-content").scrollTop = 0;
 }
 function startWizardQuestions() {
   const w = $("#wzWelcome");
@@ -368,7 +375,7 @@ function wizardNext() {
   const s = WIZARD_STEPS[wz.i];
   const ok = s.read(wz.p);
   if (ok !== true) { $("#wzErr").textContent = ok; return; }
-  if (wz.i < WIZARD_STEPS.length - 1) { wz.i++; renderWizard(); return; }
+  if (wz.i < WIZARD_STEPS.length - 1) { wz.i++; renderWizard(); $("#wizard .wz-content").scrollTop = 0; return; }
   finishWizard();
 }
 function finishWizard() {
@@ -394,11 +401,26 @@ function finishWizard() {
   toast(p.planMode === "manual" ? `Hoş geldin ${p.name}! Şimdi programını kur, ben kontrol edeceğim ✍️` : `Hoş geldin ${p.name}! Programın hazır, hadi başlayalım 💪`);
 }
 
+// Geri'ye basınca o adımda yazılanlar (doğrulamadan) saklanır
+function keepTyped() {
+  const v = (id) => $(id)?.value.trim();
+  const p = wz.p;
+  if (v("#wz_name")) p.name = niceName(v("#wz_name"));
+  if (v("#wz_age")) p.age = Math.round(num(v("#wz_age"))) || p.age;
+  if (v("#wz_h")) p.height = Math.round(num(v("#wz_h"))) || p.height;
+  if (v("#wz_w")) p.weight = num(v("#wz_w")) || p.weight;
+}
 function initWizard() {
   $("#wzStart").onclick = startWizardQuestions;
   $("#wzNext").onclick = wizardNext;
-  $("#wzBack").onclick = () => { if (wz.i) { wz.i--; renderWizard(); } };
-  $("#wzBody").addEventListener("keydown", (e) => { if (e.key === "Enter") wizardNext(); });
+  $("#wzBack").onclick = () => { if (wz.i) { keepTyped(); wz.i--; renderWizard(); $("#wizard .wz-content").scrollTop = 0; } };
+  $("#wzClose").onclick = () => { $("#wizard").classList.add("hidden"); wz = null; };
+  $("#wzBody").addEventListener("keydown", (e) => {
+    if (e.key !== "Enter") return;
+    // boy alanında Enter kilo alanına geçer
+    if (e.target.id === "wz_h" && !$("#wz_w").value) { e.preventDefault(); return $("#wz_w").focus(); }
+    wizardNext();
+  });
   $("#wzBody").addEventListener("click", (e) => {
     const b = e.target.closest("button");
     if (!b) return;

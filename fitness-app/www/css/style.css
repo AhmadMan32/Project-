@@ -445,3 +445,43 @@ body { padding-bottom: env(safe-area-inset-bottom); }
 .tc-body { gap: 4px; align-items: flex-end; }
 .tc-body .ath-body { width: 62px; height: auto; filter: drop-shadow(0 4px 10px rgba(0,0,0,.35)); }
 @media (max-width: 350px) { .today-card { grid-template-columns: 1fr 104px; } .tc-body .ath-body { width: 50px; } }
+
+/* ===== Mobil test düzeltmeleri ===== */
+* { -webkit-tap-highlight-color: transparent; }
+/* hata bildirimi kırmızı */
+.toast.err { background: var(--danger); color: #fff; }
+/* sekme çubuğu: sayfa kayınca da erişilebilir */
+.tabs { position: sticky; top: var(--topbar-h, 61px); z-index: 5; background: var(--bg); scrollbar-width: none; }
+/* seçilen hareketin başlığı üst çubukların altında kalmasın */
+#selExTitle { scroll-margin-top: 120px; }
+#tab-workout.in-session #selExTitle { scroll-margin-top: 230px; }
+.session-bar { top: calc(var(--topbar-h, 61px) + var(--tabs-h, 51px)); }
+#selExTitle { scroll-margin-top: calc(var(--topbar-h, 61px) + var(--tabs-h, 51px) + 12px); }
+#tab-workout.in-session #selExTitle { scroll-margin-top: calc(var(--topbar-h, 61px) + var(--tabs-h, 51px) + 130px); }
+.hidden-hint { margin-top: 8px; padding: 8px 10px; border: 1px dashed var(--line); border-radius: 10px; }
+/* grafikler: kendi genişliğinde çizilir, alttaki boşluk yok */
+.chart { min-height: 0; }
+.chart svg { max-height: none; }
+/* rekor tablosu: kg ve tarih bölünmesin */
+table.pr td:nth-child(n+2) { white-space: nowrap; }
+@media (max-width: 400px) { table.pr { font-size: 13px; } table.pr td, table.pr th { padding: 7px 4px; } table.pr th:nth-child(5), table.pr td:nth-child(5) { display: none; } }
+/* halkalar 320px'te taşmasın */
+.rings { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.rings:has(> :nth-child(2):last-child) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.mring { min-width: 0; }
+.mring > div { min-width: 0; }
+.mring b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (max-width: 360px) { .mring { flex-direction: column; gap: 4px; } .mring b, .mring small { text-align: center; } .mring svg { width: 40px; height: 40px; } }
+/* haftalık döngü: 5-6 günde sığsın, taşarsa kenar soluklaşsın */
+.wk-day { min-width: 44px; }
+.wk-name { max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+.wk-days:has(> :nth-child(6)) { gap: 4px; }
+/* sihirbaz: gün butonları tek satır, yatay ekranda karşılama kaydırılabilir */
+.days-pick { flex-wrap: nowrap; }
+.days-pick .opt { flex: 1; min-width: 0; }
+.welcome { overflow-y: auto; justify-content: safe center; }
+.wz-close { position: absolute; top: 12px; right: 12px; z-index: 3; }
+/* küçük dokunma alanları */
+.icon-btn { min-width: 36px; min-height: 36px; }
+.chip { padding: 7px 12px; }
+#apiKey { margin-bottom: 10px; }

@@ -317,7 +317,7 @@ function openSessionExercise() {
   $("#wDate").value = todayStr(); renderDayLog();
   selectExercise(rem[0].id, { sets: rem[0].sets, reps: rem[0].reps });
   renderSessionBar();
-  $("#setEditor").scrollIntoView({ behavior: "smooth", block: "center" });
+  $("#selExTitle").scrollIntoView({ behavior: "smooth", block: "start" });
 }
 function startSession(dayIdx) {
   state.session = { date: todayStr(), day: dayIdx };
@@ -457,7 +457,7 @@ function renderPlan() {
   const check = `<section class="card check-card">
     <button class="ck-row" id="ckToggle" aria-expanded="${showCheck}">
       ${miniRing(pa.score, 100, scoreColor, "", "")}
-      <span class="ck-main"><b>Plan kontrolü · ${pa.score}/100</b><small>${warnN ? `${warnN} öneri var, dokun ve gör` : "Dengeli: tüm kaslar hedef aralığında"}</small></span>
+      <span class="ck-main"><b>Plan kontrolü · ${pa.score}/100</b><small>${!prog.days.some((d) => d.exercises.length) ? "Planın henüz boş, günlere hareket ekle" : warnN ? `${warnN} öneri var, dokun ve gör` : "Dengeli: tüm kaslar hedef aralığında"}</small></span>
       <span class="da-chev ${showCheck ? "open" : ""}">›</span>
     </button>
     ${showCheck ? `<div class="ck-detail">
@@ -649,14 +649,17 @@ function initPlanner() {
       planUI.open.add(i); renderPlan();
       const el = $(`#planBody [data-acc="${i}"]`);
       el?.scrollIntoView({ behavior: "smooth", block: "start" });
-      if (state.program.mode === "manual" && !state.program.days[i]?.exercises.length) openPicker(i);
+      if (state.program.mode === "manual" && !state.program.days[i]?.exercises.length) {
+        if (!state.program.days[i]) { state.program.days.push({ key: "custom", name: `${state.program.days.length + 1}. Gün`, exercises: [] }); save(); renderPlan(); }
+        openPicker(Math.min(i, state.program.days.length - 1));
+      }
       return;
     }
     if (b.dataset.planex) {
       $(`#tabs button[data-tab="workout"]`).click();
       $("#wDate").value = todayStr(); renderDayLog();
       selectExercise(b.dataset.planex, { sets: +b.dataset.sets, reps: b.dataset.reps });
-      $("#setEditor").scrollIntoView({ behavior: "smooth", block: "center" });
+      $("#selExTitle").scrollIntoView({ behavior: "smooth", block: "start" });
       return;
     }
     if (b.dataset.mode && b.dataset.mode !== prog.mode) {
@@ -666,7 +669,8 @@ function initPlanner() {
         state.program = { ...generateProgram(state.profile, state.customExercises), mode: "auto" };
         toast("Otomatik plan oluşturuldu 🤖");
       } else {
-        const keep = confirm("Kendi planına geçiyorsun.\n\nTamam: mevcut planı başlangıç olarak kullan ve düzenle\nİptal: boş planla sıfırdan başla");
+        if (!confirm("Kendi planına geçilsin mi? Hareketleri sen seçersin, ben kontrol ederim.")) return;
+        const keep = confirm("Mevcut plan başlangıç olarak kullanılsın mı?\n\nTamam: mevcut planı düzenle\nİptal: boş planla sıfırdan başla");
         if (keep) toManual(); else state.program = emptyProgram(state.profile.days);
         toast("Artık planı sen seçiyorsun, ben kontrol ediyorum ✍️");
         if (!keep) { planUI.init = false; save(); renderPlan(); return openPicker(0); }
@@ -679,8 +683,12 @@ function initPlanner() {
     if (b.id === "clearPlan") { if (confirm("Tüm günlerdeki hareketler silinsin mi?")) { prog.days.forEach((d) => (d.exercises = [])); save(); renderPlan(); } return; }
     if (b.dataset.delday) {
       const i = +b.dataset.delday;
+      if (prog.days.length <= 1) return toast("Planda en az bir gün olmalı. Hareketleri temizlemek için \"Planı temizle\"yi kullan.", "err");
       if (prog.days[i].exercises.length && !confirm(`${prog.days[i].name} silinsin mi?`)) return;
-      prog.days.splice(i, 1); save(); return renderPlan();
+      prog.days.splice(i, 1);
+      // açık gün indekslerini kaydır
+      planUI.open = new Set([...planUI.open].filter((x) => x !== i).map((x) => (x > i ? x - 1 : x)));
+      save(); return renderPlan();
     }
     if (b.dataset.pick) return openPicker(+b.dataset.pick);
     if (b.dataset.step) {
@@ -701,7 +709,7 @@ function initPlanner() {
     if (b.dataset.act) {
       const [ii, ai] = b.dataset.act.split(":").map(Number);
       const a = renderPlan._pa.insights[ii].actions[ai];
-      if (prog.mode !== "manual") toManual();
+      if (prog.mode !== "manual") { toManual(); planUI.init = true; }
       if (a.kind === "add") { addToPlan(a.day, a.id, a.sets, a.reps); toast(`${exName(a.id)} eklendi`); }
       if (a.kind === "reduce") { prog.days[a.day].exercises[a.idx].sets--; save(); toast("1 set azaltıldı"); }
       if (a.kind === "remove") { prog.days[a.day].exercises.splice(a.idx, 1); save(); toast("Plandan çıkarıldı"); }
@@ -719,7 +727,7 @@ function initPlanner() {
   $("#planBody").addEventListener("change", (e) => {
     const t = e.target;
     if (t.dataset.dayname != null) { state.program.days[+t.dataset.dayname].name = t.value.trim() || `${+t.dataset.dayname + 1}. Gün`; save(); renderPlan(); }
-    if (t.dataset.reps) { const [di, ei] = t.dataset.reps.split(":").map(Number); state.program.days[di].exercises[ei].reps = t.value.trim() || "8-12"; save(); }
+    if (t.dataset.reps) { const [di, ei] = t.dataset.reps.split(":").map(Number); state.program.days[di].exercises[ei].reps = t.value.trim() || "8-12"; save(); renderPlan(); }
   });
   $("#planBody").addEventListener("click", (e) => {
     const p = e.target.closest(".muscle");

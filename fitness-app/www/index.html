@@ -118,7 +118,7 @@
       <div class="card">
         <h2>Vücut Ağırlığı</h2>
         <div class="row">
-          <input type="number" step="0.1" id="bwInput" placeholder="kg" />
+          <input type="text" inputmode="decimal" autocomplete="off" id="bwInput" placeholder="kg" />
           <button class="btn primary" id="bwSave">Bugünü kaydet</button>
         </div>
         <div id="bwChart" class="chart"></div>
@@ -232,6 +232,7 @@
       </ul>
       <button class="btn primary wl-start" id="wzStart">Başlayalım</button>
     </div>
+    <button class="btn ghost wz-close hidden" id="wzClose" aria-label="Vazgeç">✕ Vazgeç</button>
     <div class="wz-top">
       <div class="wz-progress"><div id="wzBar"></div></div>
       <span id="wzStep" class="muted small"></span>

@@ -34,11 +34,15 @@ function timeGreeting() {
 }
 const allExercises = () => [...EXERCISES, ...state.customExercises];
 const exName = (id) => (findExercise(id, state.customExercises) || { name: id }).name;
+// "22,5" ve "22.5" ikisi de 22.5; sayı değilse NaN
+const num = (v) => parseFloat(String(v ?? "").trim().replace(",", "."));
 const fmtDate = (d) => new Date(d + "T12:00:00").toLocaleDateString("tr-TR", { day: "numeric", month: "short", weekday: "short" });
 
-function toast(msg) {
+// kind: "err" hata/uyarı (kırmızı), boş = başarı (yeşil)
+function toast(msg, kind) {
   const t = $("#toast");
   t.textContent = msg;
+  t.classList.toggle("err", kind === "err");
   t.classList.add("show");
   clearTimeout(toast._t);
   toast._t = setTimeout(() => t.classList.remove("show"), 1800);
@@ -92,21 +96,30 @@ function renderExList() {
     (selectedCat === "Tümü" || e.cat === selectedCat || (selectedCat === "Makine" && e.machine)) &&
     exMatches(e, q)
   );
+  const hidden = showAll ? 0 : allExercises().filter((e) => !ok.has(e.id) && (selectedCat === "Tümü" || e.cat === selectedCat || (selectedCat === "Makine" && e.machine)) && exMatches(e, q)).length;
   $("#exList").innerHTML = list.map((e) => `
     <div class="ex-item ${selectedEx?.id === e.id ? "sel" : ""}" data-id="${e.id}">
       <span>${esc(e.name)}${riskyFor(e.id, state.profile).length ? ` <span class="risk" title="Sakatlık riski">⚠️ ${riskyFor(e.id, state.profile).join(", ")}</span>` : ""}</span>
       <span class="tags">${e.p.map((m) => MUSCLES[m].name).join(", ")}</span>
     </div>`).join("") || `<div class="muted small">Sonuç yok. Ayarlar'dan özel hareket ekleyebilirsin.</div>`;
+  if (hidden) $("#exList").innerHTML += `<div class="muted small hidden-hint">${hidden} hareket ekipmanın ya da sakatlığın nedeniyle gizlendi. Görmek için "uymayanları da göster"i işaretle.</div>`;
 }
 $("#exList").addEventListener("click", (e) => {
   const it = e.target.closest(".ex-item");
   if (!it) return;
   selectExercise(it.dataset.id);
+  if (matchMedia("(max-width: 720px)").matches) $("#selExTitle").scrollIntoView({ behavior: "smooth", block: "start" });
 });
 
+// bir hareketin tarihe göre en son kaydı (aynı gün birden fazlaysa en son eklenen)
+function lastWorkoutOf(id) {
+  let best = null;
+  for (const w of state.workouts) if (w.exerciseId === id && (!best || w.date >= best.date)) best = w;
+  return best;
+}
 function selectExercise(id, plan) {
   selectedEx = findExercise(id, state.customExercises);
-  const last = [...state.workouts].reverse().find((w) => w.exerciseId === id);
+  const last = lastWorkoutOf(id);
   editRows = last ? last.sets.map((s) => ({ ...s })) : [{ kg: "", reps: "" }, { kg: "", reps: "" }, { kg: "", reps: "" }];
   if (plan) {
     const r = parseInt(plan.reps) || "";
@@ -128,7 +141,7 @@ function renderSetRows() {
   $("#setRows").innerHTML = editRows.map((r, i) => `
     <tr>
       <td class="muted">${i + 1}</td>
-      <td><input type="number" step="0.5" inputmode="decimal" data-i="${i}" data-f="kg" value="${r.kg}" placeholder="kg"/></td>
+      <td><input type="text" inputmode="decimal" autocomplete="off" data-i="${i}" data-f="kg" value="${r.kg}" placeholder="kg"/></td>
       <td><input type="number" inputmode="numeric" data-i="${i}" data-f="reps" value="${r.reps}" placeholder="tekrar"/></td>
       <td><button class="icon-btn" data-del="${i}" title="Sil">✕</button></td>
     </tr>`).join("");
@@ -146,13 +159,24 @@ $("#setRows").addEventListener("click", (e) => {
 $("#addSet").onclick = () => { editRows.push({ kg: "", reps: "" }); renderSetRows(); };
 $("#copySet").onclick = () => { editRows.push({ ...(editRows[editRows.length - 1] || { kg: "", reps: "" }) }); renderSetRows(); };
 
+const saveGuard = { key: "", t: 0 };
 $("#saveEx").onclick = () => {
   if (!selectedEx) return;
   const sets = editRows
-    .map((r) => ({ kg: parseFloat(r.kg) || 0, reps: parseInt(r.reps) || 0 }))
+    .map((r) => ({ kg: Math.max(0, num(r.kg)) || 0, reps: parseInt(r.reps) || 0 }))
     .filter((s) => s.reps > 0);
-  if (!sets.length) return toast("En az bir set için tekrar sayısı gir");
+  if (!sets.length) return toast("En az bir set için tekrar sayısı gir", "err");
+  if (sets.some((x) => x.kg > 500 || x.reps > 500)) return toast("Kilo ya da tekrar çok yüksek görünüyor, kontrol et", "err");
+  const btn = $("#saveEx");
+  if (btn.disabled) return;
+  btn.disabled = true; btn.textContent = "Kaydedildi ✓";
+  setTimeout(() => { btn.disabled = false; btn.textContent = "Kaydet"; }, 1500);
   const date = $("#wDate").value || todayStr();
+  if (!$("#wDate").value) $("#wDate").value = date;
+  // aynı kaydın kazara tekrar eklenmesini önle (aynı hareket, gün ve setler, 60 sn içinde)
+  const key = JSON.stringify([selectedEx.id, date, sets]);
+  if (saveGuard.key === key && Date.now() - saveGuard.t < 60000) { btn.disabled = false; btn.textContent = "Kaydet"; return toast("Bu kayıt az önce eklendi", "err"); }
+  saveGuard.key = key; saveGuard.t = Date.now();
   const prevBest = Math.max(0, ...exerciseHistory(state.workouts, selectedEx.id).map((h) => h.best1rm));
   state.workouts.push({ id: uid(), date, exerciseId: selectedEx.id, sets });
   save();
@@ -162,11 +186,17 @@ $("#saveEx").onclick = () => {
   if (typeof onWorkoutSaved === "function") onWorkoutSaved();
 };
 
+// "60 kg × 8"; ağırlıksızsa "8 tekrar", saniyeli hareketlerde "60 sn"
+const SECS = new Set(["plank", "side_plank", "wall_sit", "towel_hang"]);
+function setTxt(id, s) {
+  if (SECS.has(id)) return s.kg ? `${s.kg} kg · ${s.reps} sn` : `${s.reps} sn`;
+  return s.kg ? `${s.kg} kg × ${s.reps}` : `${s.reps} tekrar`;
+}
 function workoutItem(w, withDate) {
   return `<div class="log-item">
     <div>
       <div><b>${esc(exName(w.exerciseId))}</b>${withDate ? ` <span class="muted small">${fmtDate(w.date)}</span>` : ""}</div>
-      <div class="log-sets">${w.sets.map((s) => `${s.kg || 0} kg × ${s.reps}`).join(" · ")}</div>
+      <div class="log-sets">${w.sets.map((s) => setTxt(w.exerciseId, s)).join(" · ")}</div>
     </div>
     <button class="icon-btn" data-delw="${w.id}" title="Sil">🗑</button>
   </div>`;
@@ -268,7 +298,8 @@ function updateScore() {
 // ---------- GELİŞİM ----------
 function lineChart(el, points, unit) {
   if (points.length < 1) { el.innerHTML = `<div class="muted small">Grafik için en az 1 kayıt gerekli.</div>`; return; }
-  const W = 600, H = 240, P = { l: 44, r: 14, t: 14, b: 28 };
+  // ekrandaki gerçek genişlikte çiz: yazılar telefonda da 11px kalır
+  const W = Math.max(260, Math.round(el.clientWidth || 600)), H = W < 480 ? 200 : 240, P = { l: 40, r: 12, t: 12, b: 26 };
   const ys = points.map((p) => p.y);
   let min = Math.min(...ys), max = Math.max(...ys);
   if (min === max) { min -= 5; max += 5; }
@@ -280,7 +311,7 @@ function lineChart(el, points, unit) {
     const v = min + ((max - min) * k) / 4, yy = y(v);
     grid += `<line class="grid-line" x1="${P.l}" x2="${W - P.r}" y1="${yy}" y2="${yy}"/><text class="axis" x="${P.l - 6}" y="${yy + 4}" text-anchor="end">${max - min < 10 ? v.toFixed(1) : Math.round(v)}</text>`;
   }
-  const step = Math.ceil(points.length / 6);
+  const step = Math.ceil(points.length / (W < 480 ? 4 : 6));
   const labels = points.map((p, i) => (i % step === 0 || i === points.length - 1)
     ? `<text class="axis" x="${x(i)}" y="${H - 8}" text-anchor="middle">${new Date(p.x + "T12:00:00").toLocaleDateString("tr-TR", { day: "numeric", month: "short" })}</text>` : "").join("");
   const d = points.map((p, i) => `${i ? "L" : "M"}${x(i)},${y(p.y)}`).join(" ");
@@ -331,8 +362,10 @@ function renderExChart() {
 $("#progEx").addEventListener("change", renderExChart);
 $$("input[name=metric]").forEach((r) => r.addEventListener("change", renderExChart));
 $("#bwSave").onclick = () => {
-  const v = parseFloat($("#bwInput").value);
-  if (!v) return toast("Kilo gir");
+  const v = num($("#bwInput").value);
+  if (!v) return toast("Kilo gir", "err");
+  if (v < 30 || v > 300) return toast("Kilo 30-300 kg arasında olmalı", "err");
+  $("#bwInput").value = "";
   state.bodyweight[todayStr()] = v;
   state.profile.weight = v;
   save(); renderProgress(); toast("Kilo kaydedildi, protein hedefi güncellendi");
@@ -372,7 +405,7 @@ function renderNutrition() {
     if ((state.nutrition[k]?.creatine || 0) >= 3) streak++;
     else if (i > 0) break;
   }
-  $("#crStreak").textContent = `🔥 ${streak} günlük kreatin serisi. ${state.profile.creatineLoading ? "Yükleme fazı: gün içine 4 doza böl." : "Her gün aynı saatte 3-5 g yeterli, antrenman olmayan günler dahil."}`;
+  $("#crStreak").textContent = `🔥 ${streak} günlük kreatin serisi. ${t.creatine > 5 ? "Yükleme fazı: gün içine 4 doza böl." : "Her gün aynı saatte 3-5 g yeterli, antrenman olmayan günler dahil."}`;
 
   // 7 gün
   const rows = [];
@@ -382,7 +415,7 @@ function renderNutrition() {
     const pg = n.protein.reduce((a, x) => a + x.g, 0);
     rows.push(`<div class="nut-row"><span class="muted">${fmtDate(k)}</span>
       <div title="Protein ${pg}/${t.protein} g"><div class="mini"><div style="width:${Math.min(100, (pg / t.protein) * 100 || 0)}%;background:#4ade80"></div></div><span class="small muted">${pg} g protein</span></div>
-      <div title="Kreatin"><div class="mini"><div style="width:${Math.min(100, (n.creatine / t.creatine) * 100 || 0)}%;background:#60a5fa"></div></div><span class="small muted">${n.creatine} g kreatin</span></div>
+      ${state.profile.creatine === "no" ? "" : `<div title="Kreatin"><div class="mini"><div style="width:${Math.min(100, (n.creatine / t.creatine) * 100 || 0)}%;background:#60a5fa"></div></div><span class="small muted">${n.creatine} g kreatin</span></div>`}
     </div>`);
   }
   $("#nutHistory").innerHTML = rows.join("");
@@ -395,8 +428,8 @@ $("#foodChips").addEventListener("click", (e) => {
   save(); renderNutrition();
 });
 $("#addProtein").onclick = () => {
-  const g = parseInt($("#customProtein").value);
-  if (!g) return;
+  const g = Math.round(num($("#customProtein").value));
+  if (!(g > 0 && g <= 300)) return toast("1-300 g arası bir değer gir", "err");
   dayNut().protein.push({ name: "Özel", g });
   $("#customProtein").value = "";
   save(); renderNutrition();
@@ -437,13 +470,15 @@ $("#cxPrimary").addEventListener("click", (e) => { const k = e.target.dataset.k;
 $("#cxSecondary").addEventListener("click", (e) => { const k = e.target.dataset.k; if (!k) return; cxS.has(k) ? cxS.delete(k) : cxS.add(k); renderSettings(); });
 $("#cxSave").onclick = () => {
   const name = $("#cxName").value.trim();
-  if (!name || !cxP.size) return toast("Ad ve en az bir birincil kas seç");
+  if (!name || !cxP.size) return toast("Ad ve en az bir birincil kas seç", "err");
   state.customExercises.push({ id: "c_" + uid(), name, cat: "Özel", p: [...cxP], s: [...cxS].filter((k) => !cxP.has(k)) });
   cxP.clear(); cxS.clear(); $("#cxName").value = "";
   save(); renderSettings(); renderCats(); renderExList(); toast("Hareket eklendi");
 };
 $("#saveProfile").onclick = () => {
-  state.profile.proteinOverride = $("#pProtein").value;
+  const pv = $("#pProtein").value.trim();
+  if (pv && !(num(pv) >= 20 && num(pv) <= 400)) return toast("Protein hedefi 20-400 g arası olmalı (boş = otomatik)", "err");
+  state.profile.proteinOverride = pv ? String(Math.round(num(pv))) : "";
   save(); renderSettings(); toast("Kaydedildi");
 };
 $("#redoWizard").onclick = () => openWizard();
@@ -467,24 +502,41 @@ $("#export").onclick = () => {
   a.download = `fitai-yedek-${todayStr()}.json`;
   a.click();
 };
+// Yedek doğrulama: FitAI yedeği değilse ya da alan tipleri yanlışsa hiçbir şey değişmez
+function validBackup(d) {
+  const obj = (x) => x && typeof x === "object" && !Array.isArray(x);
+  if (!obj(d) || !Array.isArray(d.workouts) || !obj(d.profile)) return false;
+  if (d.customExercises != null && !Array.isArray(d.customExercises)) return false;
+  for (const k of ["nutrition", "bodyweight"]) if (d[k] != null && !obj(d[k])) return false;
+  if (d.program != null && !(obj(d.program) && Array.isArray(d.program.days))) return false;
+  return d.workouts.every((w) => obj(w) && typeof w.date === "string" && typeof w.exerciseId === "string" && Array.isArray(w.sets));
+}
 function importJson(text) {
-  const data = JSON.parse(text);
-  state = { ...defaultState(), ...data, apiKey: state.apiKey };
-  save(); renderAll(); toast("Veriler içe aktarıldı");
+  let data;
+  try { data = JSON.parse(text); } catch { return toast("Geçersiz yedek: JSON okunamadı", "err"); }
+  if (!validBackup(data)) return toast("Bu bir FitAI yedeği değil, hiçbir şey değişmedi", "err");
+  if (!confirm(`Yedekte ${data.workouts.length} antrenman kaydı var. Mevcut verilerin yerine geçsin mi?`)) return;
+  const prev = state;
+  try {
+    state = { ...defaultState(), ...data, apiKey: prev.apiKey };
+    renderAll();
+  } catch (e) {
+    state = prev; renderAll();
+    return toast("Yedek açılamadı, verilerin korundu", "err");
+  }
+  save(); toast("Veriler içe aktarıldı");
+  if (!state.profile.onboarded) openWizard();
 }
 $("#importText").onclick = () => {
   const t = prompt("Yedek metnini (JSON) buraya yapıştır:");
   if (!t) return;
-  try { importJson(t); } catch { toast("Geçersiz yedek"); }
+  importJson(t);
 };
 $("#import").onchange = async (e) => {
   const f = e.target.files[0];
   if (!f) return;
-  try {
-    const data = JSON.parse(await f.text());
-    state = { ...defaultState(), ...data, apiKey: state.apiKey };
-    save(); renderAll(); toast("Veriler içe aktarıldı");
-  } catch { toast("Geçersiz dosya"); }
+  e.target.value = ""; // aynı dosya tekrar seçilebilsin
+  importJson(await f.text());
 };
 $("#reset").onclick = () => {
   if (!confirm("Tüm antrenman ve beslenme verileri silinecek. Emin misin?")) return;
@@ -492,12 +544,15 @@ $("#reset").onclick = () => {
   save(); renderAll(); toast("Veriler silindi"); openWizard();
 };
 $("#demo").onclick = () => {
-  if (state.workouts.length && !confirm("Mevcut verilerin üzerine örnek veri eklensin mi?")) return;
+  const own = state.workouts.filter((w) => !w.demo).length;
+  if (own && !confirm("Kendi kayıtların korunur, yanına 4 haftalık örnek antrenman eklenir. Devam edilsin mi?")) return;
   loadDemo(); save(); renderAll(); toast("Örnek veri yüklendi");
 };
 
 // Örnek veri: 4 haftalık, bilerek dengesiz (omuz/göğüs fazla, bacak ve arka omuz az)
 function loadDemo() {
+  // önceki örnek kayıtları temizle (ikinci kez basınca çiftlenmesin)
+  state.workouts = state.workouts.filter((w) => !w.demo);
   const plan = [
     { off: 0, ex: [["bench", 80, 8, 4], ["incline_db", 30, 10, 3], ["ohp", 50, 8, 4], ["lateral_raise", 10, 15, 4], ["pushdown", 30, 12, 3]] },
     { off: 2, ex: [["lat_pulldown", 60, 10, 3], ["bb_curl", 30, 10, 3], ["front_raise", 10, 12, 3], ["db_shoulder", 24, 10, 4]] },
@@ -508,15 +563,17 @@ function loadDemo() {
       const date = todayStr(new Date(Date.now() - (wk * 7 + (6 - day.off)) * DAY));
       for (const [id, kg, reps, n] of day.ex) {
         const prog = (3 - wk) * (kg >= 40 ? 2.5 : 1);
-        state.workouts.push({ id: uid(), date, exerciseId: id, sets: Array.from({ length: n }, (_, i) => ({ kg: kg + prog, reps: Math.max(1, reps - (i > 1 ? 1 : 0)) })) });
+        state.workouts.push({ id: uid(), demo: true, date, exerciseId: id, sets: Array.from({ length: n }, (_, i) => ({ kg: kg + prog, reps: Math.max(1, reps - (i > 1 ? 1 : 0)) })) });
       }
     }
   }
   for (let i = 0; i < 7; i++) {
     const k = todayStr(new Date(Date.now() - i * DAY));
-    state.nutrition[k] = { protein: [{ name: "Whey (1 ölçek)", g: 24 }, { name: "Tavuk göğsü (100g)", g: 31 * (1 + (i % 3)) }, { name: "Yumurta (1 adet)", g: 18 }], creatine: i % 4 === 3 ? 0 : 5, water: 2000 };
+    const n = state.nutrition[k];
+    if (n && (n.protein.length || n.creatine || n.water)) continue; // kullanıcının girdiği günlere dokunma
+    state.nutrition[k] = { protein: [{ name: "Whey (1 ölçek)", g: 24 }, { name: "Tavuk göğsü (100g)", g: 31 * (1 + (i % 3)) }, { name: "Yumurta (3 adet)", g: 18 }], creatine: i % 4 === 3 ? 0 : 5, water: 2000 };
   }
-  for (let i = 28; i >= 0; i -= 4) state.bodyweight[todayStr(new Date(Date.now() - i * DAY))] = +(76 - i * 0.03).toFixed(1);
+  for (let i = 28; i >= 0; i -= 4) state.bodyweight[todayStr(new Date(Date.now() - i * DAY))] ??= +(76 - i * 0.03).toFixed(1);
 }
 
 // ---------- PROGRAM ----------
@@ -545,10 +602,18 @@ function renderAll() {
   render("workout"); render(active); updateScore();
 }
 
+// sabit çubukların yüksekliği (sekme ve oturum çubukları altına yerleşir)
+function setBarHeights() {
+  const r = document.documentElement.style;
+  r.setProperty("--topbar-h", $(".topbar").offsetHeight + "px");
+  r.setProperty("--tabs-h", $("#tabs").offsetHeight + "px");
+}
+setBarHeights();
+addEventListener("resize", setBarHeights);
 let startTab = "plan";
 try { startTab = sessionStorage.getItem("fitai-tab") || "plan"; } catch {}
 const startBtn = $(`#tabs button[data-tab="${startTab}"]`);
-if (startBtn) startBtn.click(); else render("workout");
+if (startBtn) { startBtn.click(); startBtn.scrollIntoView({ block: "nearest", inline: "center" }); } else render("workout");
 renderAll();
 initWizard();
 initPlanner();

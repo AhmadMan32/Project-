@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Kalkan DNS</string>
+    <string name="connected">BAĞLI</string>
+    <string name="connecting">BAĞLANIYOR…</string>
+    <string name="disconnected">BAĞLI DEĞİL</string>
+    <string name="connected_sub">DNS sorgularınız artık şifreli ve gizli.</string>
+    <string name="disconnected_sub">DNS sorgularınız şifrelenmiyor.</string>
+    <string name="provider_label">DNS: %1$s  ›</string>
+    <string name="choose_provider">DNS sağlayıcısı seçin</string>
+    <string name="stat_queries">Sorgu</string>
+    <string name="stat_latency">Ort. gecikme</string>
+    <string name="recent">SON SORGULAR</string>
+    <string name="no_queries">Henüz sorgu yok.</string>
+    <string name="toggle_desc">Bağlantıyı aç veya kapat</string>
+    <string name="notif_channel">VPN durumu</string>
+    <string name="notif_title">Kalkan DNS bağlı</string>
+    <string name="disconnect">Bağlantıyı kes</string>
+</resources>

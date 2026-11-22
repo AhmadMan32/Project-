@@ -6,6 +6,9 @@ import java.util.concurrent.atomic.AtomicLong
 /** Servis ile arayüz arasında paylaşılan basit durum. */
 object VpnState {
     enum class Status { OFF, CONNECTING, ON }
+    enum class Mode { DNS, WARP }
+
+    @Volatile var mode = Mode.DNS
 
     @Volatile var status = Status.OFF
     @Volatile var providerTitle = ""

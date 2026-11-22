@@ -63,6 +63,7 @@ class DnsVpnService : VpnService() {
         shutdown()
         val provider = Providers.selected(this)
         VpnState.reset()
+        VpnState.mode = VpnState.Mode.DNS
         VpnState.providerTitle = provider.title
         VpnState.status = VpnState.Status.CONNECTING
         notifyTile()
@@ -133,7 +134,7 @@ class DnsVpnService : VpnService() {
         try { tun?.close() } catch (_: Exception) {}
         tun = null
         pool?.shutdownNow(); pool = null
-        VpnState.status = VpnState.Status.OFF
+        if (VpnState.mode == VpnState.Mode.DNS) VpnState.status = VpnState.Status.OFF
         notifyTile()
     }
 

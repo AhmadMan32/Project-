@@ -24,12 +24,24 @@
             android:textSize="24sp"
             android:textStyle="bold" />
 
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="28dp"
+            android:background="@drawable/card"
+            android:orientation="horizontal"
+            android:padding="4dp">
+
+            <TextView android:id="@+id/mode_dns" style="@style/ModeButton" android:text="@string/mode_dns" />
+            <TextView android:id="@+id/mode_warp" style="@style/ModeButton" android:text="@string/mode_warp" />
+        </LinearLayout>
+
         <com.kalkan.dns.BigSwitch
             android:id="@+id/toggle"
             android:layout_width="220dp"
             android:layout_height="wrap_content"
             android:layout_gravity="center_horizontal"
-            android:layout_marginTop="56dp"
+            android:layout_marginTop="40dp"
             android:contentDescription="@string/toggle_desc" />
 
         <TextView
@@ -62,6 +74,18 @@
             android:textColor="@color/text"
             android:textSize="15sp" />
 
+        <TextView
+            android:id="@+id/warp_config"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="36dp"
+            android:background="@drawable/card"
+            android:foreground="?android:attr/selectableItemBackground"
+            android:padding="18dp"
+            android:textColor="@color/text"
+            android:textSize="15sp"
+            android:visibility="gone" />
+
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -69,17 +93,18 @@
             android:orientation="horizontal">
 
             <LinearLayout style="@style/StatCard" android:layout_marginEnd="6dp">
-                <TextView android:id="@+id/queries" style="@style/StatValue" />
-                <TextView style="@style/StatLabel" android:text="@string/stat_queries" />
+                <TextView android:id="@+id/stat1" style="@style/StatValue" />
+                <TextView android:id="@+id/stat1_label" style="@style/StatLabel" />
             </LinearLayout>
 
             <LinearLayout style="@style/StatCard" android:layout_marginStart="6dp">
-                <TextView android:id="@+id/latency" style="@style/StatValue" />
-                <TextView style="@style/StatLabel" android:text="@string/stat_latency" />
+                <TextView android:id="@+id/stat2" style="@style/StatValue" />
+                <TextView android:id="@+id/stat2_label" style="@style/StatLabel" />
             </LinearLayout>
         </LinearLayout>
 
         <TextView
+            android:id="@+id/recent_title"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="24dp"

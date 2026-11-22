@@ -11,14 +11,14 @@ android {
         applicationId = "com.kalkan.dns"
         minSdk = 26
         targetSdk = 35
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 2
+        versionName = "2.0"
     }
 
     buildTypes {
         release {
             isMinifyEnabled = true
-            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"))
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             // Kolay kurulum için debug anahtarıyla imzalanır; Play Store için kendi anahtarınızı kullanın.
             signingConfig = signingConfigs.getByName("debug")
         }
@@ -31,5 +31,7 @@ android {
 }
 
 dependencies {
+    // WARP modu: resmi WireGuard tünel kütüphanesi (wireguard-go, Apache-2.0)
+    implementation("com.wireguard.android:tunnel:1.0.20250531")
     testImplementation("junit:junit:4.13.2")
 }

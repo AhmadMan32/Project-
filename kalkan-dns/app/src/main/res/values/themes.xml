@@ -8,6 +8,18 @@
         <item name="android:windowBackground">@color/bg</item>
     </style>
 
+    <style name="ModeButton">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:gravity">center</item>
+        <item name="android:padding">12dp</item>
+        <item name="android:textSize">15sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textColor">@color/mode_text</item>
+        <item name="android:background">@drawable/mode_bg</item>
+    </style>
+
     <style name="StatCard">
         <item name="android:layout_width">0dp</item>
         <item name="android:layout_height">wrap_content</item>

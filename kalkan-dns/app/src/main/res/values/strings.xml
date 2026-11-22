@@ -16,4 +16,22 @@
     <string name="notif_channel">VPN durumu</string>
     <string name="notif_title">Kalkan DNS bağlı</string>
     <string name="disconnect">Bağlantıyı kes</string>
+    <string name="mode_dns">1.1.1.1</string>
+    <string name="mode_warp">WARP</string>
+    <string name="connected_sub_warp">Tüm internet trafiğiniz WARP tüneliyle şifreleniyor.</string>
+    <string name="disconnected_sub_warp">İnternet trafiğiniz şifrelenmiyor.</string>
+    <string name="warp_label">WARP sunucusu: %1$s  ›</string>
+    <string name="warp_label_none">WARP yapılandırması yok — içe aktarmak için dokunun  ›</string>
+    <string name="warp_config_title">WARP yapılandırması</string>
+    <string name="warp_help">WARP modu, tüm internet trafiğinizi WireGuard tüneliyle şifreler.\n\nBir WireGuard yapılandırma dosyası (.conf) gerekir: kendi sunucunuzdan (bkz. README) ya da kullandığınız bir VPN sağlayıcısından alabilirsiniz.</string>
+    <string name="warp_import_file">Dosyadan içe aktar</string>
+    <string name="warp_import_paste">Metin yapıştır</string>
+    <string name="warp_delete">Yapılandırmayı sil</string>
+    <string name="warp_imported">WARP yapılandırması kaydedildi</string>
+    <string name="warp_read_error">Dosya okunamadı: %1$s</string>
+    <string name="warp_no_config">Önce bir WARP yapılandırması içe aktarın</string>
+    <string name="stat_download">İndirilen</string>
+    <string name="stat_upload">Yüklenen</string>
+    <string name="save">Kaydet</string>
+    <string name="error">Hata</string>
 </resources>
